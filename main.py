@@ -1,53 +1,110 @@
 from sklearn import svm
 from sklearn import datasets
 from sklearn.model_selection import train_test_split
+from sklearn.datasets import make_blobs
 
 import matplotlib.pyplot as plt
 import numpy as np
 
+
+def ordering_support(vectors, point, weights):
+    """
+    Returns the first possible primary support vector
+    """
+
+    max_key = min(vectors, key= lambda x: len(vectors[x]))
+    return max_key
+
+def get_splitting_point(support_dict, W):
+    """
+    Finds and returns the primary support vector, splitting point
+    """
+    return support_dict[ordering_support(support_dict, (0,0), [])][0]
+
+def split_data(primary_support, X, Y):
+    """
+    returns a tuple  containing left and right split.
+    """
+
+    right_set = [vector for vector in zip(X,Y) if vector[0][0] >= primary_support[0]]
+    left_set = [vector for vector in zip(X,Y) if vector[0][0] < primary_support[0]]
+
+    right_x = []
+    right_y = []
+
+    for pair in right_set:
+        right_x.append(pair[0])
+        right_y.append(pair[1])
+
+
+    left_x = []
+    left_y = []
+
+    for pair in left_set:
+        left_x.append(pair[0])
+        left_y.append(pair[1])
+
+
+    return ((left_x, left_y), (right_x, right_y))
+
+def group_support_vectors(support_vectors):
+    """
+    returns a dict containing lists of dicts, where key corresponds to class
+    """
+    # contains a dict of support vectors and class
+    support_dict = {}
+
+    for vector in support_vectors:
+        key = clf.predict([vector])[0]
+
+        if key not in support_dict:
+            support_dict[key] = [vector]
+        else:
+            support_dict[key].append(vector)
+
+    return support_dict
+
 if __name__ == "__main__":
     # Create classifier
-    fignum = 1
-    clf = svm.SVC(kernel="linear")
 
-    data, target = datasets.make_classification(n_samples=100, n_features=2, n_informative=2, n_redundant=0, n_repeated=0, n_classes=2, n_clusters_per_class=2, weights=None, flip_y=0.01, class_sep=1.0, hypercube=True, shift=0.0, scale=1.0, shuffle=True, random_state=None)
+    X, y = make_blobs(n_samples=40, centers=2, random_state=6)
 
-
-    X_train, X_test, y_train, y_test = train_test_split(data,
-                                                        target,
-                                                        test_size=0.0,# 70% training and 30% test
-                                                        random_state=109)
-    clf.fit(X_train, y_train)
-    support_vectors = clf.support_vectors_
-    print(len(support_vectors))
-
-    w = clf.coef_[0]
-    a = -w[0] / w[1]
-    xx = np.linspace(-5, 5)
-
-    yy = a * xx - (clf.intercept_[0]) / w[1]
-
-    print(" w {}     a {} ".format(w, a))
-
-    # plot the parallels to the separating hyperplane that pass through the
-    # support vectors (margin away from hyperplane in direction
-    # perpendicular to hyperplane). This is sqrt(1+a^2) away vertically in
-    # 2-d.
-    margin = 1 / np.sqrt(np.sum(clf.coef_ ** 2))
-    yy_down = yy - np.sqrt(1 + a ** 2) * margin
-    yy_up = yy + np.sqrt(1 + a ** 2) * margin
-
-    # plot the line, the points, and the nearest vectors to the plane
-    plt.figure(fignum, figsize=(4, 3))
-    plt.clf()
-    plt.plot(xx, yy, 'k-')
-    plt.plot(xx, yy_down, 'k--')
-    plt.plot(xx, yy_up, 'k--')
+    # fit the model, don't regularize for illustration purposes
+    clf = svm.SVC(kernel='linear', C=1000)
+    clf.fit(X, y)
 
 
-    plt.scatter(clf.support_vectors_[:, 0], clf.support_vectors_[:, 1], s=80,
-                facecolors='none', zorder=10, edgecolors='k')
+    plt.scatter(X[:, 0], X[:, 1], c=y, s=30, cmap=plt.cm.Paired)
+    # plot the decision function
 
-    plt.scatter(data[:, 0], data[:, 1], marker='o', c=target,
-                s=25, edgecolor='k')
+
+
+
+    support_dict = group_support_vectors(clf.support_vectors_)
+
+    primary_support = get_splitting_point(support_dict, [])
+    left_set, right_set = split_data(primary_support, X, y)
+
+    clf.fit(right_set[0], right_set[1])
+
+    ax = plt.gca()
+    xlim = ax.get_xlim()
+    ylim = ax.get_ylim()
+
+    # create grid to evaluate model
+    xx = np.linspace(xlim[0], xlim[1], 30)
+    yy = np.linspace(ylim[0], ylim[1], 30)
+    YY, XX = np.meshgrid(yy, xx)
+    xy = np.vstack([XX.ravel(), YY.ravel()]).T
+    Z = clf.decision_function(xy).reshape(XX.shape)
+
+    # plot decision boundary and margins
+    plt.axvline(x=primary_support[0])
+    ax.contour(XX, YY, Z, colors='k', levels=[-1, 0, 1], alpha=0.5,
+               linestyles=['--', '-', '--'])
+    # plot support vectors
+    ax.scatter(clf.support_vectors_[:, 0], clf.support_vectors_[:, 1], s=100,
+               linewidth=1, facecolors='none', edgecolors='k')
+
+
     plt.show()
