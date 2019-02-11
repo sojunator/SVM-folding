@@ -5,6 +5,20 @@ from sklearn.datasets import make_blobs
 
 import matplotlib.pyplot as plt
 import numpy as np
+import math
+
+def get_rotation(alpha):
+    theta = alpha
+    c, s = np.cos(theta), np.sin(theta)
+    return np.array(((c,-s), (s, c)))
+
+def get_margin(clf):
+    """
+    https://scikit-learn.org/stable/auto_examples/svm/plot_svm_margin.html
+    returns the margin of given clf
+    """
+
+    return 1 / np.sqrt(np.sum(clf.coef_ ** 2))
 
 def get_hyperplane(clf):
     """
@@ -13,8 +27,6 @@ def get_hyperplane(clf):
 
     w = clf.coef_[0]
     a = -w[0] / w[1]
-
-
 
     return (a, (-clf.intercept_[0]) / w[1])
 
@@ -32,7 +44,9 @@ def get_intersection_point(left, right):
     x = (left_hyperplane[1] - right_hyperplane[1]) / (right_hyperplane[0] - left_hyperplane[0])
 
     y = right_hyperplane[0] * x + right_hyperplane[1]
-    return (x, y)
+
+    angle = np.arctan(right_hyperplane[0]) - np.arctan(left_hyperplane[0])
+    return ((x, y), angle)
 
 def ordering_support(vectors, point, weights):
     """
@@ -72,7 +86,7 @@ def split_data(primary_support, X, Y):
         left_y.append(pair[1])
 
 
-    return ((left_x, left_y), (right_x, right_y))
+    return [[left_x, left_y], [right_x, right_y]]
 
 def group_support_vectors(support_vectors):
     """
@@ -91,41 +105,13 @@ def group_support_vectors(support_vectors):
 
     return support_dict
 
-if __name__ == "__main__":
-    # Create classifier
 
-    # Dataset
-    X, y = make_blobs(n_samples=40, centers=2, random_state=6)
-
-    # Original SVM
-    clf = svm.SVC(kernel='linear', C=1000)
-    clf.fit(X, y)
-
-    # folding sets
-    right_clf = svm.SVC(kernel='linear', C=1000)
-    left_clf = svm.SVC(kernel='linear', C=1000)
-
+def plot(clf, left_clf, right_clf):
+    """
+    God function that removes all the jitter from main
+    """
 
     plt.scatter(X[:, 0], X[:, 1], c=y, s=30, cmap=plt.cm.Paired)
-    # plot the decision function
-
-
-
-    # Orginal support vectors
-    support_dict = group_support_vectors(clf.support_vectors_)
-
-    # Splitting point
-    primary_support = get_splitting_point(support_dict, [])
-
-    # Subsets of datasets, left and right of primary support vector
-    left_set, right_set = split_data(primary_support, X, y)
-
-    # New SVM, right
-    right_clf.fit(right_set[0], right_set[1])
-    left_clf.fit(left_set[0], left_set[1])
-
-    get_intersection_point(left_clf, right_clf)
-
     ax = plt.gca()
     xlim = ax.get_xlim()
     ylim = ax.get_ylim()
@@ -137,24 +123,26 @@ if __name__ == "__main__":
     xy = np.vstack([XX.ravel(), YY.ravel()]).T
     Z = clf.decision_function(xy).reshape(XX.shape)
 
-    # plot decision boundary and margins
-    #plt.axvline(x=primary_support[0])
-    #ax.contour(XX, YY, Z, colors='k', levels=[-1, 0, 1], alpha=0.5,
-    #           linestyles=['--', '-', '--'])
+    ax.scatter(clf.support_vectors_[:, 0], clf.support_vectors_[:, 1], s=100,
+           linewidth=1, facecolors='none', edgecolors='k')
+    ax.contour(XX, YY, Z, colors='k', levels=[-1, 0, 1], alpha=0.5,
+           linestyles=['--', '-', '--'])
+    """
 
-    # Orginal support vectors
-    #ax.scatter(clf.support_vectors_[:, 0], clf.support_vectors_[:, 1], s=100,
-    #           linewidth=1, facecolors='none', edgecolors='k')
+    ax.scatter(right_set[0][:, 0], right_set[0][:, 1], s=100,
+       linewidth=1, facecolors='none', edgecolors='b')
 
-    intersection_point = get_intersection_point(left_clf, right_clf)
-    plt.plot(intersection_point[0], intersection_point[1], marker='o', markersize=3, color="red")
 
-    ax.scatter(right_clf.support_vectors_[:, 0], right_clf.support_vectors_[:, 1], s=100,
-           linewidth=1, facecolors='none', edgecolors='b')
+    ax.scatter(left_set[0][:, 0], left_set[0][:, 1], s=100,
+       linewidth=1, facecolors='none', edgecolors='r')
+
+
+
 
     # right support vectors
     ax.scatter(right_clf.support_vectors_[:, 0], right_clf.support_vectors_[:, 1], s=100,
            linewidth=1, facecolors='none', edgecolors='b')
+
 
 
     Z = right_clf.decision_function(xy).reshape(XX.shape)
@@ -170,5 +158,61 @@ if __name__ == "__main__":
 
     ax.contour(XX, YY, Z, colors='r', levels=[-1, 0, 1], alpha=0.5,
                linestyles=['--', '-', '--'])
-
+    """
     plt.show()
+
+if __name__ == "__main__":
+    # Dataset
+    X, y = make_blobs(n_samples=40, centers=2, random_state=6)
+
+    # Original SVM
+    clf = svm.SVC(kernel='linear', C=1000)
+    clf.fit(X, y)
+    print(get_margin(clf))
+    # folding sets
+    right_clf = svm.SVC(kernel='linear', C=1000)
+    left_clf = svm.SVC(kernel='linear', C=1000)
+
+    # Orginal support vectors
+    support_dict = group_support_vectors(clf.support_vectors_)
+
+    # Splitting point
+    primary_support = get_splitting_point(support_dict, [])
+
+    # Subsets of datasets, left and right of primary support vector
+    left_set, right_set = split_data(primary_support, X, y)
+
+    # New SVM, right
+    right_clf.fit(right_set[0], right_set[1])
+    left_clf.fit(left_set[0], left_set[1])
+
+    # Get margins
+    right_margin = get_margin(right_clf)
+    left_margin = get_margin(left_clf)
+
+    # intersection data
+    intersection_point, angle = get_intersection_point(left_clf, right_clf)
+    rotation_matrix = get_rotation(angle)
+
+
+
+    if (right_margin > left_margin):
+        right_set[0] = [np.matmul((point.T - intersection_point), rotation_matrix) +  intersection_point for point in right_set[0]]
+
+    elif (left_margin > right_margin):
+        left_set[0] = [np.matmul(point.T, rotation_matrix) for point in left_set[0]]
+    else:
+        print("Cannot improve margin")
+    """
+    X = left_set[0] + right_set[0]
+    y = left_set[1] + right_set[1]
+
+    X = np.vstack(X)
+
+    clf.fit(X,y)
+    """
+    print(get_margin(clf))
+    right_set[0] = np.vstack(right_set[0])
+    left_set[0] = np.vstack(left_set[0])
+
+    plot(clf, left_clf, right_clf)
