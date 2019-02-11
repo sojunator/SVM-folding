@@ -6,6 +6,33 @@ from sklearn.datasets import make_blobs
 import matplotlib.pyplot as plt
 import numpy as np
 
+def get_hyperplane(clf):
+    """
+    Returns hyperplane for classifer
+    """
+
+    w = clf.coef_[0]
+    a = -w[0] / w[1]
+
+
+
+    return (a, (-clf.intercept_[0]) / w[1])
+
+def get_intersection_point(left, right):
+    """
+    Takes two sklearn svc classifiers that are trained on subsets of the same
+    dataset
+
+    Returns touple of intersection point and intersection angle alpha
+    ((x,y), alpha)
+    """
+
+    # get hyperplanes
+    left_hyperplane, right_hyperplane = get_hyperplane(left), get_hyperplane(right)
+    x = (left_hyperplane[1] - right_hyperplane[1]) / (right_hyperplane[0] - left_hyperplane[0])
+
+    y = right_hyperplane[0] * x + right_hyperplane[1]
+    return (x, y)
 
 def ordering_support(vectors, point, weights):
     """
@@ -97,6 +124,8 @@ if __name__ == "__main__":
     right_clf.fit(right_set[0], right_set[1])
     left_clf.fit(left_set[0], left_set[1])
 
+    get_intersection_point(left_clf, right_clf)
+
     ax = plt.gca()
     xlim = ax.get_xlim()
     ylim = ax.get_ylim()
@@ -109,14 +138,19 @@ if __name__ == "__main__":
     Z = clf.decision_function(xy).reshape(XX.shape)
 
     # plot decision boundary and margins
-    plt.axvline(x=primary_support[0])
-    ax.contour(XX, YY, Z, colors='k', levels=[-1, 0, 1], alpha=0.5,
-               linestyles=['--', '-', '--'])
+    #plt.axvline(x=primary_support[0])
+    #ax.contour(XX, YY, Z, colors='k', levels=[-1, 0, 1], alpha=0.5,
+    #           linestyles=['--', '-', '--'])
 
     # Orginal support vectors
-    ax.scatter(clf.support_vectors_[:, 0], clf.support_vectors_[:, 1], s=100,
-               linewidth=1, facecolors='none', edgecolors='k')
+    #ax.scatter(clf.support_vectors_[:, 0], clf.support_vectors_[:, 1], s=100,
+    #           linewidth=1, facecolors='none', edgecolors='k')
 
+    intersection_point = get_intersection_point(left_clf, right_clf)
+    plt.plot(intersection_point[0], intersection_point[1], marker='o', markersize=3, color="red")
+
+    ax.scatter(right_clf.support_vectors_[:, 0], right_clf.support_vectors_[:, 1], s=100,
+           linewidth=1, facecolors='none', edgecolors='b')
 
     # right support vectors
     ax.scatter(right_clf.support_vectors_[:, 0], right_clf.support_vectors_[:, 1], s=100,
