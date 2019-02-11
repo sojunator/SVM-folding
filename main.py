@@ -27,7 +27,7 @@ def split_data(primary_support, X, Y):
     """
 
     right_set = [vector for vector in zip(X,Y) if vector[0][0] >= primary_support[0]]
-    left_set = [vector for vector in zip(X,Y) if vector[0][0] < primary_support[0]]
+    left_set = [vector for vector in zip(X,Y) if vector[0][0] <= primary_support[0]]
 
     right_x = []
     right_y = []
@@ -67,11 +67,16 @@ def group_support_vectors(support_vectors):
 if __name__ == "__main__":
     # Create classifier
 
+    # Dataset
     X, y = make_blobs(n_samples=40, centers=2, random_state=6)
 
-    # fit the model, don't regularize for illustration purposes
+    # Original SVM
     clf = svm.SVC(kernel='linear', C=1000)
     clf.fit(X, y)
+
+    # folding sets
+    right_clf = svm.SVC(kernel='linear', C=1000)
+    left_clf = svm.SVC(kernel='linear', C=1000)
 
 
     plt.scatter(X[:, 0], X[:, 1], c=y, s=30, cmap=plt.cm.Paired)
@@ -79,13 +84,18 @@ if __name__ == "__main__":
 
 
 
-
+    # Orginal support vectors
     support_dict = group_support_vectors(clf.support_vectors_)
 
+    # Splitting point
     primary_support = get_splitting_point(support_dict, [])
+
+    # Subsets of datasets, left and right of primary support vector
     left_set, right_set = split_data(primary_support, X, y)
 
-    clf.fit(right_set[0], right_set[1])
+    # New SVM, right
+    right_clf.fit(right_set[0], right_set[1])
+    left_clf.fit(left_set[0], left_set[1])
 
     ax = plt.gca()
     xlim = ax.get_xlim()
@@ -102,9 +112,29 @@ if __name__ == "__main__":
     plt.axvline(x=primary_support[0])
     ax.contour(XX, YY, Z, colors='k', levels=[-1, 0, 1], alpha=0.5,
                linestyles=['--', '-', '--'])
-    # plot support vectors
+
+    # Orginal support vectors
     ax.scatter(clf.support_vectors_[:, 0], clf.support_vectors_[:, 1], s=100,
                linewidth=1, facecolors='none', edgecolors='k')
 
+
+    # right support vectors
+    ax.scatter(right_clf.support_vectors_[:, 0], right_clf.support_vectors_[:, 1], s=100,
+           linewidth=1, facecolors='none', edgecolors='b')
+
+
+    Z = right_clf.decision_function(xy).reshape(XX.shape)
+
+    ax.contour(XX, YY, Z, colors='b', levels=[-1, 0, 1], alpha=0.5,
+               linestyles=['--', '-', '--'])
+
+    # left support vectors
+    ax.scatter(left_clf.support_vectors_[:, 0], left_clf.support_vectors_[:, 1], s=100,
+           linewidth=1, facecolors='none', edgecolors='r')
+
+    Z = left_clf.decision_function(xy).reshape(XX.shape)
+
+    ax.contour(XX, YY, Z, colors='r', levels=[-1, 0, 1], alpha=0.5,
+               linestyles=['--', '-', '--'])
 
     plt.show()
