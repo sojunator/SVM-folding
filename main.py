@@ -7,6 +7,38 @@ import matplotlib.pyplot as plt
 import numpy as np
 import math
 
+def rotate_set(left_clf, left_set, right_clf, right_set):
+    """
+    Performs rotation on the set with biggest margin
+    Currently rotates around the intersection point
+
+    Does not contain datapoints to set
+
+    returns a merged and rotated set
+    """
+    # Get margins
+    right_margin = get_margin(right_clf)
+    left_margin = get_margin(left_clf)
+
+    # intersection data
+    intersection_point, angle = get_intersection_point(left_clf, right_clf)
+    rotation_matrix = get_rotation(angle)
+
+    if (right_margin > left_margin):
+        right_set[0] = [np.matmul((point.T - intersection_point), rotation_matrix) +  intersection_point for point in right_set[0]]
+
+    elif (left_margin > right_margin):
+        left_set[0] = [np.matmul(point.T - intersection_point, rotation_matrix) + - intersection_point for point in left_set[0]]
+    else:
+        print("Cannot improve margin")
+
+    X = left_set[0] + right_set[0]
+    y = left_set[1] + right_set[1]
+
+    X = np.vstack(X)
+
+    return (X, y)
+
 def get_rotation(alpha):
     theta = alpha
     c, s = np.cos(theta), np.sin(theta)
@@ -127,7 +159,7 @@ def plot(clf, left_clf, right_clf):
            linewidth=1, facecolors='none', edgecolors='k')
     ax.contour(XX, YY, Z, colors='k', levels=[-1, 0, 1], alpha=0.5,
            linestyles=['--', '-', '--'])
-    """
+
 
     ax.scatter(right_set[0][:, 0], right_set[0][:, 1], s=100,
        linewidth=1, facecolors='none', edgecolors='b')
@@ -158,7 +190,7 @@ def plot(clf, left_clf, right_clf):
 
     ax.contour(XX, YY, Z, colors='r', levels=[-1, 0, 1], alpha=0.5,
                linestyles=['--', '-', '--'])
-    """
+
     plt.show()
 
 if __name__ == "__main__":
@@ -167,11 +199,16 @@ if __name__ == "__main__":
 
     # Original SVM
     clf = svm.SVC(kernel='linear', C=1000)
-    clf.fit(X, y)
-    print(get_margin(clf))
     # folding sets
     right_clf = svm.SVC(kernel='linear', C=1000)
     left_clf = svm.SVC(kernel='linear', C=1000)
+
+    # Train on inital data
+    clf.fit(X, y)
+
+    print("Old margin {}".format(get_margin(clf)))
+
+
 
     # Orginal support vectors
     support_dict = group_support_vectors(clf.support_vectors_)
@@ -186,32 +223,16 @@ if __name__ == "__main__":
     right_clf.fit(right_set[0], right_set[1])
     left_clf.fit(left_set[0], left_set[1])
 
-    # Get margins
-    right_margin = get_margin(right_clf)
-    left_margin = get_margin(left_clf)
 
-    # intersection data
-    intersection_point, angle = get_intersection_point(left_clf, right_clf)
-    rotation_matrix = get_rotation(angle)
+    # Rotate and merge data sets back into one
+    X, y = rotate_set(left_clf, left_set, right_clf, right_set)
 
-
-
-    if (right_margin > left_margin):
-        right_set[0] = [np.matmul((point.T - intersection_point), rotation_matrix) +  intersection_point for point in right_set[0]]
-
-    elif (left_margin > right_margin):
-        left_set[0] = [np.matmul(point.T, rotation_matrix) for point in left_set[0]]
-    else:
-        print("Cannot improve margin")
-    """
-    X = left_set[0] + right_set[0]
-    y = left_set[1] + right_set[1]
-
-    X = np.vstack(X)
-
+    # merge
     clf.fit(X,y)
-    """
-    print(get_margin(clf))
+
+    print("New margin {}".format(get_margin(clf)))
+
+    # Used for highlighting the sets
     right_set[0] = np.vstack(right_set[0])
     left_set[0] = np.vstack(left_set[0])
 
