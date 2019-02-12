@@ -168,8 +168,8 @@ def plot(new_clf, old_clf, X, y):
     YY, XX = np.meshgrid(yy, xx)
 
 
-    plot_clf(new_clf, ax, XX, YY)
-    plot_clf(old_clf, ax, XX, YY)
+    plot_clf(new_clf, ax, XX, YY, 'b')
+    plot_clf(old_clf, ax, XX, YY, 'r')
 
     plt.show()
 
