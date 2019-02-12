@@ -137,6 +137,17 @@ def group_support_vectors(support_vectors):
 
     return support_dict
 
+def plot_clf(clf, ax, XX, YY, Z, colour='k'):
+    """
+    Plots a clf, with margins, colour will be black
+    """
+
+    ax.scatter(clf.support_vectors_[:, 0], clf.support_vectors_[:, 1], s=100,
+           linewidth=1, facecolors='none', edgecolors=colour)
+
+    ax.contour(XX, YY, Z, colors=colour, levels=[-1, 0, 1], alpha=0.5,
+           linestyles=['--', '-', '--'])
+
 
 def plot(clf, left_clf, right_clf):
     """
@@ -155,41 +166,7 @@ def plot(clf, left_clf, right_clf):
     xy = np.vstack([XX.ravel(), YY.ravel()]).T
     Z = clf.decision_function(xy).reshape(XX.shape)
 
-    ax.scatter(clf.support_vectors_[:, 0], clf.support_vectors_[:, 1], s=100,
-           linewidth=1, facecolors='none', edgecolors='k')
-    ax.contour(XX, YY, Z, colors='k', levels=[-1, 0, 1], alpha=0.5,
-           linestyles=['--', '-', '--'])
-
-
-    ax.scatter(right_set[0][:, 0], right_set[0][:, 1], s=100,
-       linewidth=1, facecolors='none', edgecolors='b')
-
-
-    ax.scatter(left_set[0][:, 0], left_set[0][:, 1], s=100,
-       linewidth=1, facecolors='none', edgecolors='r')
-
-
-
-
-    # right support vectors
-    ax.scatter(right_clf.support_vectors_[:, 0], right_clf.support_vectors_[:, 1], s=100,
-           linewidth=1, facecolors='none', edgecolors='b')
-
-
-
-    Z = right_clf.decision_function(xy).reshape(XX.shape)
-
-    ax.contour(XX, YY, Z, colors='b', levels=[-1, 0, 1], alpha=0.5,
-               linestyles=['--', '-', '--'])
-
-    # left support vectors
-    ax.scatter(left_clf.support_vectors_[:, 0], left_clf.support_vectors_[:, 1], s=100,
-           linewidth=1, facecolors='none', edgecolors='r')
-
-    Z = left_clf.decision_function(xy).reshape(XX.shape)
-
-    ax.contour(XX, YY, Z, colors='r', levels=[-1, 0, 1], alpha=0.5,
-               linestyles=['--', '-', '--'])
+    plot_clf(clf, ax, XX, YY, Z)
 
     plt.show()
 
@@ -199,6 +176,7 @@ if __name__ == "__main__":
 
     # Original SVM
     clf = svm.SVC(kernel='linear', C=1000)
+    
     # folding sets
     right_clf = svm.SVC(kernel='linear', C=1000)
     left_clf = svm.SVC(kernel='linear', C=1000)
@@ -207,7 +185,6 @@ if __name__ == "__main__":
     clf.fit(X, y)
 
     print("Old margin {}".format(get_margin(clf)))
-
 
 
     # Orginal support vectors
