@@ -7,6 +7,61 @@ import matplotlib.pyplot as plt
 import numpy as np
 import math
 
+def vector_projection(v1,v2):
+    dot1 = np.dot(v1,v2)
+    dot2 = np.dot(v2,v2)
+    return (np.dot(v1, v2) / np.dot(v2,v2)) * v2
+
+    
+
+def grahm_schmidt_orthonorm(linearly_independent_support_vectors):
+
+    orthonormated_vectors = []#stores the new basis
+
+    vec = linearly_independent_support_vectors[0] 
+    vec = vec / np.linalg.norm(vec)#first entry is just the itself normalized
+    orthonormated_vectors.append(vec)
+
+    for v in linearly_independent_support_vectors[1:]:
+
+        vec = 0
+        for u in orthonormated_vectors:
+            projection = np.dot(v,u) * u
+            projection[np.abs(projection) < 0.000001] = 0
+            vec -= projection
+
+        vec = v + vec
+        vec[np.abs(vec) < 0.000001] = 0
+        vec = vec / np.linalg.norm(vec)
+        orthonormated_vectors.append(vec)
+
+    return orthonormated_vectors
+
+def align_axis(support_vectors):
+
+    linearly_independent_support_vectors = 0
+
+    orthonormated_basis = grahm_schmidt_orthonorm(linearly_independent_support_vectors)
+
+    return
+
+def rotate_project_into_lower_dimension():
+    """
+    rotates the datapoints so that they align eventually aligning dimensions so that they can be excluded during the next rotation
+    """
+
+
+    return
+
+def dimension_reduction(dataset, support_vectors):
+    
+    #if supportvectors  -> k < n + 1 run align axis
+    #align_axis
+    #then rotate project
+
+    return
+
+
 def rotate_set(left_clf, left_set, right_clf, right_set):
     """
     Performs rotation on the set with biggest margin
@@ -174,6 +229,12 @@ def plot(new_clf, old_clf, X, y):
     plt.show()
 
 def main():
+    testVectors = np.array([[1,1,0], [1,1,1], [1,0,0]])
+
+    print(grahm_schmidt_orthonorm(testVectors))
+
+
+def asdf():
     # Dataset
     X, y = make_blobs(n_samples=40, centers=2, random_state=6)
 
