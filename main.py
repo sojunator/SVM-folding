@@ -120,7 +120,7 @@ def split_data(primary_support, X, Y):
 
     return [[left_x, left_y], [right_x, right_y]]
 
-def group_support_vectors(support_vectors):
+def group_support_vectors(support_vectors, clf):
     """
     returns a dict containing lists of dicts, where key corresponds to class
     """
@@ -137,10 +137,13 @@ def group_support_vectors(support_vectors):
 
     return support_dict
 
-def plot_clf(clf, ax, XX, YY, Z, colour='k'):
+def plot_clf(clf, ax, XX, YY, colour='k'):
     """
     Plots a clf, with margins, colour will be black
     """
+
+    xy = np.vstack([XX.ravel(), YY.ravel()]).T
+    Z = clf.decision_function(xy).reshape(XX.shape)
 
     ax.scatter(clf.support_vectors_[:, 0], clf.support_vectors_[:, 1], s=100,
            linewidth=1, facecolors='none', edgecolors=colour)
@@ -149,7 +152,7 @@ def plot_clf(clf, ax, XX, YY, Z, colour='k'):
            linestyles=['--', '-', '--'])
 
 
-def plot(clf, left_clf, right_clf):
+def plot(new_clf, old_clf, X, y):
     """
     God function that removes all the jitter from main
     """
@@ -163,32 +166,32 @@ def plot(clf, left_clf, right_clf):
     xx = np.linspace(xlim[0], xlim[1], 30)
     yy = np.linspace(ylim[0], ylim[1], 30)
     YY, XX = np.meshgrid(yy, xx)
-    xy = np.vstack([XX.ravel(), YY.ravel()]).T
-    Z = clf.decision_function(xy).reshape(XX.shape)
 
-    plot_clf(clf, ax, XX, YY, Z)
+
+    plot_clf(new_clf, ax, XX, YY)
+    plot_clf(old_clf, ax, XX, YY)
 
     plt.show()
 
-if __name__ == "__main__":
+def main():
     # Dataset
     X, y = make_blobs(n_samples=40, centers=2, random_state=6)
 
     # Original SVM
-    clf = svm.SVC(kernel='linear', C=1000)
-    
+    old_clf = svm.SVC(kernel='linear', C=1000)
+
     # folding sets
     right_clf = svm.SVC(kernel='linear', C=1000)
     left_clf = svm.SVC(kernel='linear', C=1000)
 
     # Train on inital data
-    clf.fit(X, y)
+    old_clf.fit(X, y)
 
-    print("Old margin {}".format(get_margin(clf)))
+    print("Old margin {}".format(get_margin(old_clf)))
 
 
     # Orginal support vectors
-    support_dict = group_support_vectors(clf.support_vectors_)
+    support_dict = group_support_vectors(old_clf.support_vectors_, old_clf)
 
     # Splitting point
     primary_support = get_splitting_point(support_dict, [])
@@ -205,12 +208,17 @@ if __name__ == "__main__":
     X, y = rotate_set(left_clf, left_set, right_clf, right_set)
 
     # merge
-    clf.fit(X,y)
+    new_clf = svm.SVC(kernel='linear', C=1000)
+    new_clf.fit(X, y)
 
-    print("New margin {}".format(get_margin(clf)))
+    print("New margin {}".format(get_margin(new_clf)))
 
     # Used for highlighting the sets
     right_set[0] = np.vstack(right_set[0])
     left_set[0] = np.vstack(left_set[0])
 
-    plot(clf, left_clf, right_clf)
+    plot(new_clf, old_clf, X, y)
+
+
+if __name__ == "__main__":
+    main()
