@@ -130,9 +130,30 @@ def align_axis(support_vectors):
 
     return
 
+def find_vectors_with_smallest_distance(set):
+    """
+    Finds the shortest distance between two vectors within the given set.
+    Returns [vec1, vec2]
+    """
+    bestVec1 = set[0]
+    bestVec2 = set[1]
+
+    bestDist = np.linalg.norm(bestVec1 - bestVec2)
+
+    for index_v1 in range(0, len(set)):
+        vec1 = set[index_v1]
+        for vec2 in set[index_v1 + 1:]:
+            dist = np.linalg.norm(vec1 - vec2)
+            if dist < bestDist:#found two vecs with shorter distance inbetween
+                bestDist = dist
+                bestVec1 = vec1
+                bestVec2 = vec2
+
+    return bestVec1, bestVec2
+
 def rotation_matrix_onto_lower_dimension(support_vectors):
     
-    direction = support_vectors[0] - support_vectors[1]
+    direction = support_vectors[0] - support_vectors[1]#of same class
     dim = len(support_vectors)
 
     rotation_matrix = np.zeros((dim,dim))
@@ -324,12 +345,9 @@ def nada():
     print(testVectors)
 
 def main():
-    
+   testVectors = np.array([[2.5,0,0], [0,0,1], [1.1,0,0], [0,1.1,0], [0, -3, 0], [2,2,0], [0.5,0.5,0]])
+   print(find_vectors_with_smallest_distance(testVectors))
   
-   mat = np.random.random((3,4))
-   mat.rref()
-
-   print(mat)
 
 def asdf():
     # Dataset
