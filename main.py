@@ -130,33 +130,70 @@ def align_axis(support_vectors):
 
     return
 
-def find_vectors_with_smallest_distance(set):
+def get_direction_between_two_vectors_in_set_with_smallest_distance(set):
     """
     Finds the shortest distance between two vectors within the given set.
-    Returns [vec1, vec2]
     """
-    bestVec1 = set[0]
-    bestVec2 = set[1]
-
-    bestDist = np.linalg.norm(bestVec1 - bestVec2)
+    bestDir = set[0] - set[1]
+    bestDist = np.linalg.norm(bestDir)
 
     for index_v1 in range(0, len(set)):
         vec1 = set[index_v1]
         for vec2 in set[index_v1 + 1:]:
-            dist = np.linalg.norm(vec1 - vec2)
+
+            dir = vec1 - vec2
+            dist = np.linalg.norm(dir)
             if dist < bestDist:#found two vecs with shorter distance inbetween
                 bestDist = dist
-                bestVec1 = vec1
-                bestVec2 = vec2
+                bestDir = dir
 
-    return bestVec1, bestVec2
+    return bestDir
 
 def rotation_matrix_onto_lower_dimension(support_vectors):
     
-    direction = support_vectors[0] - support_vectors[1]#of same class
-    dim = len(support_vectors)
-
+    dim = len(support_vectors[0])
     rotation_matrix = np.zeros((dim,dim))
+
+    #d is the shortest direction between two support vectors in one of the classes
+    d = [1,2,3,4,5]#get_direction_between_two_vectors_in_set_with_smallest_distance(support_vectors)
+
+
+    #W = sqrt(v1^2 + v2^2 ... + vk^2) where k=2,...,n
+    squaredElementsAccumulator = d[0] * d[0] + d[1] * d[1]
+    k = 1
+
+    Wk = d[0]#for k = 0
+    Wkp1 = np.sqrt(squaredElementsAccumulator)
+    
+
+    #first element
+    rotation_matrix[0][0] = d[1] / Wkp1
+
+    #first diagonal element
+    rotation_matrix[0][1] = -Wk / Wkp1
+
+    #middle rows
+    for row in range(1, dim - 1):
+        k += 1
+        squaredElementsAccumulator += d[k] * d[k] #accumulate next step
+
+
+        rotation_matrix[k - 1][k] = -Wk / Wkp1 #diagonal
+
+        i = 0
+        for element in d[0:k]:
+        
+            Wk = Wkp1
+            Wkp1 = np.sqrt(squaredElementsAccumulator)
+            rotation_matrix[k - 1][i] = d[i]*d[k] / (Wk * Wkp1)
+            i+=1
+    
+
+    #last row
+    i = 0
+    for element in d:
+        rotation_matrix[dim-1][i] = element / Wk
+        i += 1
 
 
     return
@@ -345,8 +382,8 @@ def nada():
     print(testVectors)
 
 def main():
-   testVectors = np.array([[2.5,0,0], [0,0,1], [1.1,0,0], [0,1.1,0], [0, -3, 0], [2,2,0], [0.5,0.5,0]])
-   print(find_vectors_with_smallest_distance(testVectors))
+   testVectors = np.array([[2,2,2,2,2], [1,3,3,5,5]])
+   print(rotation_matrix_onto_lower_dimension(testVectors))
   
 
 def asdf():
