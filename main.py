@@ -7,28 +7,49 @@ import matplotlib.pyplot as plt
 import numpy as np
 import math
 
-def rotate_set(left_clf, left_set, right_clf, right_set):
+
+def get_rotation(alpha):
+    theta = alpha
+    c, s = np.cos(theta), np.sin(theta)
+    return np.array(((c,-s), (s, c)))
+
+def rotate_point(point, angle, primary_support, intersection_point):
+    """
+    Returns the point rotated accordingly to rubberband folding
+
+    Does currently not apply rubberband folding, rotates points around intersection
+    """
+    rotation_matrix = get_rotation(angle)
+
+    point = np.matmul(point.T - intersection_point, rotation_matrix) + intersection_point
+
+    return point
+
+def rotate_set(left_clf, left_set, right_clf, right_set, primary_support):
     """
     Performs rotation on the set with biggest margin
     Currently rotates around the intersection point
 
     Does not contain datapoints to set
 
-    returns a merged and rotated set
+    returns a merged and rotated set, touple (X, y)
     """
+    
     # Get margins
     right_margin = get_margin(right_clf)
     left_margin = get_margin(left_clf)
 
     # intersection data
     intersection_point, angle = get_intersection_point(left_clf, right_clf)
-    rotation_matrix = get_rotation(angle)
 
     if (right_margin > left_margin):
-        right_set[0] = [np.matmul((point.T - intersection_point), rotation_matrix) +  intersection_point for point in right_set[0]]
+        right_set[0] = [rotate_point(point, angle, primary_support, intersection_point)
+                            for point in right_set[0]]
 
     elif (left_margin > right_margin):
-        left_set[0] = [np.matmul(point.T - intersection_point, rotation_matrix) + intersection_point for point in left_set[0]]
+        left_set[0] = [rotate_point(point, angle, primary_support, intersection_point)
+                            for point in left_set[0]]
+
     else:
         print("Cannot improve margin")
 
@@ -38,11 +59,6 @@ def rotate_set(left_clf, left_set, right_clf, right_set):
     X = np.vstack(X)
 
     return (X, y)
-
-def get_rotation(alpha):
-    theta = alpha
-    c, s = np.cos(theta), np.sin(theta)
-    return np.array(((c,-s), (s, c)))
 
 def get_margin(clf):
     """
@@ -119,7 +135,7 @@ def ordering_support(vectors, point, clf):
                             ( a * a + b * b)), vector, key))
 
     tk.sort(key=lambda x: x[0])
-    
+
     return tk
 
 def get_splitting_point(support_dict, clf):
@@ -141,7 +157,7 @@ def get_splitting_point(support_dict, clf):
 
 def split_data(primary_support, X, Y):
     """
-    returns a tuple  containing left and right split.
+    returns a list  containing left and right split.
     """
 
     right_set = [vector for vector in zip(X,Y) if vector[0][0] >= primary_support[0]]
@@ -251,7 +267,7 @@ def main():
 
 
     # Rotate and merge data sets back into one
-    X, y = rotate_set(left_clf, left_set, right_clf, right_set)
+    X, y = rotate_set(left_clf, left_set, right_clf, right_set, primary_support)
 
     # merge
     new_clf = svm.SVC(kernel='linear', C=1000)
@@ -263,6 +279,8 @@ def main():
     right_set[0] = np.vstack(right_set[0])
     left_set[0] = np.vstack(left_set[0])
 
+    # plot new clf (post hyperplane folding) and old clf.
+    # Blue is old, red is new.
     plot(new_clf, old_clf, X, y)
 
 
