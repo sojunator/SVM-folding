@@ -7,12 +7,12 @@ import matplotlib.pyplot as plt
 import numpy as np
 import math
 
+
 def vector_projection(v1,v2):
     dot1 = np.dot(v1,v2)
     dot2 = np.dot(v2,v2)
     return (np.dot(v1, v2) / np.dot(v2,v2)) * v2
 
-    
 
 def grahm_schmidt_orthonorm(linearly_independent_support_vectors):
 
@@ -22,6 +22,7 @@ def grahm_schmidt_orthonorm(linearly_independent_support_vectors):
     vec = vec / np.linalg.norm(vec)#first entry is just the itself normalized
     orthonormated_vectors.append(vec)
 
+    i = 0
     for v in linearly_independent_support_vectors[1:]:
 
         vec = 0
@@ -32,10 +33,94 @@ def grahm_schmidt_orthonorm(linearly_independent_support_vectors):
 
         vec = v + vec
         vec[np.abs(vec) < 0.000001] = 0
+        
+        if all(v == 0 for v in vec):#if true then this vector is dependent on it's predicessors
+            print(i)
+
+        i += 1
+
         vec = vec / np.linalg.norm(vec)
         orthonormated_vectors.append(vec)
 
     return orthonormated_vectors
+
+def linind(support_vectors):#asdfasdfc
+
+    linearly_independent_support_vectors = support_vectors
+
+    progresser = 0
+    i = 0
+    while i < len(linearly_independent_support_vectors) - 1:
+        
+        li_vec1 = linearly_independent_support_vectors[i]
+       
+        linearlyDependent = False
+        dependentIndexes = np.ones(len(linearly_independent_support_vectors), dtype=bool)
+
+        
+
+        for k in range(progresser + 1, len(linearly_independent_support_vectors)):
+
+            li_vec2 = linearly_independent_support_vectors[k]
+
+            if cauchy_schwarz_equal(li_vec1, li_vec2):#if true, li_vec1 and li_vec2 are dependent according to cauchy-schwarz-inequality
+                dependentIndexes[k] = False
+                linearlyDependent = True
+                
+        
+        if linearlyDependent:
+            linearly_independent_support_vectors = linearly_independent_support_vectors[dependentIndexes]# remove vectors that were dependent with li_vec1
+        else:
+            progresser += 1 # increment 'progresser', since vec[i] is independent
+            
+        i = progresser # reset iteration
+
+    return linearly_independent_support_vectors
+
+def cauchy_schwarz_equal(v1,v2):
+    """
+    returns true if the cauchy-schwarz inequality is equal, meaning that they are linearly dependent
+    if the function returns true, the vectors are linearly dependent, and one of the vectors can be removed
+    """
+
+    #inner product
+    ipLeft = np.dot(v1, v2)
+
+    return ipLeft * ipLeft == np.dot(v1,v1) * np.dot(v2,v2)
+    
+
+def get_linearly_independent_support_vectors(support_vectors):
+
+    linearly_independent_support_vectors = support_vectors
+
+    progresser = 0
+    i = 0
+    while i < len(linearly_independent_support_vectors) - 1:
+        
+        li_vec1 = linearly_independent_support_vectors[i]
+       
+        linearlyDependent = False
+        dependentIndexes = np.ones(len(linearly_independent_support_vectors), dtype=bool)
+
+
+        for k in range(progresser + 1, len(linearly_independent_support_vectors)):
+
+            li_vec2 = linearly_independent_support_vectors[k]
+
+            if cauchy_schwarz_equal(li_vec1, li_vec2):#if true, li_vec1 and li_vec2 are dependent according to cauchy-schwarz-inequality
+                dependentIndexes[k] = False
+                linearlyDependent = True
+                
+        
+        if linearlyDependent:
+            linearly_independent_support_vectors = linearly_independent_support_vectors[dependentIndexes]# remove vectors that were dependent with li_vec1
+        else:
+            progresser += 1 # increment 'progresser', since vec[i] is independent
+            
+        i = progresser # reset iteration
+
+
+    return linearly_independent_support_vectors
 
 def align_axis(support_vectors):
 
@@ -45,17 +130,19 @@ def align_axis(support_vectors):
 
     return
 
-def rotate_project_into_lower_dimension():
-    """
-    rotates the datapoints so that they align eventually aligning dimensions so that they can be excluded during the next rotation
-    """
+def rotation_matrix_onto_lower_dimension(support_vectors):
+    
+    direction = support_vectors[0] - support_vectors[1]
+    dim = len(support_vectors)
+
+    rotation_matrix = np.zeros((dim,dim))
 
 
     return
 
 def dimension_reduction(dataset, support_vectors):
     
-    #if supportvectors  -> k < n + 1 run align axis
+    #if supportvectors  -> k < n + 1 run align axis aka if(n <= currentDim) then -> align_axis
     #align_axis
     #then rotate project
 
@@ -228,11 +315,21 @@ def plot(new_clf, old_clf, X, y):
 
     plt.show()
 
+def nada():
+    testVectors = np.array([[2.5,0,0], [0,0,1], [1,0,0], [0,1,0], [0, 3, 0], [2,2,0], [0.5,0.5,0]])
+    print(testVectors)
+    testVectors = get_linearly_independent_support_vectors(testVectors)
+    print(testVectors)
+    testVectors = grahm_schmidt_orthonorm(testVectors) 
+    print(testVectors)
+
 def main():
-    testVectors = np.array([[1,1,0], [1,1,1], [1,0,0]])
+    
+  
+   mat = np.random.random((3,4))
+   mat.rref()
 
-    print(grahm_schmidt_orthonorm(testVectors))
-
+   print(mat)
 
 def asdf():
     # Dataset
