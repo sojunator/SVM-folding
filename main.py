@@ -216,32 +216,48 @@ def dimension_reduction(dataset, support_dict):#Input: full dataset for a clf, a
     dataset = [np.matmul(point, rotation_matrix) for point in dataset] 
 
 
+def get_rotation(alpha):
+    theta = alpha
+    c, s = np.cos(theta), np.sin(theta)
+    return np.array(((c,-s), (s, c)))
 
-    return
+def rotate_point(point, angle, primary_support, intersection_point):
+    """
+    Returns the point rotated accordingly to rubberband folding
 
+    Does currently not apply rubberband folding, rotates points around intersection
+    """
+    rotation_matrix = get_rotation(angle)
 
-def rotate_set(left_clf, left_set, right_clf, right_set):
+    point = np.matmul(point.T - intersection_point, rotation_matrix) + intersection_point
+
+    return point
+
+def rotate_set(left_clf, left_set, right_clf, right_set, primary_support):
     """
     Performs rotation on the set with biggest margin
     Currently rotates around the intersection point
 
     Does not contain datapoints to set
 
-    returns a merged and rotated set
+    returns a merged and rotated set, touple (X, y)
     """
+    
     # Get margins
     right_margin = get_margin(right_clf)
     left_margin = get_margin(left_clf)
 
     # intersection data
     intersection_point, angle = get_intersection_point(left_clf, right_clf)
-    rotation_matrix = get_rotation(angle)
 
     if (right_margin > left_margin):
-        right_set[0] = [np.matmul((point.T - intersection_point), rotation_matrix) +  intersection_point for point in right_set[0]]
+        right_set[0] = [rotate_point(point, angle, primary_support, intersection_point)
+                            for point in right_set[0]]
 
     elif (left_margin > right_margin):
-        left_set[0] = [np.matmul(point.T - intersection_point, rotation_matrix) + - intersection_point for point in left_set[0]]
+        left_set[0] = [rotate_point(point, angle, primary_support, intersection_point)
+                            for point in left_set[0]]
+
     else:
         print("Cannot improve margin")
 
@@ -251,11 +267,6 @@ def rotate_set(left_clf, left_set, right_clf, right_set):
     X = np.vstack(X)
 
     return (X, y)
-
-def get_rotation(alpha):
-    theta = alpha
-    c, s = np.cos(theta), np.sin(theta)
-    return np.array(((c,-s), (s, c)))
 
 def get_margin(clf):
     """
@@ -293,23 +304,68 @@ def get_intersection_point(left, right):
     angle = np.arctan(right_hyperplane[0]) - np.arctan(left_hyperplane[0])
     return ((x, y), angle)
 
-def ordering_support(vectors, point, weights):
+def ordering_support(vectors, point, clf):
     """
     Returns the first possible primary support vector
     """
+    primary_support_vector = None
 
-    max_key = min(vectors, key= lambda x: len(vectors[x]))
-    return max_key
 
-def get_splitting_point(support_dict, W):
+    # As the problem is binary classification, we will only have keys 0, 1
+    """
+    if (len(vectors[0]) is 1):
+        if (len(vectors[1]) > 1):
+            return 0
+
+    if (len(vectors[1]) is 1):
+        if (len(vectors[0]) > 1):
+            return 1
+    """
+
+    w = clf.coef_[0]
+
+    # As normal for the line is W = (b, -a)
+    # direction is then given by as a = (-(-a), b))
+
+    a = -w[1]
+    b = w[0]
+
+    cd = (vectors[0][0] - vectors[1][0]) / 2
+
+    c = cd[0]
+    d = cd[1]
+
+    tk = []
+
+    for key in vectors:
+        for vector in vectors[key]:
+            tk.append((((a * (vector[0] - c) + b * (vector[1] - d)) /
+                            ( a * a + b * b)), vector, key))
+
+    tk.sort(key=lambda x: x[0])
+
+    return tk
+
+def get_splitting_point(support_dict, clf):
     """
     Finds and returns the primary support vector, splitting point
     """
-    return support_dict[ordering_support(support_dict, (0,0), [])][0]
+
+    tk = ordering_support(support_dict, (0,0), clf)
+
+    first_class = tk[0][2]
+
+    primary_support_vector = None
+
+    for vector in tk:
+        if (vector[2] is not first_class):
+            primary_support_vector = vector[1]
+
+    return primary_support_vector
 
 def split_data(primary_support, X, Y):
     """
-    returns a tuple  containing left and right split.
+    returns a list  containing left and right split.
     """
 
     right_set = [vector for vector in zip(X,Y) if vector[0][0] >= primary_support[0]]
@@ -378,11 +434,12 @@ def plot(new_clf, old_clf, X, y):
     # create grid to evaluate model
     xx = np.linspace(xlim[0], xlim[1], 30)
     yy = np.linspace(ylim[0], ylim[1], 30)
+
     YY, XX = np.meshgrid(yy, xx)
 
 
-    plot_clf(new_clf, ax, XX, YY)
-    plot_clf(old_clf, ax, XX, YY)
+    plot_clf(new_clf, ax, XX, YY, 'b')
+    plot_clf(old_clf, ax, XX, YY, 'r')
 
     plt.show()
 
@@ -394,15 +451,15 @@ def nada():
     testVectors = grahm_schmidt_orthonorm(testVectors) 
     print(testVectors)
 
-def main():
+def test():
    testVectors = np.array([[2,2,2,2,2], [1,3,3,5,5]])
 
+   print("test")
 
-
-   print(rotation_matrix_onto_lower_dimension(testVectors))
+   #print(rotation_matrix_onto_lower_dimension(testVectors))
   
 
-def asdf():
+def main():
     # Dataset
     X, y = make_blobs(n_samples=40, centers=2, random_state=6)
 
@@ -423,7 +480,7 @@ def asdf():
     support_dict = group_support_vectors(old_clf.support_vectors_, old_clf)
 
     # Splitting point
-    primary_support = get_splitting_point(support_dict, [])
+    primary_support = get_splitting_point(support_dict, old_clf)
 
     # Subsets of datasets, left and right of primary support vector
     left_set, right_set = split_data(primary_support, X, y)
@@ -434,7 +491,7 @@ def asdf():
 
 
     # Rotate and merge data sets back into one
-    X, y = rotate_set(left_clf, left_set, right_clf, right_set)
+    X, y = rotate_set(left_clf, left_set, right_clf, right_set, primary_support)
 
     # merge
     new_clf = svm.SVC(kernel='linear', C=1000)
@@ -446,6 +503,8 @@ def asdf():
     right_set[0] = np.vstack(right_set[0])
     left_set[0] = np.vstack(left_set[0])
 
+    # plot new clf (post hyperplane folding) and old clf.
+    # Blue is old, red is new.
     plot(new_clf, old_clf, X, y)
 
 
