@@ -149,13 +149,13 @@ def get_direction_between_two_vectors_in_set_with_smallest_distance(set):
 
     return bestDir
 
-def rotation_matrix_onto_lower_dimension(support_vectors):
+def get_rotation_matrix_onto_lower_dimension(support_vectors_from_one_class):
     
-    dim = len(support_vectors[0])
+    dim = len(support_vectors_from_one_class[0])
     rotation_matrix = np.zeros((dim,dim))
 
     #d is the shortest direction between two support vectors in one of the classes
-    d = [1,2,3,4,5]#get_direction_between_two_vectors_in_set_with_smallest_distance(support_vectors)
+    d = [2,0,0]#get_direction_between_two_vectors_in_set_with_smallest_distance(support_vectors_from_one_class)
 
 
     #W = sqrt(v1^2 + v2^2 ... + vk^2) where k=2,...,n
@@ -174,18 +174,18 @@ def rotation_matrix_onto_lower_dimension(support_vectors):
 
     #middle rows
     for row in range(1, dim - 1):
-        k += 1
+        k += 1#according to algortihm, this is basically row + 1
         squaredElementsAccumulator += d[k] * d[k] #accumulate next step
 
 
-        rotation_matrix[k - 1][k] = -Wk / Wkp1 #diagonal
+        rotation_matrix[row][k] = -Wk / Wkp1 #diagonal elements
 
         i = 0
         for element in d[0:k]:
         
             Wk = Wkp1
             Wkp1 = np.sqrt(squaredElementsAccumulator)
-            rotation_matrix[k - 1][i] = d[i]*d[k] / (Wk * Wkp1)
+            rotation_matrix[row][i] = d[i]*d[k] / (Wk * Wkp1)
             i+=1
     
 
@@ -196,13 +196,26 @@ def rotation_matrix_onto_lower_dimension(support_vectors):
         i += 1
 
 
-    return
+    return rotation_matrix
 
-def dimension_reduction(dataset, support_vectors):
+def dimension_reduction(dataset, support_dict):#Input: full dataset for a clf, and support vectors separated into classes in a dictionary
     
     #if supportvectors  -> k < n + 1 run align axis aka if(n <= currentDim) then -> align_axis
     #align_axis
+
+
+    rotation_matrix
     #then rotate project
+    if (len(support_dict[0]) > len(support_dict[1])):#pick class with most vectors in
+        rotation_matrix = get_rotation_matrix_onto_lower_dimension(support_dict[0])
+    else:
+        rotation_matrix = get_rotation_matrix_onto_lower_dimension(support_dict[1])
+    
+
+    #rotate all datapoint
+    dataset = [np.matmul(point, rotation_matrix) for point in dataset] 
+
+
 
     return
 
@@ -383,6 +396,9 @@ def nada():
 
 def main():
    testVectors = np.array([[2,2,2,2,2], [1,3,3,5,5]])
+
+
+
    print(rotation_matrix_onto_lower_dimension(testVectors))
   
 
