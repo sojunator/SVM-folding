@@ -13,6 +13,22 @@ def vector_projection(v1,v2):
     dot2 = np.dot(v2,v2)
     return (np.dot(v1, v2) / np.dot(v2,v2)) * v2
 
+def group_support_vectors(support_vectors, clf):
+    """
+    returns a dict containing lists of dicts, where key corresponds to class
+    """
+    # contains a dict of support vectors and class
+    support_dict = {}
+
+    for vector in support_vectors:
+        key = clf.predict([vector])[0]
+
+        if key not in support_dict:
+            support_dict[key] = [vector]
+        else:
+            support_dict[key].append(vector)
+
+    return support_dict
 
 def grahm_schmidt_orthonorm(linearly_independent_support_vectors):
 
@@ -151,11 +167,13 @@ def get_direction_between_two_vectors_in_set_with_smallest_distance(set):
 
 def get_rotation_matrix_onto_lower_dimension(support_vectors_from_one_class):
     
+
+
     dim = len(support_vectors_from_one_class[0])
     rotation_matrix = np.zeros((dim,dim))
 
     #d is the shortest direction between two support vectors in one of the classes
-    d = [2,0,0]#get_direction_between_two_vectors_in_set_with_smallest_distance(support_vectors_from_one_class)
+    d = get_direction_between_two_vectors_in_set_with_smallest_distance(support_vectors_from_one_class)
 
 
     #W = sqrt(v1^2 + v2^2 ... + vk^2) where k=2,...,n
@@ -204,7 +222,7 @@ def dimension_reduction(dataset, support_dict):#Input: full dataset for a clf, a
     #align_axis
 
 
-    rotation_matrix
+    rotation_matrix = 0
     #then rotate project
     if (len(support_dict[0]) > len(support_dict[1])):#pick class with most vectors in
         rotation_matrix = get_rotation_matrix_onto_lower_dimension(support_dict[0])
@@ -389,22 +407,7 @@ def split_data(primary_support, X, Y):
 
     return [[left_x, left_y], [right_x, right_y]]
 
-def group_support_vectors(support_vectors, clf):
-    """
-    returns a dict containing lists of dicts, where key corresponds to class
-    """
-    # contains a dict of support vectors and class
-    support_dict = {}
 
-    for vector in support_vectors:
-        key = clf.predict([vector])[0]
-
-        if key not in support_dict:
-            support_dict[key] = [vector]
-        else:
-            support_dict[key].append(vector)
-
-    return support_dict
 
 def plot_clf(clf, ax, XX, YY, colour='k'):
     """
@@ -451,10 +454,19 @@ def nada():
     testVectors = grahm_schmidt_orthonorm(testVectors) 
     print(testVectors)
 
-def test():
-   testVectors = np.array([[2,2,2,2,2], [1,3,3,5,5]])
+def test_get_direction_between_two_vectors_in_set_with_smallest_distance():
+    testVectors = np.array([[2,2,2,2,2], [1,3,3,5,5], [2,0,0,0,2], [3,0,0,0,2], [4,6,4,-4,-4], [5,2,-6,-7,2],[1,2,3,2,1]])
 
-   print("test")
+    ans = np.array([-1,0,0,0,0])
+
+    dir = get_direction_between_two_vectors_in_set_with_smallest_distance(testVectors)
+
+
+    if all(dir) != all(ans):
+        print("Error, wrong direction, Expected: ", ans, "Recieved: ", dir)
+    else:
+        print("Test passed")
+    
 
    #print(rotation_matrix_onto_lower_dimension(testVectors))
   
@@ -479,6 +491,12 @@ def main():
     # Orginal support vectors
     support_dict = group_support_vectors(old_clf.support_vectors_, old_clf)
 
+
+    #2D align
+    dimension_reduction(X, support_dict)
+
+
+
     # Splitting point
     primary_support = get_splitting_point(support_dict, old_clf)
 
@@ -488,6 +506,9 @@ def main():
     # New SVM, right
     right_clf.fit(right_set[0], right_set[1])
     left_clf.fit(left_set[0], left_set[1])
+
+
+
 
 
     # Rotate and merge data sets back into one
