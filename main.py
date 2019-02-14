@@ -227,12 +227,13 @@ def plot(new_clf, old_clf, X, y, splitting_point):
     plot_clf(new_clf, ax, XX, YY, 'g')
     plot_clf(old_clf, ax, XX, YY, 'k')
 
+
     plt.show()
 
 def main():
     # Dataset
 
-    X, y = make_blobs(n_samples=165, centers=2, random_state=6)
+    X, y = make_blobs(n_samples=40, centers=2, random_state=6)
 
     # Original SVM
     old_clf = svm.SVC(kernel='linear', C=1000)
@@ -281,10 +282,11 @@ def main():
 
     if (new_margin < old_margin):
         print("WARNING: NEW IS LESS THAN OLD")
-        print
 
         print("{}".format(new_margin - old_margin))
     else:
+        print("New margin is: ")
+
         print("{}".format(new_margin - old_margin))
 
     # plot new clf (post hyperplane folding) and old clf.
