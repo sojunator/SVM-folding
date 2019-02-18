@@ -146,10 +146,14 @@ def align_axis(support_vectors):
 
     return
 
-def get_direction_between_two_vectors_in_set_with_smallest_distance(set):
+def get_direction_between_two_vectors_in_set_with_smallest_distance(set, dim):
     """
     Finds the shortest distance between two vectors within the given set.
     """
+    if (len(set) <2):
+        print("Error, less than two support vectors in set")
+        return
+    
     bestDir = set[0] - set[1]
     bestDist = np.linalg.norm(bestDir)
 
@@ -163,50 +167,66 @@ def get_direction_between_two_vectors_in_set_with_smallest_distance(set):
                 bestDist = dist
                 bestDir = dir
 
-    return bestDir
+    return bestDir[:dim]
 
-def get_rotation_matrix_onto_lower_dimension(support_vectors_from_one_class):
+def get_rotation_matrix_onto_lower_dimension(support_vectors_from_one_class, dim):
     """
     Forms a lower triangular rotation matrix
     In the function, 'diagonal' is NOT denoted as the 'center'-diagonal. It is selected as: matrix[row][row+1] for a row-major matrix
     """
-    dim = len(support_vectors_from_one_class[0])
+    
     rotation_matrix = np.zeros((dim,dim))
 
     #d is the shortest direction between two support vectors in one of the classes
-    dir = get_direction_between_two_vectors_in_set_with_smallest_distance(support_vectors_from_one_class)
+    dir = get_direction_between_two_vectors_in_set_with_smallest_distance(support_vectors_from_one_class, dim)
 
     #Wk = sqrt(v1^2 + v2^2 ... + vk^2) 
     squaredElementsAccumulator = dir[0] * dir[0] + dir[1] * dir[1]
     
-    Wk = d[0]#for k = 1
+    Wk = dir[0]#for k = 1
     Wkp1 = np.sqrt(squaredElementsAccumulator)
     
     #first row
-    rotation_matrix[0][0] = dir[1] / Wkp1#first element
-    rotation_matrix[0][1] = -Wk / Wkp1#first diagonal element
+    if Wkp1 != 0:
+        rotation_matrix[0][0] = dir[1] / Wkp1#first element
+        rotation_matrix[0][1] = -Wk / Wkp1#first diagonal element
+    else:
+        rotation_matrix[0][0] = 1#first element
+        rotation_matrix[0][1] = 0#first diagonal element
 
-
+   
     #middle rows
     for row in range(1, dim - 1):
-        #row + 1 is the k'th element in the vector
-        diagonalElement = d[row + 1]
+        
+        diagonalElement = dir[row + 1]#row + 1 is the k'th element in the vector
         squaredElementsAccumulator += diagonalElement * diagonalElement#accumulate next step, square next element
 
         Wk = Wkp1
         Wkp1 = np.sqrt(squaredElementsAccumulator)
 
-        rotation_matrix[row][row + 1] = -Wk / Wkp1 #diagonal entry in matrix
+        #diagonal entry in matrix
+        U = 0
+        if Wkp1 != 0:
+            U = Wk / Wkp1 
+
+        rotation_matrix[row][row + 1] = -U
+        
         
         denominator = Wk * Wkp1
-        
-        i = 0
-        for element in dir[0:k]:
-            rotation_matrix[row][i] = element*diagonalElement / denominator
-            i+=1
+        if denominator == 0:
+            rotation_matrix[row][row] = 1
+        else:        
+            i = 0
+            for element in dir[0:row + 1]:
+                rotation_matrix[row][i] = element*diagonalElement / denominator
+                i+=1
     
     #last row in matrix
-    rotation_matrix[dim-1] = [element / Wkp1 for element in dir]
+    if Wkp1 != 0:
+        rotation_matrix[dim-1] = [element / Wkp1 for element in dir]
+    else:
+        rotation_matrix[dim-1][dim - 1] = 1
+
 
     return rotation_matrix
 
@@ -215,16 +235,31 @@ def dimension_reduction(dataset, support_dict):#Input: full dataset for a clf, a
     #if supportvectors  -> k < n + 1 run align axis aka if(n <= currentDim) then -> align_axis
     #align_axis
 
+    rotDim = dim = len(support_dict[0][0])
 
-    rotation_matrix = 0
-    #then rotate project
-    if (len(support_dict[0]) > len(support_dict[1])):#pick class with most vectors in
-        rotation_matrix = get_rotation_matrix_onto_lower_dimension(support_dict[0])
-    else:
-        rotation_matrix = get_rotation_matrix_onto_lower_dimension(support_dict[1])
+
+    while rotDim > 2:
+        support_vectors_from_one_class = 0
+        if (len(support_dict[0]) > len(support_dict[1])):#pick class with most vectors in
+            support_vectors_from_one_class = support_dict[0]
+        else:
+            support_vectors_from_one_class = support_dict[1]
+
+
+        rotation_matrix = get_rotation_matrix_onto_lower_dimension(support_vectors_from_one_class, rotDim)
     
-    #rotate all datapoint
-    dataset = [np.matmul(rotation_matrix, point) for point in dataset] 
+    
+        #rotate all datapoint
+        rotDim -= 1
+        dataset = [np.matmul(rotation_matrix, point)[:rotDim] for point in dataset] 
+        support_dict[0] = [np.matmul(rotation_matrix, point)[:rotDim] for point in support_dict[0]] 
+        support_dict[1] = [np.matmul(rotation_matrix, point)[:rotDim] for point in support_dict[1]] 
+        
+
+    
+
+
+    return dataset, support_dict
 
 
 def get_rotation(alpha):
@@ -400,8 +435,6 @@ def split_data(primary_support, X, Y):
 
     return [[left_x, left_y], [right_x, right_y]]
 
-
-
 def plot_clf(clf, ax, XX, YY, colour='k'):
     """
     Plots a clf, with margins, colour will be black
@@ -416,13 +449,22 @@ def plot_clf(clf, ax, XX, YY, colour='k'):
     ax.contour(XX, YY, Z, colors=colour, levels=[-1, 0, 1], alpha=0.5,
            linestyles=['--', '-', '--'])
 
-
 def plot(new_clf, old_clf, X, y):
     """
     God function that removes all the jitter from main
     """
+    #X = np.concatenate( X, axis=0 )
+    
+    arr = []
+    for d in X:
+        arr.append(tuple(d))
+    
+   # X = tuple(map(tuple, X))
 
-    plt.scatter(X[:, 0], X[:, 1], c=y, s=30, cmap=plt.cm.Paired)
+    #X = tuple(X.reshape(1, -1)[0])
+    arr = np.array(arr)
+
+    plt.scatter(arr[:, 0], arr[:, 1], s=30, cmap=plt.cm.Paired)
     ax = plt.gca()
     xlim = ax.get_xlim()
     ylim = ax.get_ylim()
@@ -439,13 +481,28 @@ def plot(new_clf, old_clf, X, y):
 
     plt.show()
 
-def nada():
-    testVectors = np.array([[2.5,0,0], [0,0,1], [1,0,0], [0,1,0], [0, 3, 0], [2,2,0], [0.5,0.5,0]])
-    print(testVectors)
-    testVectors = get_linearly_independent_support_vectors(testVectors)
-    print(testVectors)
-    testVectors = grahm_schmidt_orthonorm(testVectors) 
-    print(testVectors)
+def test_get_rotation_matrix_onto_lower_dimension():
+
+    test_vectors = np.array([[1,0,0],[2,0,0]])
+    test_ans = np.array([[0.0, 1.0, 0.0], [0.0, 0.0, -1.0], [-1.0, 0.0, 0.0]])
+    rotation_matrix = get_rotation_matrix_onto_lower_dimension(test_vectors, 3)
+    if np.array_equal(rotation_matrix, test_ans) == False:
+        print("Error, wrong matrix")
+        
+    test_vectors = np.array([[0,0,1],[0,0,2]])
+    test_ans = np.array([[1.0, 0.0, 0.0], [0.0, 1.0, 0.0], [0.0, 0.0, -1.0]])
+    rotation_matrix = get_rotation_matrix_onto_lower_dimension(test_vectors, 3)
+    if np.array_equal(rotation_matrix, test_ans) == False:
+        print("Error, wrong matrix")
+        
+    test_vectors = np.array([[0,1,0],[0,2,0]])
+    test_ans = np.array([[0.0, 1.0, 0.0], [0.0, 0.0, -1.0], [-1.0, 0.0, 0.0]])
+    rotation_matrix = get_rotation_matrix_onto_lower_dimension(test_vectors, 3)
+    if np.array_equal(rotation_matrix, test_ans) == False:
+        print("Error, wrong matrix")
+        
+
+    return
 
 def test_get_direction_between_two_vectors_in_set_with_smallest_distance():
     testVectors = np.array([[2,2,2,2,2], [1,3,3,5,5], [2,0,0,0,2], [3,0,0,0,2], [4,6,4,-4,-4], [5,2,-6,-7,2],[1,2,3,2,1]])
@@ -463,21 +520,32 @@ def test_get_direction_between_two_vectors_in_set_with_smallest_distance():
 
    #print(rotation_matrix_onto_lower_dimension(testVectors))
   
+def get_test_rot_data():
+    data_points = np.array([[1.5, 1.5, 1.0, 1.0], [0.5, 1.5, 1.0, 1.1], [1.6, 1.6, 1.0, 1.2], [3.0, 1.5, 1.0, 1.3], [0.0, 1.5, 3.5,1.4], [1.0, 2.0, 3.2, 1.5], [1.0, -1.0, -3.05,-2], [1.0, -1.5, -4.55,-2.5], [1.5, -1.2, -4,-3]])
+    #data_points = np.array([[1.5, 1.5, 1.0], [0.5, 1.5, 1.0], [1.6, 1.6, 1.0], [3.0, 1.5, 1.0], [0.0, 1.5, 3.5], [1.0, 2.0, 3.2], [1.0, -1.0, -3.05], [1.0, -1.5, -4.55], [1.5, -1.2, -4]])
+    labels = np.array([0, 0, 0, 0, 0, 0, 1, 1, 1])
+
+    return data_points, labels
+
 def test_rot():
 
-    data = np.array([[1,1,0],[0,0,0],[1,1,3]])
+    data, labels = get_test_rot_data()
 
-    m = get_rotation_matrix_onto_lower_dimension(data)
+    clf = svm.SVC(kernel='linear', C=1000)
+    clf.fit(data, labels)
 
-    print(np.matmul(data[2], m))
-    print(np.matmul(m, data[2]))
-    print(np.matmul(m, data[0]))
+    support_dict = group_support_vectors(clf.support_vectors_, clf)
+
+    #2D align
+    data, support_dict = dimension_reduction(data, support_dict)
+
+    plot(clf, clf, data, labels)
 
 
 
 def main():
     # Dataset
-    X, y = make_blobs(n_samples=40, n_features=3, centers=2, random_state=6)
+    X, y = make_blobs(n_samples=500, n_features=3, centers=2, random_state=6)
 
 
     # Original SVM
@@ -497,7 +565,7 @@ def main():
     support_dict = group_support_vectors(old_clf.support_vectors_, old_clf)
 
     #2D align
-    dimension_reduction(X, support_dict)
+    X, support_dict = dimension_reduction(X, support_dict)
 
 
 
@@ -534,4 +602,4 @@ def main():
 
 
 if __name__ == "__main__":
-    main()
+    test_rot()
