@@ -45,13 +45,19 @@ def rotate_set(left_clf, left_set, right_clf, right_set, primary_support):
     # intersection data
     intersection_point, angle = get_intersection_point(left_clf, right_clf)
 
+    # if 1, left was rotated, 0 is right set.
+    left_or_right = -1
+
     if (right_margin > left_margin):
         right_set[0] = [rotate_point(point, angle, primary_support, intersection_point)
                             for point in right_set[0]]
+        left_or_right = 0
 
     elif (left_margin > right_margin):
         left_set[0] = [rotate_point(point, -angle, primary_support, intersection_point)
                             for point in left_set[0]]
+
+        left_or_right = 1
 
     else:
         print("Cannot improve margin")
@@ -61,7 +67,7 @@ def rotate_set(left_clf, left_set, right_clf, right_set, primary_support):
 
     X = np.vstack(X)
 
-    return (X, y)
+    return (X, y, left_or_right)
 
 def get_margin(clf):
     """
@@ -264,38 +270,27 @@ def main():
     right_clf.fit(right_set[0], right_set[1])
     left_clf.fit(left_set[0], left_set[1])
 
-
     # Rotate and merge data sets back into one
     old_X = X
     old_y = y
-    X, y = rotate_set(left_clf, left_set, right_clf, right_set, primary_support)
+    X, y, left_or_right = rotate_set(left_clf, left_set, right_clf, right_set, primary_support)
 
     # merge
-    new_clf = svm.SVC(kernel='linear', C=1000)
+    new_clf = right_clf if left_or_right else left_clf
+    """
+    new_clf = svm.SVC(kernel="linear", C=10000)
     new_clf.fit(X, y)
-
+    """
     new_margin = get_margin(new_clf)
 
     # Used for highlighting the sets
     right_set[0] = np.vstack(right_set[0])
     left_set[0] = np.vstack(left_set[0])
 
-    if (new_margin < old_margin):
-        print("WARNING: NEW IS LESS THAN OLD")
-
-        print("{}".format(new_margin - old_margin))
-    else:
-        print("New margin is: ")
-
-        print("{}".format(new_margin - old_margin))
 
     # plot new clf (post hyperplane folding) and old clf.
     # Blue is old, red is new.
-    plot(new_clf, old_clf, X, y, splitting_point)
-
-
-    plot(left_clf, right_clf, old_X, old_y, splitting_point)
-
+    plot(old_clf, new_clf, X, y, splitting_point)
 
 if __name__ == "__main__":
     main()
