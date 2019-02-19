@@ -283,21 +283,30 @@ def rotate_set(left_clf, left_set, right_clf, right_set, primary_support):
 
     returns a merged and rotated set, touple (X, y)
     """
-    
+
     # Get margins
     right_margin = get_margin(right_clf)
     left_margin = get_margin(left_clf)
 
+    #print("Left margin:     {}".format(left_margin))
+    #print("Right margin:    {}".format(right_margin))
+
     # intersection data
     intersection_point, angle = get_intersection_point(left_clf, right_clf)
+
+    # if 1, left was rotated, 0 is right set.
+    left_or_right = -1
 
     if (right_margin > left_margin):
         right_set[0] = [rotate_point(point, angle, primary_support, intersection_point)
                             for point in right_set[0]]
+        left_or_right = 0
 
     elif (left_margin > right_margin):
-        left_set[0] = [rotate_point(point, angle, primary_support, intersection_point)
+        left_set[0] = [rotate_point(point, -angle, primary_support, intersection_point)
                             for point in left_set[0]]
+
+        left_or_right = 1
 
     else:
         print("Cannot improve margin")
@@ -307,7 +316,7 @@ def rotate_set(left_clf, left_set, right_clf, right_set, primary_support):
 
     X = np.vstack(X)
 
-    return (X, y)
+    return (X, y, left_or_right)
 
 def get_margin(clf):
     """
@@ -351,17 +360,6 @@ def ordering_support(vectors, point, clf):
     """
     primary_support_vector = None
 
-
-    # As the problem is binary classification, we will only have keys 0, 1
-    """
-    if (len(vectors[0]) is 1):
-        if (len(vectors[1]) > 1):
-            return 0
-
-    if (len(vectors[1]) is 1):
-        if (len(vectors[0]) > 1):
-            return 1
-    """
 
     w = clf.coef_[0]
 
@@ -444,25 +442,18 @@ def plot_clf(clf, ax, XX, YY, colour='k'):
     ax.contour(XX, YY, Z, colors=colour, levels=[-1, 0, 1], alpha=0.5,
            linestyles=['--', '-', '--'])
 
-def plot(new_clf, old_clf, X, y):
+
+def plot(new_clf, old_clf, X, y, splitting_point):
     """
     God function that removes all the jitter from main
     """
-    #X = np.concatenate( X, axis=0 )
-    
-    arr = []
-    for d in X:
-        arr.append(tuple(d))
-    
-   # X = tuple(map(tuple, X))
 
-    #X = tuple(X.reshape(1, -1)[0])
-    arr = np.array(arr)
-
-    plt.scatter(arr[:, 0], arr[:, 1], s=30, cmap=plt.cm.Paired)
+    plt.scatter(X[:, 0], X[:, 1], c=y, s=30, cmap=plt.cm.Paired)
     ax = plt.gca()
-    xlim = ax.get_xlim()
-    ylim = ax.get_ylim()
+    xlim = (2, 10)
+    ylim = (-2, -11)
+
+    plt.axvline(x=splitting_point, color='k')
 
     # create grid to evaluate model
     xx = np.linspace(xlim[0], xlim[1], 30)
@@ -471,8 +462,9 @@ def plot(new_clf, old_clf, X, y):
     YY, XX = np.meshgrid(yy, xx)
 
 
-    plot_clf(new_clf, ax, XX, YY, 'b')
-    plot_clf(old_clf, ax, XX, YY, 'r')
+    plot_clf(new_clf, ax, XX, YY, 'g')
+    plot_clf(old_clf, ax, XX, YY, 'k')
+
 
     plt.show()
 
@@ -540,7 +532,7 @@ def test_rot():
 
 def main():
     # Dataset
-    X, y = make_blobs(n_samples=500, n_features=3, centers=2, random_state=6)
+    data_points, data_labels = make_blobs(n_samples=30, n_features=2, centers=2, random_state=6)
 
 
     # Original SVM
@@ -551,50 +543,53 @@ def main():
     left_clf = svm.SVC(kernel='linear', C=1000)
 
     # Train on inital data
-    old_clf.fit(X, y)
+    old_clf.fit(data_points, data_labels)
 
-    print("Old margin {}".format(get_margin(old_clf)))
+    old_margin = get_margin(old_clf)
 
 
     # Orginal support vectors
     support_dict = group_support_vectors(old_clf.support_vectors_, old_clf)
 
     #2D align
-    X, support_dict = dimension_projection(X, support_dict)
+    #data_points, support_dict = dimension_projection(data_points, support_dict)
 
 
 
     # Splitting point
-    primary_support = get_splitting_point(support_dict, old_clf)
+    primary_support_vector = get_splitting_point(support_dict, old_clf)
+
+    # Used for plotting where the split occoured
+    splitting_point = primary_support_vector[0]#x-axis-location of primary vec
 
     # Subsets of datasets, left and right of primary support vector
-    left_set, right_set = split_data(primary_support, X, y)
+    left_set, right_set = split_data(primary_support_vector, data_points, data_labels)
 
     # New SVM, right
     right_clf.fit(right_set[0], right_set[1])
     left_clf.fit(left_set[0], left_set[1])
 
-
-
-
-
     # Rotate and merge data sets back into one
-    X, y = rotate_set(left_clf, left_set, right_clf, right_set, primary_support)
+    old_X = data_points
+    old_y = data_labels
+    data_points, data_labels, left_or_right = rotate_set(left_clf, left_set, right_clf, right_set, primary_support_vector)
 
     # merge
-    new_clf = svm.SVC(kernel='linear', C=1000)
+    new_clf = right_clf if left_or_right else left_clf
+    """
+    new_clf = svm.SVC(kernel="linear", C=10000)
     new_clf.fit(X, y)
-
-    print("New margin {}".format(get_margin(new_clf)))
+    """
+    new_margin = get_margin(new_clf)
 
     # Used for highlighting the sets
     right_set[0] = np.vstack(right_set[0])
     left_set[0] = np.vstack(left_set[0])
 
+
     # plot new clf (post hyperplane folding) and old clf.
     # Blue is old, red is new.
-    plot(new_clf, old_clf, X, y)
-
+    plot(old_clf, new_clf, data_points, data_labels, splitting_point)
 
 if __name__ == "__main__":
     main()
