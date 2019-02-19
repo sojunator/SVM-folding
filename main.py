@@ -211,13 +211,15 @@ def get_rotation_matrix_onto_lower_dimension(support_vectors_from_one_class, dim
 
         rotation_matrix[row][row + 1] = -U
         
-        
+        #denominator per row 
         denominator = Wk * Wkp1
+
         if denominator == 0:
             rotation_matrix[row][row] = 1
+
         else:        
             i = 0
-            for element in dir[0:row + 1]:
+            for element in dir[0:row+1]:
                 rotation_matrix[row][i] = element*diagonalElement / denominator
                 i+=1
     
@@ -225,18 +227,16 @@ def get_rotation_matrix_onto_lower_dimension(support_vectors_from_one_class, dim
     if Wkp1 != 0:
         rotation_matrix[dim-1] = [element / Wkp1 for element in dir]
     else:
-        rotation_matrix[dim-1][dim - 1] = 1
+        rotation_matrix[dim-1][dim-1] = 1
 
 
     return rotation_matrix
 
-def dimension_reduction(dataset, support_dict):#Input: full dataset for a clf, and support vectors separated into classes in a dictionary
-    
+def dimension_projection(dataset, support_dict):#Input: full dataset for a clf, and support vectors separated into classes in a dictionary
     #if supportvectors  -> k < n + 1 run align axis aka if(n <= currentDim) then -> align_axis
     #align_axis
 
     rotDim = dim = len(support_dict[0][0])
-
 
     while rotDim > 2:
         support_vectors_from_one_class = 0
@@ -245,9 +245,7 @@ def dimension_reduction(dataset, support_dict):#Input: full dataset for a clf, a
         else:
             support_vectors_from_one_class = support_dict[1]
 
-
         rotation_matrix = get_rotation_matrix_onto_lower_dimension(support_vectors_from_one_class, rotDim)
-    
     
         #rotate all datapoint
         rotDim -= 1
@@ -255,9 +253,6 @@ def dimension_reduction(dataset, support_dict):#Input: full dataset for a clf, a
         support_dict[0] = [np.matmul(rotation_matrix, point)[:rotDim] for point in support_dict[0]] 
         support_dict[1] = [np.matmul(rotation_matrix, point)[:rotDim] for point in support_dict[1]] 
         
-
-    
-
 
     return dataset, support_dict
 
@@ -496,7 +491,7 @@ def test_get_rotation_matrix_onto_lower_dimension():
         print("Error, wrong matrix")
         
     test_vectors = np.array([[0,1,0],[0,2,0]])
-    test_ans = np.array([[0.0, 1.0, 0.0], [0.0, 0.0, -1.0], [-1.0, 0.0, 0.0]])
+    test_ans = np.array([[-1.0, 1.0, 0.0], [0.0, 0.0, -1.0], [0.0, -1.0, 0.0]])
     rotation_matrix = get_rotation_matrix_onto_lower_dimension(test_vectors, 3)
     if np.array_equal(rotation_matrix, test_ans) == False:
         print("Error, wrong matrix")
@@ -565,7 +560,7 @@ def main():
     support_dict = group_support_vectors(old_clf.support_vectors_, old_clf)
 
     #2D align
-    X, support_dict = dimension_reduction(X, support_dict)
+    X, support_dict = dimension_projection(X, support_dict)
 
 
 
@@ -602,4 +597,4 @@ def main():
 
 
 if __name__ == "__main__":
-    test_rot()
+    main()
