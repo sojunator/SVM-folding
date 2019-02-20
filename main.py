@@ -9,8 +9,6 @@ import math
 
 
 def vector_projection(v1,v2):
-    dot1 = np.dot(v1,v2)
-    dot2 = np.dot(v2,v2)
     return (np.dot(v1, v2) / np.dot(v2,v2)) * v2
 
 def group_support_vectors(support_vectors, clf):
@@ -34,7 +32,7 @@ def grahm_schmidt_orthonorm(linearly_independent_support_vectors):
 
     orthonormated_vectors = []#stores the new basis
 
-    vec = linearly_independent_support_vectors[0] 
+    vec = linearly_independent_support_vectors[0]
     vec = vec / np.linalg.norm(vec)#first entry is just the itself normalized
     orthonormated_vectors.append(vec)
 
@@ -49,7 +47,7 @@ def grahm_schmidt_orthonorm(linearly_independent_support_vectors):
 
         vec = v + vec
         vec[np.abs(vec) < 0.000001] = 0
-        
+
         if all(v == 0 for v in vec):#if true then this vector is dependent on it's predicessors
             print(i)
 
@@ -67,13 +65,13 @@ def linind(support_vectors):#asdfasdfc
     progresser = 0
     i = 0
     while i < len(linearly_independent_support_vectors) - 1:
-        
+
         li_vec1 = linearly_independent_support_vectors[i]
-       
+
         linearlyDependent = False
         dependentIndexes = np.ones(len(linearly_independent_support_vectors), dtype=bool)
 
-        
+
 
         for k in range(progresser + 1, len(linearly_independent_support_vectors)):
 
@@ -82,13 +80,13 @@ def linind(support_vectors):#asdfasdfc
             if cauchy_schwarz_equal(li_vec1, li_vec2):#if true, li_vec1 and li_vec2 are dependent according to cauchy-schwarz-inequality
                 dependentIndexes[k] = False
                 linearlyDependent = True
-                
-        
+
+
         if linearlyDependent:
             linearly_independent_support_vectors = linearly_independent_support_vectors[dependentIndexes]# remove vectors that were dependent with li_vec1
         else:
             progresser += 1 # increment 'progresser', since vec[i] is independent
-            
+
         i = progresser # reset iteration
 
     return linearly_independent_support_vectors
@@ -103,7 +101,7 @@ def cauchy_schwarz_equal(v1,v2):
     ipLeft = np.dot(v1, v2)
 
     return ipLeft * ipLeft == np.dot(v1,v1) * np.dot(v2,v2)
-    
+
 
 def get_linearly_independent_support_vectors(support_vectors):
 
@@ -112,9 +110,9 @@ def get_linearly_independent_support_vectors(support_vectors):
     progresser = 0
     i = 0
     while i < len(linearly_independent_support_vectors) - 1:
-        
+
         li_vec1 = linearly_independent_support_vectors[i]
-       
+
         linearlyDependent = False
         dependentIndexes = np.ones(len(linearly_independent_support_vectors), dtype=bool)
 
@@ -126,13 +124,13 @@ def get_linearly_independent_support_vectors(support_vectors):
             if cauchy_schwarz_equal(li_vec1, li_vec2):#if true, li_vec1 and li_vec2 are dependent according to cauchy-schwarz-inequality
                 dependentIndexes[k] = False
                 linearlyDependent = True
-                
-        
+
+
         if linearlyDependent:
             linearly_independent_support_vectors = linearly_independent_support_vectors[dependentIndexes]# remove vectors that were dependent with li_vec1
         else:
             progresser += 1 # increment 'progresser', since vec[i] is independent
-            
+
         i = progresser # reset iteration
 
 
@@ -153,7 +151,7 @@ def get_direction_between_two_vectors_in_set_with_smallest_distance(set, dim):
     if (len(set) <2):
         print("Error, less than two support vectors in set")
         return
-    
+
     bestDir = set[0] - set[1]
     bestDist = np.linalg.norm(bestDir)
 
@@ -174,18 +172,18 @@ def get_rotation_matrix_onto_lower_dimension(support_vectors_from_one_class, dim
     Forms a lower triangular rotation matrix
     In the function, 'diagonal' is NOT denoted as the 'center'-diagonal. It is selected as: matrix[row][row+1] for a row-major matrix
     """
-    
+
     rotation_matrix = np.zeros((dim,dim))
 
     #d is the shortest direction between two support vectors in one of the classes
     dir = get_direction_between_two_vectors_in_set_with_smallest_distance(support_vectors_from_one_class, dim)
 
-    #Wk = sqrt(v1^2 + v2^2 ... + vk^2) 
+    #Wk = sqrt(v1^2 + v2^2 ... + vk^2)
     squaredElementsAccumulator = dir[0] * dir[0] + dir[1] * dir[1]
-    
+
     Wk = dir[0]#for k = 1
     Wkp1 = np.sqrt(squaredElementsAccumulator)
-    
+
     #first row
     if Wkp1 != 0:
         rotation_matrix[0][0] = dir[1] / Wkp1#first element
@@ -194,10 +192,10 @@ def get_rotation_matrix_onto_lower_dimension(support_vectors_from_one_class, dim
         rotation_matrix[0][0] = 1#first element
         rotation_matrix[0][1] = 0#first diagonal element
 
-   
+
     #middle rows
     for row in range(1, dim - 1):
-        
+
         diagonalElement = dir[row + 1]#row + 1 is the k'th element in the vector
         squaredElementsAccumulator += diagonalElement * diagonalElement#accumulate next step, square next element
 
@@ -207,22 +205,22 @@ def get_rotation_matrix_onto_lower_dimension(support_vectors_from_one_class, dim
         #diagonal entry in matrix
         U = 0
         if Wkp1 != 0:
-            U = Wk / Wkp1 
+            U = Wk / Wkp1
 
         rotation_matrix[row][row + 1] = -U
-        
-        #denominator per row 
+
+        #denominator per row
         denominator = Wk * Wkp1
 
         if denominator == 0:
             rotation_matrix[row][row] = 1
 
-        else:        
+        else:
             i = 0
             for element in dir[0:row+1]:
                 rotation_matrix[row][i] = element*diagonalElement / denominator
                 i+=1
-    
+
     #last row in matrix
     if Wkp1 != 0:
         rotation_matrix[dim-1] = [element / Wkp1 for element in dir]
@@ -246,13 +244,13 @@ def dimension_projection(dataset, support_dict):#Input: full dataset for a clf, 
             support_vectors_from_one_class = support_dict[1]
 
         rotation_matrix = get_rotation_matrix_onto_lower_dimension(support_vectors_from_one_class, rotDim)
-    
+
         #rotate all datapoint
         rotDim -= 1
-        dataset = [np.matmul(rotation_matrix, point)[:rotDim] for point in dataset] 
-        support_dict[0] = [np.matmul(rotation_matrix, point)[:rotDim] for point in support_dict[0]] 
-        support_dict[1] = [np.matmul(rotation_matrix, point)[:rotDim] for point in support_dict[1]] 
-        
+        dataset = [np.matmul(rotation_matrix, point)[:rotDim] for point in dataset]
+        support_dict[0] = [np.matmul(rotation_matrix, point)[:rotDim] for point in support_dict[0]]
+        support_dict[1] = [np.matmul(rotation_matrix, point)[:rotDim] for point in support_dict[1]]
+
 
     return dataset, support_dict
 
@@ -273,6 +271,7 @@ def rotate_point(point, angle, primary_support, intersection_point):
     point = np.matmul(point.T - intersection_point, rotation_matrix) + intersection_point
 
     return point
+
 
 def rotate_set(left_clf, left_set, right_clf, right_set, primary_support):
     """
@@ -298,21 +297,25 @@ def rotate_set(left_clf, left_set, right_clf, right_set, primary_support):
     left_or_right = -1
 
     if (right_margin > left_margin):
+        #right_set[0] = removearray(right_set[0], primary_support)
         right_set[0] = [rotate_point(point, angle, primary_support, intersection_point)
                             for point in right_set[0]]
         left_or_right = 0
 
     elif (left_margin > right_margin):
+        #left_set[0] = removearray(left_set[0], primary_support)
         left_set[0] = [rotate_point(point, -angle, primary_support, intersection_point)
                             for point in left_set[0]]
-
         left_or_right = 1
 
     else:
         print("Cannot improve margin")
 
+
     X = left_set[0] + right_set[0]
+
     y = left_set[1] + right_set[1]
+
 
     X = np.vstack(X)
 
@@ -443,7 +446,7 @@ def plot_clf(clf, ax, XX, YY, colour='k'):
            linestyles=['--', '-', '--'])
 
 
-def plot(new_clf, old_clf, X, y, splitting_point):
+def plot(new_clf, old_clf, X, y):
     """
     God function that removes all the jitter from main
     """
@@ -453,7 +456,7 @@ def plot(new_clf, old_clf, X, y, splitting_point):
     xlim = (2, 10)
     ylim = (-2, -11)
 
-    plt.axvline(x=splitting_point, color='k')
+    #plt.axvline(x=splitting_point, color='k')
 
     # create grid to evaluate model
     xx = np.linspace(xlim[0], xlim[1], 30)
@@ -475,19 +478,19 @@ def test_get_rotation_matrix_onto_lower_dimension():
     rotation_matrix = get_rotation_matrix_onto_lower_dimension(test_vectors, 3)
     if np.array_equal(rotation_matrix, test_ans) == False:
         print("Error, wrong matrix")
-        
+
     test_vectors = np.array([[0,0,1],[0,0,2]])
     test_ans = np.array([[1.0, 0.0, 0.0], [0.0, 1.0, 0.0], [0.0, 0.0, -1.0]])
     rotation_matrix = get_rotation_matrix_onto_lower_dimension(test_vectors, 3)
     if np.array_equal(rotation_matrix, test_ans) == False:
         print("Error, wrong matrix")
-        
+
     test_vectors = np.array([[0,1,0],[0,2,0]])
     test_ans = np.array([[-1.0, 1.0, 0.0], [0.0, 0.0, -1.0], [0.0, -1.0, 0.0]])
     rotation_matrix = get_rotation_matrix_onto_lower_dimension(test_vectors, 3)
     if np.array_equal(rotation_matrix, test_ans) == False:
         print("Error, wrong matrix")
-        
+
 
     return
 
@@ -503,10 +506,10 @@ def test_get_direction_between_two_vectors_in_set_with_smallest_distance():
         print("Error, wrong direction, Expected: ", ans, "Recieved: ", dir)
     else:
         print("Test passed")
-    
+
 
    #print(rotation_matrix_onto_lower_dimension(testVectors))
-  
+
 def get_test_rot_data():
     data_points = np.array([[1.5, 1.5, 1.0, 1.0], [0.5, 1.5, 1.0, 1.1], [1.6, 1.6, 1.0, 1.2], [3.0, 1.5, 1.0, 1.3], [0.0, 1.5, 3.5,1.4], [1.0, 2.0, 3.2, 1.5], [1.0, -1.0, -3.05,-2], [1.0, -1.5, -4.55,-2.5], [1.5, -1.2, -4,-3]])
     #data_points = np.array([[1.5, 1.5, 1.0], [0.5, 1.5, 1.0], [1.6, 1.6, 1.0], [3.0, 1.5, 1.0], [0.0, 1.5, 3.5], [1.0, 2.0, 3.2], [1.0, -1.0, -3.05], [1.0, -1.5, -4.55], [1.5, -1.2, -4]])
@@ -528,33 +531,13 @@ def test_rot():
 
     plot(clf, clf, data, labels)
 
-
-
-def main():
-    # Dataset
-    data_points, data_labels = make_blobs(n_samples=30, n_features=2, centers=2, random_state=6)
-
-
-    # Original SVM
-    old_clf = svm.SVC(kernel='linear', C=1000)
-
+def fold(old_clf, data_points, data_labels):
     # folding sets
     right_clf = svm.SVC(kernel='linear', C=1000)
     left_clf = svm.SVC(kernel='linear', C=1000)
 
-    # Train on inital data
-    old_clf.fit(data_points, data_labels)
-
-    old_margin = get_margin(old_clf)
-
-
     # Orginal support vectors
     support_dict = group_support_vectors(old_clf.support_vectors_, old_clf)
-
-    #2D align
-    #data_points, support_dict = dimension_projection(data_points, support_dict)
-
-
 
     # Splitting point
     primary_support_vector = get_splitting_point(support_dict, old_clf)
@@ -566,6 +549,7 @@ def main():
     left_set, right_set = split_data(primary_support_vector, data_points, data_labels)
 
     # New SVM, right
+
     right_clf.fit(right_set[0], right_set[1])
     left_clf.fit(left_set[0], left_set[1])
 
@@ -576,20 +560,35 @@ def main():
 
     # merge
     new_clf = right_clf if left_or_right else left_clf
-    """
-    new_clf = svm.SVC(kernel="linear", C=10000)
-    new_clf.fit(X, y)
-    """
-    new_margin = get_margin(new_clf)
 
     # Used for highlighting the sets
     right_set[0] = np.vstack(right_set[0])
     left_set[0] = np.vstack(left_set[0])
 
 
-    # plot new clf (post hyperplane folding) and old clf.
-    # Blue is old, red is new.
-    plot(old_clf, new_clf, data_points, data_labels, splitting_point)
+    return (new_clf, data_points, data_labels)
+
+
+def main():
+    # Dataset
+    old_data_points, old_data_labels = data_points, data_labels = make_blobs(n_samples=400, n_features=2, centers=2, random_state=6)
+
+    # Original SVM
+    first_clf = clf = svm.SVC(kernel='linear', C=1000)
+    clf.fit(data_points, data_labels)
+
+    while(len(clf.support_vectors_) > 2):
+        clf, data_points, data_labels = fold(clf, data_points, data_labels)
+
+    old_margin = get_margin(first_clf)
+    new_margin = get_margin(clf)
+
+    print("Old margin {}".format(old_margin))
+    print("New margin post folds {}".format(new_margin))
+    print("Improvement of {} and {}%".format(new_margin - old_margin, new_margin / old_margin))
+
+    plot(first_clf, clf, data_points, data_labels)
+    plot(first_clf, clf, old_data_points, old_data_labels)
 
 if __name__ == "__main__":
     main()
