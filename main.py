@@ -3,10 +3,11 @@ from sklearn import datasets
 from sklearn.model_selection import train_test_split
 from sklearn.datasets import make_blobs
 
+
 import matplotlib.pyplot as plt
 import numpy as np
 import math
-
+import scipy as sci
 
 def vector_projection(v1,v2):
     dot1 = np.dot(v1,v2)
@@ -60,38 +61,7 @@ def grahm_schmidt_orthonorm(linearly_independent_support_vectors):
 
     return orthonormated_vectors
 
-def linind(support_vectors):#asdfasdfc
 
-    linearly_independent_support_vectors = support_vectors
-
-    progresser = 0
-    i = 0
-    while i < len(linearly_independent_support_vectors) - 1:
-        
-        li_vec1 = linearly_independent_support_vectors[i]
-       
-        linearlyDependent = False
-        dependentIndexes = np.ones(len(linearly_independent_support_vectors), dtype=bool)
-
-        
-
-        for k in range(progresser + 1, len(linearly_independent_support_vectors)):
-
-            li_vec2 = linearly_independent_support_vectors[k]
-
-            if cauchy_schwarz_equal(li_vec1, li_vec2):#if true, li_vec1 and li_vec2 are dependent according to cauchy-schwarz-inequality
-                dependentIndexes[k] = False
-                linearlyDependent = True
-                
-        
-        if linearlyDependent:
-            linearly_independent_support_vectors = linearly_independent_support_vectors[dependentIndexes]# remove vectors that were dependent with li_vec1
-        else:
-            progresser += 1 # increment 'progresser', since vec[i] is independent
-            
-        i = progresser # reset iteration
-
-    return linearly_independent_support_vectors
 
 def cauchy_schwarz_equal(v1,v2):
     """
@@ -105,9 +75,63 @@ def cauchy_schwarz_equal(v1,v2):
     return ipLeft * ipLeft == np.dot(v1,v1) * np.dot(v2,v2)
     
 
-def get_linearly_independent_support_vectors(support_vectors):
 
-    linearly_independent_support_vectors = support_vectors
+def find_linear_independent_vectors(vectors, matrix, rank):
+    """
+    Adds linear independent vectors into a matrix recursively
+    """
+
+    i = 0
+    while i < len(vectors):
+
+        vector = vectors[i]
+        new_matrix = np.vstack([matrix, vector])
+        new_rank = np.linalg.matrix_rank(new_matrix)
+
+        if new_rank > rank: #if the rank is higher, the newly introduced vector is linearly independent with the vectors in the matrix, then add it to the matrix and start over
+
+            #vectors = np.delete(vectors, i, 0)#remove the vector from the mass that is linearly independent
+
+            matrix = find_linear_independent_vectors(vectors[i:], new_matrix, new_rank)
+            
+            #exit
+            i = len(vectors)
+
+        i += 1
+
+    return matrix
+
+
+def get_orthonormated_basis_from_support_vectors(support_vectors):
+
+    #linearly_independent_support_vectors = support_vectors
+    
+    #Start with finding two linearly independent supportvectors of any class using cauchy schwarz inequality
+    matrix = None
+    i = 0
+    while i < len(support_vectors) - 1:
+
+        firstVector = support_vectors[i]
+
+        for secondVector in support_vectors[i + 1:]:
+
+            if not(cauchy_schwarz_equal(firstVector, secondVector)):
+
+                matrix = np.array([firstVector, secondVector])
+
+                #exit
+                i = len(support_vectors)
+                break
+
+        i += 1
+
+    #Store the rank of the current matrix
+    rank = np.linalg.matrix_rank(matrix)
+    
+    matrix = find_linear_independent_vectors(support_vectors, matrix, rank)
+    
+    
+    
 
     progresser = 0
     i = 0
@@ -270,12 +294,16 @@ def dimension_projection(dataset, support_dict):#Input: full dataset for a clf, 
 
         for i in range(0, len(support_dict[1])):
             support_dict[1][i][:rotDim] = np.matmul(rotation_matrix, support_dict[1][i][:rotDim])
-        #dataset = [np.matmul(rotation_matrix, point)[:rotDim] for point in dataset] 
-        #support_dict[0] = [np.matmul(rotation_matrix, point)[:rotDim] for point in support_dict[0]] 
-        #support_dict[1] = [np.matmul(rotation_matrix, point)[:rotDim] for point in support_dict[1]] 
+        
         rotDim -= 1
 
-    return dataset, support_dict
+    dataset2d = np.delete(dataset, np.s_[-dim+2], axis = 1)
+    support_dict2d = support_dict
+    support_dict2d[0] = np.delete(support_dict2d[0], np.s_[-dim+2], axis = 1)
+    support_dict2d[1] = np.delete(support_dict2d[1], np.s_[-dim+2], axis = 1)
+
+
+    return dataset, support_dict, dataset2d, support_dict2d
 
 
 def get_rotation(alpha):
@@ -375,7 +403,7 @@ def get_intersection_point(left, right):
     angle = np.arctan(right_hyperplane[0]) - np.arctan(left_hyperplane[0])
     return ((x, y), angle)
 
-def ordering_support(vectors, point, clf):
+def ordering_support(vectors, clf):
     """
     Returns the first possible primary support vector
     """
@@ -411,7 +439,7 @@ def get_splitting_point(support_dict, clf):
     Finds and returns the primary support vector, splitting point
     """
 
-    tk = ordering_support(support_dict, (0,0), clf)
+    tk = ordering_support(support_dict, clf)
 
     first_class = tk[0][2]
 
@@ -550,6 +578,17 @@ def test_rot():
     plot(clf, clf, data, labels)
 
 
+def asdf():
+
+    testVectors = np.array([[0,0,0,0],[1,0,0,0],[1,0,0,0],[1,0,1,0],[1,1,0,0],[0,0,0,1]])
+
+    asdfasdf = get_orthonormated_basis_from_support_vectors(testVectors)
+
+    r = np.linalg.matrix_rank(testVectors)
+    kekMat = sci.linalg.orth(testVectors)
+
+    stopper = 0
+
 
 def main():
     # Dataset
@@ -574,7 +613,7 @@ def main():
     support_dict = group_support_vectors(old_clf.support_vectors_, old_clf)
 
     #2D align
-    data_points, support_dict = dimension_projection(data_points, support_dict)
+    data_pointshd, support_dicthd, data_points, support_dict = dimension_projection(data_points, support_dict)
 
 
 
@@ -614,4 +653,4 @@ def main():
     plot(old_clf, new_clf, data_points, data_labels, splitting_point)
 
 if __name__ == "__main__":
-    main()
+    asdf()
