@@ -593,24 +593,23 @@ def clean_set(clf, data_points, data_labels):
 
     point_on_line = (support_dict[0][0] + support_dict[1][0]) / 2
 
-    data_points = data_points.tolist()
     margin = get_distance_from_line_to_point(w, support_dict[0][0], point_on_line)
-    remove_points = []
 
     for point in data_points:
         distance = get_distance_from_line_to_point(w, point, point_on_line)
 
         if (distance < margin):
-            index = data_points.index(point)
+            index = np.where(data_points==point)
+            print(point)
 
-            data_points = np.delete(data_points, point)
+            data_points = np.delete(data_points, index, 0)
+
+
 
             data_labels = np.delete(data_labels, index)
 
-    data_points = np.asarray(data_points)
-    remove_points = np.asarray(remove_points)
 
-    return (clf, data_points, data_labels, remove_points)
+    return (clf, data_points, data_labels)
 
 def main():
     # Dataset
@@ -626,7 +625,7 @@ def main():
     old_data_labels = np.hstack([data_labels, b])
 
     # Detect points inside the margins
-    clf, old_data_points, old_data_labels, removed_points = clean_set(first_clf, old_data_points, old_data_labels)
+    clf, old_data_points, old_data_labels = clean_set(first_clf, old_data_points, old_data_labels)
 
     clf.fit(data_points, data_labels)
 
