@@ -81,94 +81,62 @@ def find_linear_independent_vectors(vectors, matrix, rank):
     Adds linear independent vectors into a matrix recursively
     """
 
-    i = 0
-    while i < len(vectors):
-
-        vector = vectors[i]
+    for vector in vectors:
         new_matrix = np.vstack([matrix, vector])
         new_rank = np.linalg.matrix_rank(new_matrix)
 
-        if new_rank > rank: #if the rank is higher, the newly introduced vector is linearly independent with the vectors in the matrix, then add it to the matrix and start over
+        if new_rank > rank: #if the rank is higher, the newly introduced vector is linearly independent with the vectors in the matrix, then add it to the matrix and start over with the rest of the vectors
 
-            #vectors = np.delete(vectors, i, 0)#remove the vector from the mass that is linearly independent
-
-            matrix = find_linear_independent_vectors(vectors[i:], new_matrix, new_rank)
+            matrix = new_matrix#find_linear_independent_vectors(vectors[i:], new_matrix, new_rank)
+            rank = new_rank
             
-            #exit
-            i = len(vectors)
-
-        i += 1
-
     return matrix
+
 
 
 def get_orthonormated_basis_from_support_vectors(support_vectors):
 
-    #linearly_independent_support_vectors = support_vectors
+    #make the first support vector the new 'origin'
+    new_origin = support_vectors[0]
+    direction_vectors = [vector - new_origin for vector in support_vectors[1:]]
     
-    #Start with finding two linearly independent supportvectors of any class using cauchy schwarz inequality
+
+    #Start with finding two linearly independent vectors of any class using cauchy schwarz inequality
     matrix = None
     i = 0
-    while i < len(support_vectors) - 1:
+    while i < len(direction_vectors) - 1:
 
-        firstVector = support_vectors[i]
+        first_vector = direction_vectors[i]
 
-        for secondVector in support_vectors[i + 1:]:
+        for second_vector in direction_vectors[i + 1:]:
 
-            if not(cauchy_schwarz_equal(firstVector, secondVector)):
+            if not(cauchy_schwarz_equal(first_vector, second_vector)):
 
-                matrix = np.array([firstVector, secondVector])
+                matrix = np.array([first_vector, second_vector])
 
                 #exit
-                i = len(support_vectors)
+                i = len(direction_vectors)
                 break
 
         i += 1
 
-    #Store the rank of the current matrix
+    #find linearly independent vectors
     rank = np.linalg.matrix_rank(matrix)
+    matrix = find_linear_independent_vectors(direction_vectors, matrix, rank)
     
-    matrix = find_linear_independent_vectors(support_vectors, matrix, rank)
+    #create orthonormated vectors with grahm schmidt
+    matrix = grahm_schmidt_orthonorm(matrix)
     
-    
-    
+    #complement the set if incomplete
+    if len(matrix) < len(support_vectors) - 1:
 
-    progresser = 0
-    i = 0
-    while i < len(linearly_independent_support_vectors) - 1:
-        
-        li_vec1 = linearly_independent_support_vectors[i]
-       
-        linearlyDependent = False
-        dependentIndexes = np.ones(len(linearly_independent_support_vectors), dtype=bool)
+        kek = 0
 
+    if np.linalg.det(matrix) == 0:
+        print("Error: not a basis")
 
-        for k in range(progresser + 1, len(linearly_independent_support_vectors)):
+    return matrix
 
-            li_vec2 = linearly_independent_support_vectors[k]
-
-            if cauchy_schwarz_equal(li_vec1, li_vec2):#if true, li_vec1 and li_vec2 are dependent according to cauchy-schwarz-inequality
-                dependentIndexes[k] = False
-                linearlyDependent = True
-                
-        
-        if linearlyDependent:
-            linearly_independent_support_vectors = linearly_independent_support_vectors[dependentIndexes]# remove vectors that were dependent with li_vec1
-        else:
-            progresser += 1 # increment 'progresser', since vec[i] is independent
-            
-        i = progresser # reset iteration
-
-
-    return linearly_independent_support_vectors
-
-def align_axis(support_vectors):
-
-    linearly_independent_support_vectors = 0
-
-    orthonormated_basis = grahm_schmidt_orthonorm(linearly_independent_support_vectors)
-
-    return
 
 def get_direction_between_two_vectors_in_set_with_smallest_distance(set, dim):
     """
