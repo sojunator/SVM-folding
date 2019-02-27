@@ -9,7 +9,7 @@ import math
 
 
 def vector_projection(v1,v2):
-    return (np.dot(v1, v2) / np.dot(v2,v2)) * v2
+    return (np.dot(v1, v2) * np.dot(v2,v2)) * v2
 
 def group_support_vectors(support_vectors, clf):
     """
@@ -568,13 +568,66 @@ def fold(old_clf, data_points, data_labels):
 
     return (new_clf, data_points, data_labels)
 
+def get_distance_from_line_to_point(w, point, point_on_line):
+    v = point - point_on_line
+    proj = vector_projection(v, w)
+    distance = np.linalg.norm(v - proj)
+
+    return distance
+
+def clean_set(clf, data_points, data_labels):
+    """
+    Returns a cleaned dataset, turns soft into hard.
+
+    Function does not calculate margin as get_margin does, something could be
+    wrong with the assumption that len w is the margin. Instead it calculates
+    the margin by calculating the distance from the decision_function to
+    a support vector.
+    """
+
+    w = clf.coef_[0]
+    w = np.array(w[1], w[0]) # place the vector in the direction of the line
+
+    # Orginal support vectors
+    support_dict = group_support_vectors(clf.support_vectors_, clf)
+
+    point_on_line = (support_dict[0][0] + support_dict[1][0]) / 2
+
+    data_points = data_points.tolist()
+    margin = get_distance_from_line_to_point(w, support_dict[0][0], point_on_line)
+    remove_points = []
+
+    for point in data_points:
+        distance = get_distance_from_line_to_point(w, point, point_on_line)
+
+        if (distance < margin):
+            index = data_points.index(point)
+
+            data_points = np.delete(data_points, point)
+
+            data_labels = np.delete(data_labels, index)
+
+    data_points = np.asarray(data_points)
+    remove_points = np.asarray(remove_points)
+
+    return (clf, data_points, data_labels, remove_points)
 
 def main():
     # Dataset
-    old_data_points, old_data_labels = data_points, data_labels = make_blobs(n_samples=400, n_features=2, centers=2, random_state=6)
+    old_data_points, old_data_labels = data_points, data_labels = make_blobs(n_samples=40, n_features=2, centers=2, random_state=6)
 
     # Original SVM
     first_clf = clf = svm.SVC(kernel='linear', C=1000)
+    clf.fit(data_points, data_labels)
+    a = np.array([6.6, -4.8])
+    b = np.array([0])
+
+    old_data_points = np.vstack([data_points, a])
+    old_data_labels = np.hstack([data_labels, b])
+
+    # Detect points inside the margins
+    clf, old_data_points, old_data_labels, removed_points = clean_set(first_clf, old_data_points, old_data_labels)
+
     clf.fit(data_points, data_labels)
 
     while(len(clf.support_vectors_) > 2):
