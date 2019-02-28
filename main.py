@@ -76,6 +76,10 @@ def cauchy_schwarz_equal(v1,v2):
     
 
 def find_two_linearly_independent_vectors(vectors):
+    """
+    Returns a matrix with the first two linearly independent vectors in it
+    """
+
     matrix = None
     i = 0
     while i < len(vectors) - 1:
@@ -84,7 +88,7 @@ def find_two_linearly_independent_vectors(vectors):
 
         for second_vector in vectors[i + 1:]:
 
-            if not(cauchy_schwarz_equal(first_vector, second_vector)):
+            if not(cauchy_schwarz_equal(first_vector, second_vector)):#if not equal, then they are independent.
 
                 matrix = np.array([first_vector, second_vector])
 
@@ -93,6 +97,9 @@ def find_two_linearly_independent_vectors(vectors):
                 break
 
         i += 1
+
+    if matrix == None:
+        print("Error, no vectors are independent")
 
     return matrix
 
@@ -129,8 +136,9 @@ def get_orthonormated_basis_from_support_vectors(support_vectors):
     #make the first support vector the new 'origin'
     new_origin = support_vectors[0]
     dim = len(new_origin)
+
+    #ceate direction vectors going from the new_origin to all points
     direction_vectors = [vector - new_origin for vector in support_vectors[1:]]
-    
 
     #Start with finding two linearly independent vectors of any class using cauchy schwarz inequality
     matrix = find_two_linearly_independent_vectors(direction_vectors)
@@ -159,8 +167,8 @@ def get_direction_between_two_vectors_in_set_with_smallest_distance(set, dim):
         print("Error, less than two support vectors in set")
         return
     
-    bestDir = set[0] - set[1]
-    bestDist = np.linalg.norm(bestDir)
+    best_dir = set[0] - set[1]
+    best_dist = np.linalg.norm(best_dir)
     index_v1 = 0
     for index_v1 in range(0, len(set)):
         vec1 = set[index_v1]
@@ -168,13 +176,13 @@ def get_direction_between_two_vectors_in_set_with_smallest_distance(set, dim):
 
             dir = vec1 - vec2
             dist = np.linalg.norm(dir)
-            if dist < bestDist:#found two vecs with shorter distance inbetween
-                bestDist = dist
-                bestDir = dir
+            if dist < best_dist:#found two vecs with shorter distance inbetween
+                best_dist = dist
+                best_dir = dir
 
     set = np.delete(set, index_v1, 0)
 
-    return bestDir[:dim], set
+    return best_dir[:dim], set
 
 def get_align_points_rotation_matrix(direction):
     """
@@ -188,10 +196,10 @@ def get_align_points_rotation_matrix(direction):
     rotation_matrix = np.zeros((dim,dim))
 
     #Wk = sqrt(v1^2 + v2^2 ... + vk^2) 
-    squaredElementsAccumulator = direction[0] * direction[0] + direction[1] * direction[1]
+    squared_elements_accumulator = direction[0] * direction[0] + direction[1] * direction[1]
     
     Wk = direction[0]#for k = 1
-    Wkp1 = np.sqrt(squaredElementsAccumulator)
+    Wkp1 = np.sqrt(squared_elements_accumulator)
     
     #first row
     if Wkp1 != 0:
@@ -205,19 +213,21 @@ def get_align_points_rotation_matrix(direction):
     #middle rows
     for row in range(1, dim - 1):
         
-        diagonalElement = direction[row + 1]#row + 1 is the k'th element in the vector
-        squaredElementsAccumulator += diagonalElement * diagonalElement#accumulate next step, square next element
+        subdiagonal_element = direction[row + 1]#row + 1 is the k'th element in the vector
+        squared_elements_accumulator += subdiagonal_element * subdiagonal_element#accumulate next step, square next element
 
         Wk = Wkp1
-        Wkp1 = np.sqrt(squaredElementsAccumulator)
+        Wkp1 = np.sqrt(squared_elements_accumulator)
 
-        #diagonal entry in matrix
+        
+        #subdiagonal
         U = 0
         if Wkp1 != 0:
             U = Wk / Wkp1 
 
-        rotation_matrix[row][row + 1] = -U
-        
+        rotation_matrix[row][row + 1] = -U #subdiagonal entry in matrix
+             
+
         #denominator per row 
         denominator = Wk * Wkp1
 
@@ -227,7 +237,7 @@ def get_align_points_rotation_matrix(direction):
         else:        
             i = 0
             for element in direction[0:row+1]:
-                rotation_matrix[row][i] = element*diagonalElement / denominator
+                rotation_matrix[row][i] = element * subdiagonal_element / denominator
                 i+=1
     
     #last row in matrix
