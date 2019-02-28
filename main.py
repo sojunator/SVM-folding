@@ -615,9 +615,8 @@ def clean_set(clf, data_points, data_labels):
     return (clf, data_points, data_labels)
 
 def classify(clf, points, rotation_steps):
-    #unpackage the mess
-
     for rotation in rotation_steps:
+        #unpackage the mess
         intersection_point = rotation[0]
         primary_support_vector = rotation[1]
         left_or_right = rotation[2]
@@ -627,8 +626,25 @@ def classify(clf, points, rotation_steps):
         _, angle = get_intersection_point(left_clf, right_clf)
         rotation_matrix = get_rotation(angle)
 
-        points = [rotate_point(point, angle, primary_support_vector, intersection_point) for point in points]
+        rotated_set = []
+        none_rotated_set = []
 
+
+        for point in points:
+            if left_or_right:
+                if primary_support_vector[0] >= point[0]:
+                    rotated_set.append(point)
+                else:
+                    none_rotated_set.append(point)
+            else:
+                if primary_support_vector[0] <= point[0]:
+                    rotated_set.append(point)
+                else:
+                    none_rotated_set.append(point)
+
+        rotated_set = [rotate_point(point, angle, primary_support_vector, intersection_point) for point in rotated_set]
+
+        points = np.asarray(rotated_set + none_rotated_set)
 
 
 
