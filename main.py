@@ -75,6 +75,26 @@ def cauchy_schwarz_equal(v1,v2):
     return ipLeft * ipLeft == np.dot(v1,v1) * np.dot(v2,v2)
     
 
+def find_two_linearly_independent_vectors(vectors):
+    matrix = None
+    i = 0
+    while i < len(vectors) - 1:
+
+        first_vector = vectors[i]
+
+        for second_vector in vectors[i + 1:]:
+
+            if not(cauchy_schwarz_equal(first_vector, second_vector)):
+
+                matrix = np.array([first_vector, second_vector])
+
+                #exit
+                i = len(vectors)
+                break
+
+        i += 1
+
+    return matrix
 
 def find_linear_independent_vectors(vectors, matrix):
     """
@@ -91,8 +111,12 @@ def find_linear_independent_vectors(vectors, matrix):
 
             matrix = new_matrix#find_linear_independent_vectors(vectors[i:], new_matrix, new_rank)
 
-            if len(matrix) == dim: #matrix is a basis
-                return matrix
+            if len(matrix) == dim: 
+                if np.linalg.det(matrix) != 0: #matrix is a basis
+                    return matrix
+                else:
+                    print("SOMETHING WENT WRONG, Error: not a basis")
+                    
 
             rank = new_rank
             
@@ -109,40 +133,18 @@ def get_orthonormated_basis_from_support_vectors(support_vectors):
     
 
     #Start with finding two linearly independent vectors of any class using cauchy schwarz inequality
-    matrix = None
-    i = 0
-    while i < len(direction_vectors) - 1:
-
-        first_vector = direction_vectors[i]
-
-        for second_vector in direction_vectors[i + 1:]:
-
-            if not(cauchy_schwarz_equal(first_vector, second_vector)):
-
-                matrix = np.array([first_vector, second_vector])
-
-                #exit
-                i = len(direction_vectors)
-                break
-
-        i += 1
-
+    matrix = find_two_linearly_independent_vectors(direction_vectors)
     
-    #add the base vectors to complement the vectors that arn't linearly independent
+    #add the base vectors to complement for the vectors that arn't linearly independent
     direction_vectors = np.vstack([direction_vectors, np.identity(dim)])
 
-    #find linearly independent vectors
+    #find linearly independent vectors and add them to the matrix
     matrix = find_linear_independent_vectors(direction_vectors, matrix)
     
     #create orthonormated vectors with grahm schmidt
     matrix = grahm_schmidt_orthonorm(matrix)
+
     
-    #complement the set if incomplete
-    if len(matrix) < len(support_vectors) - 1:
-
-        kek = 0
-        
-
     if np.linalg.det(matrix) == 0:
         print("Error: not a basis")
 
