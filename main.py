@@ -511,65 +511,7 @@ def plot(new_clf, old_clf, X, y):
 
     plt.show()
 
-def test_get_rotation_matrix_onto_lower_dimension():
 
-    test_vectors = np.array([[1,0,0],[2,0,0]])
-    test_ans = np.array([[0.0, 1.0, 0.0], [0.0, 0.0, -1.0], [-1.0, 0.0, 0.0]])
-    rotation_matrix = get_rotation_matrix_onto_lower_dimension(test_vectors, 3)
-    if np.array_equal(rotation_matrix, test_ans) == False:
-        print("Error, wrong matrix")
-
-    test_vectors = np.array([[0,0,1],[0,0,2]])
-    test_ans = np.array([[1.0, 0.0, 0.0], [0.0, 1.0, 0.0], [0.0, 0.0, -1.0]])
-    rotation_matrix = get_rotation_matrix_onto_lower_dimension(test_vectors, 3)
-    if np.array_equal(rotation_matrix, test_ans) == False:
-        print("Error, wrong matrix")
-
-    test_vectors = np.array([[0,1,0],[0,2,0]])
-    test_ans = np.array([[-1.0, 1.0, 0.0], [0.0, 0.0, -1.0], [0.0, -1.0, 0.0]])
-    rotation_matrix = get_rotation_matrix_onto_lower_dimension(test_vectors, 3)
-    if np.array_equal(rotation_matrix, test_ans) == False:
-        print("Error, wrong matrix")
-
-
-    return
-
-def test_get_direction_between_two_vectors_in_set_with_smallest_distance():
-    testVectors = np.array([[2,2,2,2,2], [1,3,3,5,5], [2,0,0,0,2], [3,0,0,0,2], [4,6,4,-4,-4], [5,2,-6,-7,2],[1,2,3,2,1]])
-
-    ans = np.array([-1,0,0,0,0])
-
-    dir = get_direction_between_two_vectors_in_set_with_smallest_distance(testVectors)
-
-
-    if all(dir) != all(ans):
-        print("Error, wrong direction, Expected: ", ans, "Recieved: ", dir)
-    else:
-        print("Test passed")
-
-
-   #print(rotation_matrix_onto_lower_dimension(testVectors))
-
-def get_test_rot_data():
-    #data_points = np.array([[1.5, 1.5, 1.0, 1.0], [0.5, 1.5, 1.0, 1.1], [1.6, 1.6, 1.0, 1.2], [3.0, 1.5, 1.0, 1.3], [0.0, 1.5, 3.5,1.4], [1.0, 2.0, 3.2, 1.5], [1.0, -1.0, -3.05,-2], [1.0, -1.5, -4.55,-2.5], [1.5, -1.2, -4,-3]])
-    data_points = np.array([[1.5, 1.5, 1.0], [0.5, 1.5, 1.0], [1.6, 1.6, 1.0], [3.0, 1.5, 1.0], [0.0, 1.5, 3.5], [1.0, 2.0, 3.2], [1.0, -1.0, -3.05], [1.0, -1.5, -4.55], [1.5, -1.2, -4]])
-    labels = np.array([0, 0, 0, 0, 0, 0, 1, 1, 1])
-
-    return data_points, labels
-
-def test_rot():
-
-    data, labels = get_test_rot_data()
-
-    clf = svm.SVC(kernel='linear', C=1000)
-    clf.fit(data, labels)
-
-    support_dict = group_support_vectors(clf.support_vectors_, clf)
-
-    #2D align
-    data, support_dict = dimension_reduction(data, support_dict)
-
-    plot(clf, clf, data, labels)
 
 def fold(old_clf, data_points, data_labels):
     # folding sets
