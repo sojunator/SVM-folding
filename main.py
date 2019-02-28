@@ -76,10 +76,12 @@ def cauchy_schwarz_equal(v1,v2):
     
 
 
-def find_linear_independent_vectors(vectors, matrix, rank):
+def find_linear_independent_vectors(vectors, matrix):
     """
     Adds linear independent vectors into a matrix recursively
     """
+    dim = len(vectors[0])
+    rank = np.linalg.matrix_rank(matrix)
 
     for vector in vectors:
         new_matrix = np.vstack([matrix, vector])
@@ -88,6 +90,10 @@ def find_linear_independent_vectors(vectors, matrix, rank):
         if new_rank > rank: #if the rank is higher, the newly introduced vector is linearly independent with the vectors in the matrix, then add it to the matrix and start over with the rest of the vectors
 
             matrix = new_matrix#find_linear_independent_vectors(vectors[i:], new_matrix, new_rank)
+
+            if len(matrix) == dim: #matrix is a basis
+                return matrix
+
             rank = new_rank
             
     return matrix
@@ -98,6 +104,7 @@ def get_orthonormated_basis_from_support_vectors(support_vectors):
 
     #make the first support vector the new 'origin'
     new_origin = support_vectors[0]
+    dim = len(new_origin)
     direction_vectors = [vector - new_origin for vector in support_vectors[1:]]
     
 
@@ -120,9 +127,12 @@ def get_orthonormated_basis_from_support_vectors(support_vectors):
 
         i += 1
 
+    
+    #add the base vectors to complement the vectors that arn't linearly independent
+    direction_vectors = np.vstack([direction_vectors, np.identity(dim)])
+
     #find linearly independent vectors
-    rank = np.linalg.matrix_rank(matrix)
-    matrix = find_linear_independent_vectors(direction_vectors, matrix, rank)
+    matrix = find_linear_independent_vectors(direction_vectors, matrix)
     
     #create orthonormated vectors with grahm schmidt
     matrix = grahm_schmidt_orthonorm(matrix)
@@ -131,6 +141,7 @@ def get_orthonormated_basis_from_support_vectors(support_vectors):
     if len(matrix) < len(support_vectors) - 1:
 
         kek = 0
+        
 
     if np.linalg.det(matrix) == 0:
         print("Error: not a basis")
