@@ -319,7 +319,7 @@ def rotate_set(left_clf, left_set, right_clf, right_set, primary_support):
 
     X = np.vstack(X)
 
-    return (X, y, left_or_right)
+    return (X, y, left_or_right, intersection_point)
 
 def get_margin(clf):
     """
@@ -556,7 +556,11 @@ def fold(old_clf, data_points, data_labels):
     # Rotate and merge data sets back into one
     old_X = data_points
     old_y = data_labels
-    data_points, data_labels, left_or_right = rotate_set(left_clf, left_set, right_clf, right_set, primary_support_vector)
+    data_points, data_labels, left_or_right, intersection_point = rotate_set(left_clf,
+                                                                            left_set,
+                                                                            right_clf,
+                                                                            right_set,
+                                                                            primary_support_vector)
 
     # merge
     new_clf = right_clf if left_or_right else left_clf
@@ -566,7 +570,9 @@ def fold(old_clf, data_points, data_labels):
     left_set[0] = np.vstack(left_set[0])
 
 
-    return (new_clf, data_points, data_labels)
+    return (new_clf, data_points, data_labels, (intersection_point,
+                                                primary_support_vector,
+                                                left_or_right, (right_clf, left_clf)))
 
 def get_distance_from_line_to_point(w, point, point_on_line):
     v = point - point_on_line
@@ -600,37 +606,55 @@ def clean_set(clf, data_points, data_labels):
 
         if (distance < margin):
             index = np.where(data_points==point)
-            print(point)
 
             data_points = np.delete(data_points, index, 0)
-
-
 
             data_labels = np.delete(data_labels, index)
 
 
     return (clf, data_points, data_labels)
 
+def classify(clf, points, rotation_steps):
+    #unpackage the mess
+
+    for rotation in rotation_steps:
+        intersection_point = rotation[0]
+        primary_support_vector = rotation[1]
+        left_or_right = rotation[2]
+        right_clf = rotation[3][0]
+        left_clf = rotation[3][1]
+
+        _, angle = get_intersection_point(left_clf, right_clf)
+        rotation_matrix = get_rotation(angle)
+
+        points = [rotate_point(point, angle, primary_support_vector, intersection_point) for point in points]
+
+
+
+
+    return clf.predict(points)
+
 def main():
     # Dataset
-    old_data_points, old_data_labels = data_points, data_labels = make_blobs(n_samples=40, n_features=2, centers=2, random_state=6)
+    old_data_points, old_data_labels = data_points, data_labels = make_blobs(n_samples=40,
+                                                                             n_features=2,
+                                                                             centers=2,
+                                                                             random_state=6)
 
     # Original SVM
     first_clf = clf = svm.SVC(kernel='linear', C=1000)
     clf.fit(data_points, data_labels)
-    a = np.array([6.6, -4.8])
-    b = np.array([0])
-
-    old_data_points = np.vstack([data_points, a])
-    old_data_labels = np.hstack([data_labels, b])
 
     # Detect points inside the margins
-    clf, old_data_points, old_data_labels = clean_set(first_clf, old_data_points, old_data_labels)
+    clf, old_data_points, old_data_labels = clean_set(first_clf, old_data_points,
+                                                                 old_data_labels)
 
-    clf.fit(data_points, data_labels)
+    rotation_steps = []
 
     while(len(clf.support_vectors_) > 2):
-        clf, data_points, data_labels = fold(clf, data_points, data_labels)
+        clf, data_points, data_labels, rotation_data = fold(clf, data_points, data_labels)
+        rotation_steps.append(rotation_data)
+
 
     old_margin = get_margin(first_clf)
     new_margin = get_margin(clf)
@@ -638,6 +662,8 @@ def main():
     print("Old margin {}".format(old_margin))
     print("New margin post folds {}".format(new_margin))
     print("Improvement of {} and {}%".format(new_margin - old_margin, new_margin / old_margin))
+
+    print(classify(clf, np.array([[6.4, -4.8],[5.4, -7.5]]), rotation_steps))
 
     plot(first_clf, clf, data_points, data_labels)
     plot(first_clf, clf, old_data_points, old_data_labels)
