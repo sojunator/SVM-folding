@@ -10,9 +10,7 @@ import math
 import scipy as sci
 
 def vector_projection(v1,v2):
-    dot1 = np.dot(v1,v2)
-    dot2 = np.dot(v2,v2)
-    return (np.dot(v1, v2) / np.dot(v2,v2)) * v2
+    return (np.dot(v1, v2) * np.dot(v2,v2)) * v2
 
 def group_support_vectors(support_vectors, clf):
     """
@@ -35,7 +33,7 @@ def grahm_schmidt_orthonorm(linearly_independent_support_vectors):
 
     orthonormated_vectors = []#stores the new basis
 
-    vec = linearly_independent_support_vectors[0] 
+    vec = linearly_independent_support_vectors[0]
     vec = vec / np.linalg.norm(vec)#first entry is just the itself normalized
     orthonormated_vectors.append(vec)
 
@@ -50,7 +48,7 @@ def grahm_schmidt_orthonorm(linearly_independent_support_vectors):
 
         vec = v + vec
         vec[np.abs(vec) < 0.000001] = 0
-        
+
         if all(v == 0 for v in vec):#if true then this vector is dependent on it's predicessors
             print(i)
 
@@ -209,7 +207,7 @@ def get_align_points_rotation_matrix(direction):
         rotation_matrix[0][0] = 1#first element
         rotation_matrix[0][1] = 0#first diagonal element
 
-   
+
     #middle rows
     for row in range(1, dim - 1):
         
@@ -223,7 +221,7 @@ def get_align_points_rotation_matrix(direction):
         #subdiagonal
         U = 0
         if Wkp1 != 0:
-            U = Wk / Wkp1 
+            U = Wk / Wkp1
 
         rotation_matrix[row][row + 1] = -U #subdiagonal entry in matrix
              
@@ -234,12 +232,12 @@ def get_align_points_rotation_matrix(direction):
         if denominator == 0:
             rotation_matrix[row][row] = 1
 
-        else:        
+        else:
             i = 0
             for element in direction[0:row+1]:
                 rotation_matrix[row][i] = element * subdiagonal_element / denominator
                 i+=1
-    
+
     #last row in matrix
     if Wkp1 != 0:
         rotation_matrix[dim-1] = [element / Wkp1 for element in direction]
@@ -314,6 +312,7 @@ def rotate_point(point, angle, primary_support, intersection_point):
 
     return point
 
+
 def rotate_set(left_clf, left_set, right_clf, right_set, primary_support):
     """
     Performs rotation on the set with biggest margin
@@ -338,25 +337,29 @@ def rotate_set(left_clf, left_set, right_clf, right_set, primary_support):
     left_or_right = -1
 
     if (right_margin > left_margin):
+        #right_set[0] = removearray(right_set[0], primary_support)
         right_set[0] = [rotate_point(point, angle, primary_support, intersection_point)
                             for point in right_set[0]]
         left_or_right = 0
 
     elif (left_margin > right_margin):
+        #left_set[0] = removearray(left_set[0], primary_support)
         left_set[0] = [rotate_point(point, -angle, primary_support, intersection_point)
                             for point in left_set[0]]
-
         left_or_right = 1
 
     else:
         print("Cannot improve margin")
 
+
     X = left_set[0] + right_set[0]
+
     y = left_set[1] + right_set[1]
+
 
     X = np.vstack(X)
 
-    return (X, y, left_or_right)
+    return (X, y, left_or_right, intersection_point)
 
 def get_margin(clf):
     """
@@ -483,7 +486,7 @@ def plot_clf(clf, ax, XX, YY, colour='k'):
            linestyles=['--', '-', '--'])
 
 
-def plot(new_clf, old_clf, X, y, splitting_point):
+def plot(new_clf, old_clf, X, y):
     """
     God function that removes all the jitter from main
     """
@@ -493,7 +496,7 @@ def plot(new_clf, old_clf, X, y, splitting_point):
     xlim = (2, 10)
     ylim = (-2, -11)
 
-    plt.axvline(x=splitting_point, color='k')
+    #plt.axvline(x=splitting_point, color='k')
 
     # create grid to evaluate model
     xx = np.linspace(xlim[0], xlim[1], 30)
@@ -515,19 +518,19 @@ def test_get_rotation_matrix_onto_lower_dimension():
     rotation_matrix = get_rotation_matrix_onto_lower_dimension(test_vectors, 3)
     if np.array_equal(rotation_matrix, test_ans) == False:
         print("Error, wrong matrix")
-        
+
     test_vectors = np.array([[0,0,1],[0,0,2]])
     test_ans = np.array([[1.0, 0.0, 0.0], [0.0, 1.0, 0.0], [0.0, 0.0, -1.0]])
     rotation_matrix = get_rotation_matrix_onto_lower_dimension(test_vectors, 3)
     if np.array_equal(rotation_matrix, test_ans) == False:
         print("Error, wrong matrix")
-        
+
     test_vectors = np.array([[0,1,0],[0,2,0]])
     test_ans = np.array([[-1.0, 1.0, 0.0], [0.0, 0.0, -1.0], [0.0, -1.0, 0.0]])
     rotation_matrix = get_rotation_matrix_onto_lower_dimension(test_vectors, 3)
     if np.array_equal(rotation_matrix, test_ans) == False:
         print("Error, wrong matrix")
-        
+
 
     return
 
@@ -543,10 +546,10 @@ def test_get_direction_between_two_vectors_in_set_with_smallest_distance():
         print("Error, wrong direction, Expected: ", ans, "Recieved: ", dir)
     else:
         print("Test passed")
-    
+
 
    #print(rotation_matrix_onto_lower_dimension(testVectors))
-  
+
 def get_test_rot_data():
     #data_points = np.array([[1.5, 1.5, 1.0, 1.0], [0.5, 1.5, 1.0, 1.1], [1.6, 1.6, 1.0, 1.2], [3.0, 1.5, 1.0, 1.3], [0.0, 1.5, 3.5,1.4], [1.0, 2.0, 3.2, 1.5], [1.0, -1.0, -3.05,-2], [1.0, -1.5, -4.55,-2.5], [1.5, -1.2, -4,-3]])
     data_points = np.array([[1.5, 1.5, 1.0], [0.5, 1.5, 1.0], [1.6, 1.6, 1.0], [3.0, 1.5, 1.0], [0.0, 1.5, 3.5], [1.0, 2.0, 3.2], [1.0, -1.0, -3.05], [1.0, -1.5, -4.55], [1.5, -1.2, -4]])
@@ -594,12 +597,6 @@ def main():
     right_clf = svm.SVC(kernel='linear', C=10000)
     left_clf = svm.SVC(kernel='linear', C=10000)
 
-    # Train on inital data
-    old_clf.fit(data_points, data_labels)
-
-    old_margin = get_margin(old_clf)
-
-
     # Orginal support vectors
     support_dict = group_support_vectors(old_clf.support_vectors_, old_clf)
 
@@ -618,30 +615,124 @@ def main():
     left_set, right_set = split_data(primary_support_vector, data_points, data_labels)
 
     # New SVM, right
+
     right_clf.fit(right_set[0], right_set[1])
     left_clf.fit(left_set[0], left_set[1])
 
     # Rotate and merge data sets back into one
     old_X = data_points
     old_y = data_labels
-    data_points, data_labels, left_or_right = rotate_set(left_clf, left_set, right_clf, right_set, primary_support_vector)
+    data_points, data_labels, left_or_right, intersection_point = rotate_set(left_clf,
+                                                                            left_set,
+                                                                            right_clf,
+                                                                            right_set,
+                                                                            primary_support_vector)
 
     # merge
     new_clf = right_clf if left_or_right else left_clf
-    """
-    new_clf = svm.SVC(kernel="linear", C=10000)
-    new_clf.fit(X, y)
-    """
-    new_margin = get_margin(new_clf)
 
     # Used for highlighting the sets
     right_set[0] = np.vstack(right_set[0])
     left_set[0] = np.vstack(left_set[0])
 
 
-    # plot new clf (post hyperplane folding) and old clf.
-    # Blue is old, red is new.
-    plot(old_clf, new_clf, data_points, data_labels, splitting_point)
+    return (new_clf, data_points, data_labels, (intersection_point,
+                                                primary_support_vector,
+                                                left_or_right, (right_clf, left_clf)))
+
+def get_distance_from_line_to_point(w, point, point_on_line):
+    v = point - point_on_line
+    proj = vector_projection(v, w)
+    distance = np.linalg.norm(v - proj)
+
+    return distance
+
+def clean_set(clf, data_points, data_labels):
+    """
+    Returns a cleaned dataset, turns soft into hard.
+
+    Function does not calculate margin as get_margin does, something could be
+    wrong with the assumption that len w is the margin. Instead it calculates
+    the margin by calculating the distance from the decision_function to
+    a support vector.
+    """
+
+    w = clf.coef_[0]
+    w = np.array(w[1], w[0]) # place the vector in the direction of the line
+
+    # Orginal support vectors
+    support_dict = group_support_vectors(clf.support_vectors_, clf)
+
+    point_on_line = (support_dict[0][0] + support_dict[1][0]) / 2
+
+    margin = get_distance_from_line_to_point(w, support_dict[0][0], point_on_line)
+
+    for point in data_points:
+        distance = get_distance_from_line_to_point(w, point, point_on_line)
+
+        if (distance < margin):
+            index = np.where(data_points==point)
+
+            data_points = np.delete(data_points, index, 0)
+
+            data_labels = np.delete(data_labels, index)
+
+
+    return (clf, data_points, data_labels)
+
+def classify(clf, points, rotation_steps):
+    #unpackage the mess
+
+    for rotation in rotation_steps:
+        intersection_point = rotation[0]
+        primary_support_vector = rotation[1]
+        left_or_right = rotation[2]
+        right_clf = rotation[3][0]
+        left_clf = rotation[3][1]
+
+        _, angle = get_intersection_point(left_clf, right_clf)
+        rotation_matrix = get_rotation(angle)
+
+        points = [rotate_point(point, angle, primary_support_vector, intersection_point) for point in points]
+
+
+
+
+    return clf.predict(points)
+
+def main():
+    # Dataset
+    old_data_points, old_data_labels = data_points, data_labels = make_blobs(n_samples=40,
+                                                                             n_features=2,
+                                                                             centers=2,
+                                                                             random_state=6)
+
+    # Original SVM
+    first_clf = clf = svm.SVC(kernel='linear', C=1000)
+    clf.fit(data_points, data_labels)
+
+    # Detect points inside the margins
+    clf, old_data_points, old_data_labels = clean_set(first_clf, old_data_points,
+                                                                 old_data_labels)
+
+    rotation_steps = []
+
+    while(len(clf.support_vectors_) > 2):
+        clf, data_points, data_labels, rotation_data = fold(clf, data_points, data_labels)
+        rotation_steps.append(rotation_data)
+
+
+    old_margin = get_margin(first_clf)
+    new_margin = get_margin(clf)
+
+    print("Old margin {}".format(old_margin))
+    print("New margin post folds {}".format(new_margin))
+    print("Improvement of {} and {}%".format(new_margin - old_margin, new_margin / old_margin))
+
+    print(classify(clf, np.array([[6.4, -4.8],[5.4, -7.5]]), rotation_steps))
+
+    plot(first_clf, clf, data_points, data_labels)
+    plot(first_clf, clf, old_data_points, old_data_labels)
 
 if __name__ == "__main__":
     asdf()
