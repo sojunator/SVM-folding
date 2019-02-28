@@ -571,39 +571,13 @@ def test_rot():
 
     plot(clf, clf, data, labels)
 
-
-def asdf():
-
-    testVectors = np.array([[0,0,0,0],[1,0,0,0],[1,0,0,0],[1,0,1,0],[1,1,0,0],[0,0,0,1]])
-
-    asdfasdf = get_orthonormated_basis_from_support_vectors(testVectors)
-
-    r = np.linalg.matrix_rank(testVectors)
-    kekMat = sci.linalg.orth(testVectors)
-
-    stopper = 0
-
-
-def main():
-    # Dataset
-    
-   # data_points, data_labels = make_blobs(n_samples=30, n_features=2, centers=2, random_state=6)
-    data_points, data_labels = get_test_rot_data()
-    
-    # Original SVM
-    old_clf = svm.SVC(kernel='linear', C=10000)
-
+def fold(old_clf, data_points, data_labels):
     # folding sets
-    right_clf = svm.SVC(kernel='linear', C=10000)
-    left_clf = svm.SVC(kernel='linear', C=10000)
+    right_clf = svm.SVC(kernel='linear', C=1000)
+    left_clf = svm.SVC(kernel='linear', C=1000)
 
     # Orginal support vectors
     support_dict = group_support_vectors(old_clf.support_vectors_, old_clf)
-
-    #2D align
-    data_pointshd, support_dicthd, data_points, support_dict = dimension_projection(data_points, support_dict)
-
-
 
     # Splitting point
     primary_support_vector = get_splitting_point(support_dict, old_clf)
@@ -650,7 +624,6 @@ def get_distance_from_line_to_point(w, point, point_on_line):
 def clean_set(clf, data_points, data_labels):
     """
     Returns a cleaned dataset, turns soft into hard.
-
     Function does not calculate margin as get_margin does, something could be
     wrong with the assumption that len w is the margin. Instead it calculates
     the margin by calculating the distance from the decision_function to
@@ -681,9 +654,8 @@ def clean_set(clf, data_points, data_labels):
     return (clf, data_points, data_labels)
 
 def classify(clf, points, rotation_steps):
-    #unpackage the mess
-
     for rotation in rotation_steps:
+        #unpackage the mess
         intersection_point = rotation[0]
         primary_support_vector = rotation[1]
         left_or_right = rotation[2]
@@ -693,8 +665,25 @@ def classify(clf, points, rotation_steps):
         _, angle = get_intersection_point(left_clf, right_clf)
         rotation_matrix = get_rotation(angle)
 
-        points = [rotate_point(point, angle, primary_support_vector, intersection_point) for point in points]
+        rotated_set = []
+        none_rotated_set = []
 
+
+        for point in points:
+            if left_or_right:
+                if primary_support_vector[0] >= point[0]:
+                    rotated_set.append(point)
+                else:
+                    none_rotated_set.append(point)
+            else:
+                if primary_support_vector[0] <= point[0]:
+                    rotated_set.append(point)
+                else:
+                    none_rotated_set.append(point)
+
+        rotated_set = [rotate_point(point, angle, primary_support_vector, intersection_point) for point in rotated_set]
+
+        points = np.asarray(rotated_set + none_rotated_set)
 
 
 
@@ -735,4 +724,4 @@ def main():
     plot(first_clf, clf, old_data_points, old_data_labels)
 
 if __name__ == "__main__":
-    asdf()
+    main()
