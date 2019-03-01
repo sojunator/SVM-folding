@@ -96,9 +96,6 @@ def find_two_linearly_independent_vectors(vectors):
 
         i += 1
 
-    #if matrix == None:
-     #   print("Error, no vectors are independent")
-
     return matrix
 
 def find_linear_independent_vectors(vectors, matrix):
@@ -647,12 +644,14 @@ def classify(clf, points, rotation_steps):
 
     return clf.predict(points)
 
+
+def get_test_rot_five_d():
+
+    return np.array([[2,7,0,2,2],[1,5,1,2,2], [-1,5,2,2,2], [-2,3,4,2,2], [1,2,4,2,2], [0,0,5,2,2]]), np.array([1,1,1,0,0,0])
+
 def main():
     # Dataset
-    old_data_points, old_data_labels = data_points, data_labels = make_blobs(n_samples=1000,
-                                                                             n_features=5,
-                                                                             centers=2,
-                                                                             random_state=6)
+    old_data_points, old_data_labels = data_points, data_labels = get_test_rot_five_d()#make_blobs(n_samples=5,n_features=5,centers=2,random_state=6)
 
     # Original SVM
     first_clf = clf = svm.SVC(kernel='linear', C=1000)
