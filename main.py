@@ -96,8 +96,8 @@ def find_two_linearly_independent_vectors(vectors):
 
         i += 1
 
-    if matrix == None:
-        print("Error, no vectors are independent")
+    #if matrix == None:
+     #   print("Error, no vectors are independent")
 
     return matrix
 
@@ -248,51 +248,67 @@ def get_align_points_rotation_matrix(direction):
     return rotation_matrix
 
 
-def dimension_projection(dataset, support_dict):#Input: full dataset for a clf, and support vectors separated into classes in a dictionary
+def dimension_projection(dataset, clf):#Input: full dataset for a clf, and support vectors separated into classes in a dictionary
     #if supportvectors  -> k < n + 1 run align axis aka if(n <= currentDim) then -> align_axis
     #align_axis
 
-    rotDim = dim = len(support_dict[0][0])
+    support_dict = group_support_vectors(clf.support_vectors_, clf)
+    nr_of_coordinates = len(support_dict[0][0])
 
-    while rotDim > 2:
-        support_vectors_from_one_class = 0
-        if (len(support_dict[0]) > len(support_dict[1])):#pick class with most vectors in
-            support_vectors_from_one_class = support_dict[0]
-        else:
-            support_vectors_from_one_class = support_dict[1]
-
+    while nr_of_coordinates > 2:
         
+        #Rotate until we have three support vectors.
+        nr_of_support_vectors = len(support_dict[0]) + len(support_dict[1])
+        if nr_of_support_vectors < 3:
+            return dataset, support_dict
+        
+        if nr_of_support_vectors == 3:
+            all_support_vectors = [val for lst in support_dict.values() for val in lst]#group support vectors into one array
+            rotation_matrix = get_orthonormated_basis_from_support_vectors(all_support_vectors)
+            
+            for i in range(0, len(dataset)):
+                dataset[i][:nr_of_coordinates] = np.matmul(rotation_matrix, dataset[i][:nr_of_coordinates])
+           
+            for i in range(0, len(support_dict[0])):
+                support_dict[0][i][:nr_of_coordinates] = np.matmul(rotation_matrix, support_dict[0][i][:nr_of_coordinates])
+
+            for i in range(0, len(support_dict[1])):
+                support_dict[1][i][:nr_of_coordinates] = np.matmul(rotation_matrix, support_dict[1][i][:nr_of_coordinates])
+            
+    #dataset2d = np.delete(dataset, np.s_[-dim+2], axis = 1)
+    #support_dict2d = support_dict
+    #support_dict2d[0] = np.delete(support_dict2d[0], np.s_[-dim+2], axis = 1)
+    #support_dict2d[1] = np.delete(support_dict2d[1], np.s_[-dim+2], axis = 1)
+
+
+            return dataset, support_dict
+
+
+        #choose the class with most support vectors
         max_key = max(support_dict, key= lambda x: len(support_dict[x]))
-
-        if len(support_dict[max_key]) < 2:
-            stopper = 0
-            break
-
+        
+        #get the direction between the vectors, and removes one of them from the dictionary
         direction, support_dict[max_key] = get_direction_between_two_vectors_in_set_with_smallest_distance(support_dict[max_key], rotDim)
+        
 
+        #calculate alignment matrix
         rotation_matrix = get_align_points_rotation_matrix(direction)
     
 
-
-        #rotate all datapoints
+        #rotate all datapoints and support vectors
         for i in range(0, len(dataset)):
-            dataset[i][:rotDim] = np.matmul(rotation_matrix, dataset[i][:rotDim])
+            dataset[i][:nr_of_coordinates] = np.matmul(rotation_matrix, dataset[i][:nr_of_coordinates])
            
         for i in range(0, len(support_dict[0])):
-            support_dict[0][i][:rotDim] = np.matmul(rotation_matrix, support_dict[0][i][:rotDim])
+            support_dict[0][i][:nr_of_coordinates] = np.matmul(rotation_matrix, support_dict[0][i][:nr_of_coordinates])
 
         for i in range(0, len(support_dict[1])):
-            support_dict[1][i][:rotDim] = np.matmul(rotation_matrix, support_dict[1][i][:rotDim])
+            support_dict[1][i][:nr_of_coordinates] = np.matmul(rotation_matrix, support_dict[1][i][:nr_of_coordinates])
         
-        rotDim -= 1
+        nr_of_coordinates -= 1 #exclude last coordinate
 
-    dataset2d = np.delete(dataset, np.s_[-dim+2], axis = 1)
-    support_dict2d = support_dict
-    support_dict2d[0] = np.delete(support_dict2d[0], np.s_[-dim+2], axis = 1)
-    support_dict2d[1] = np.delete(support_dict2d[1], np.s_[-dim+2], axis = 1)
-
-
-    return dataset, support_dict, dataset2d, support_dict2d
+    
+    return dataset, support_dict
 
 
 def get_rotation(alpha):
@@ -513,13 +529,13 @@ def plot(new_clf, old_clf, X, y):
 
 
 
-def fold(old_clf, data_points, data_labels):
+def fold(old_clf, data_points, data_labels, support_vectors):
     # folding sets
     right_clf = svm.SVC(kernel='linear', C=1000)
     left_clf = svm.SVC(kernel='linear', C=1000)
 
     # Orginal support vectors
-    support_dict = group_support_vectors(old_clf.support_vectors_, old_clf)
+    support_dict = group_support_vectors(support_vectors, old_clf)
 
     # Splitting point
     primary_support_vector = get_splitting_point(support_dict, old_clf)
@@ -633,8 +649,8 @@ def classify(clf, points, rotation_steps):
 
 def main():
     # Dataset
-    old_data_points, old_data_labels = data_points, data_labels = make_blobs(n_samples=40,
-                                                                             n_features=2,
+    old_data_points, old_data_labels = data_points, data_labels = make_blobs(n_samples=1000,
+                                                                             n_features=5,
                                                                              centers=2,
                                                                              random_state=6)
 
@@ -646,10 +662,14 @@ def main():
     clf, old_data_points, old_data_labels = clean_set(first_clf, old_data_points,
                                                                  old_data_labels)
 
+    #dimension reduction
+    
+    data_points, rotated_support_vectors = dimension_projection(data_points, clf)
+
     rotation_steps = []
 
     while(len(clf.support_vectors_) > 2):
-        clf, data_points, data_labels, rotation_data = fold(clf, data_points, data_labels)
+        clf, data_points, data_labels, rotation_data = fold(clf, data_points, data_labels, support_vectors)
         rotation_steps.append(rotation_data)
 
 
