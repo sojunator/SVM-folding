@@ -2,7 +2,7 @@ from sklearn import svm
 from sklearn import datasets
 from sklearn.model_selection import train_test_split
 from sklearn.datasets import make_blobs
-
+from hpf_helpers import plot
 from hpf import HPF
 
 import matplotlib.pyplot as plt
@@ -17,6 +17,6 @@ data_points, data_labels = make_blobs(n_samples=40,
                                      random_state=6)
 
 test = HPF(data_points, data_labels)
-
+plot(test)
 
 print(test.classify(np.array([[6.4, -4.8],[5.4, -7.5]])))
