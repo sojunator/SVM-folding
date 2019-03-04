@@ -307,39 +307,7 @@ class HPF:
 
         return orthonormated_vectors
 
-    def linind(self, support_vectors):#asdfasdfc
-
-        linearly_independent_support_vectors = support_vectors
-
-        progresser = 0
-        i = 0
-        while i < len(linearly_independent_support_vectors) - 1:
-
-            li_vec1 = linearly_independent_support_vectors[i]
-
-            linearlyDependent = False
-            dependentIndexes = np.ones(len(linearly_independent_support_vectors), dtype=bool)
-
-
-
-            for k in range(progresser + 1, len(linearly_independent_support_vectors)):
-
-                li_vec2 = linearly_independent_support_vectors[k]
-
-                if cauchy_schwarz_equal(li_vec1, li_vec2):#if true, li_vec1 and li_vec2 are dependent according to cauchy-schwarz-inequality
-                    dependentIndexes[k] = False
-                    linearlyDependent = True
-
-
-            if linearlyDependent:
-                linearly_independent_support_vectors = linearly_independent_support_vectors[dependentIndexes]# remove vectors that were dependent with li_vec1
-            else:
-                progresser += 1 # increment 'progresser', since vec[i] is independent
-
-            i = progresser # reset iteration
-
-        return linearly_independent_support_vectors
-
+    
     def cauchy_schwarz_equal(self, v1, v2):
         """
         returns true if the cauchy-schwarz inequality is equal, meaning that they are linearly dependent
@@ -383,14 +351,6 @@ class HPF:
 
 
         return linearly_independent_support_vectors
-
-    def align_axis(self, support_vectors):
-
-        linearly_independent_support_vectors = 0
-
-        orthonormated_basis = grahm_schmidt_orthonorm(linearly_independent_support_vectors)
-
-        return
 
     def get_direction_between_two_vectors_in_set_with_smallest_distance(self, set, dim):
         """
