@@ -277,6 +277,233 @@ class HPF:
 
         return self.clf.predict(points)
 
+    def grahm_schmidt_orthonorm(self, linearly_independent_support_vectors):
+
+        orthonormated_vectors = []#stores the new basis
+
+        vec = linearly_independent_support_vectors[0]
+        vec = vec / np.linalg.norm(vec)#first entry is just the itself normalized
+        orthonormated_vectors.append(vec)
+
+        i = 0
+        for v in linearly_independent_support_vectors[1:]:
+
+            vec = 0
+            for u in orthonormated_vectors:
+                projection = np.dot(v,u) * u
+                projection[np.abs(projection) < 0.000001] = 0
+                vec -= projection
+
+            vec = v + vec
+            vec[np.abs(vec) < 0.000001] = 0
+
+            if all(v == 0 for v in vec):#if true then this vector is dependent on it's predicessors
+                print(i)
+
+            i += 1
+
+            vec = vec / np.linalg.norm(vec)
+            orthonormated_vectors.append(vec)
+
+        return orthonormated_vectors
+
+    def linind(self, support_vectors):#asdfasdfc
+
+        linearly_independent_support_vectors = support_vectors
+
+        progresser = 0
+        i = 0
+        while i < len(linearly_independent_support_vectors) - 1:
+
+            li_vec1 = linearly_independent_support_vectors[i]
+
+            linearlyDependent = False
+            dependentIndexes = np.ones(len(linearly_independent_support_vectors), dtype=bool)
+
+
+
+            for k in range(progresser + 1, len(linearly_independent_support_vectors)):
+
+                li_vec2 = linearly_independent_support_vectors[k]
+
+                if cauchy_schwarz_equal(li_vec1, li_vec2):#if true, li_vec1 and li_vec2 are dependent according to cauchy-schwarz-inequality
+                    dependentIndexes[k] = False
+                    linearlyDependent = True
+
+
+            if linearlyDependent:
+                linearly_independent_support_vectors = linearly_independent_support_vectors[dependentIndexes]# remove vectors that were dependent with li_vec1
+            else:
+                progresser += 1 # increment 'progresser', since vec[i] is independent
+
+            i = progresser # reset iteration
+
+        return linearly_independent_support_vectors
+
+    def cauchy_schwarz_equal(self, v1, v2):
+        """
+        returns true if the cauchy-schwarz inequality is equal, meaning that they are linearly dependent
+        if the function returns true, the vectors are linearly dependent, and one of the vectors can be removed
+        """
+
+        #inner product
+        ipLeft = np.dot(v1, v2)
+
+        return ipLeft * ipLeft == np.dot(v1,v1) * np.dot(v2,v2)
+
+    def get_linearly_independent_support_vectors(self, support_vectors):
+
+        linearly_independent_support_vectors = support_vectors
+
+        progresser = 0
+        i = 0
+        while i < len(linearly_independent_support_vectors) - 1:
+
+            li_vec1 = linearly_independent_support_vectors[i]
+
+            linearlyDependent = False
+            dependentIndexes = np.ones(len(linearly_independent_support_vectors), dtype=bool)
+
+
+            for k in range(progresser + 1, len(linearly_independent_support_vectors)):
+
+                li_vec2 = linearly_independent_support_vectors[k]
+
+                if cauchy_schwarz_equal(li_vec1, li_vec2):#if true, li_vec1 and li_vec2 are dependent according to cauchy-schwarz-inequality
+                    dependentIndexes[k] = False
+                    linearlyDependent = True
+
+
+            if linearlyDependent:
+                linearly_independent_support_vectors = linearly_independent_support_vectors[dependentIndexes]# remove vectors that were dependent with li_vec1
+            else:
+                progresser += 1 # increment 'progresser', since vec[i] is independent
+
+            i = progresser # reset iteration
+
+
+        return linearly_independent_support_vectors
+
+    def align_axis(self, support_vectors):
+
+        linearly_independent_support_vectors = 0
+
+        orthonormated_basis = grahm_schmidt_orthonorm(linearly_independent_support_vectors)
+
+        return
+
+    def get_direction_between_two_vectors_in_set_with_smallest_distance(self, set, dim):
+        """
+        Finds the shortest distance between two vectors within the given set.
+        """
+        if (len(set) <2):
+            print("Error, less than two support vectors in set")
+            return
+
+        bestDir = set[0] - set[1]
+        bestDist = np.linalg.norm(bestDir)
+
+        for index_v1 in range(0, len(set)):
+            vec1 = set[index_v1]
+            for vec2 in set[index_v1 + 1:]:
+
+                dir = vec1 - vec2
+                dist = np.linalg.norm(dir)
+                if dist < bestDist:#found two vecs with shorter distance inbetween
+                    bestDist = dist
+                    bestDir = dir
+
+        return bestDir[:dim]
+
+    def get_rotation_matrix_onto_lower_dimension(self, support_vectors_from_one_class, dim):
+        """
+        Forms a lower triangular rotation matrix
+        In the function, 'diagonal' is NOT denoted as the 'center'-diagonal. It is selected as: matrix[row][row+1] for a row-major matrix
+        """
+
+        rotation_matrix = np.zeros((dim,dim))
+
+        #d is the shortest direction between two support vectors in one of the classes
+        dir = get_direction_between_two_vectors_in_set_with_smallest_distance(support_vectors_from_one_class, dim)
+
+        #Wk = sqrt(v1^2 + v2^2 ... + vk^2)
+        squaredElementsAccumulator = dir[0] * dir[0] + dir[1] * dir[1]
+
+        Wk = dir[0]#for k = 1
+        Wkp1 = np.sqrt(squaredElementsAccumulator)
+
+        #first row
+        if Wkp1 != 0:
+            rotation_matrix[0][0] = dir[1] / Wkp1#first element
+            rotation_matrix[0][1] = -Wk / Wkp1#first diagonal element
+        else:
+            rotation_matrix[0][0] = 1#first element
+            rotation_matrix[0][1] = 0#first diagonal element
+
+
+        #middle rows
+        for row in range(1, dim - 1):
+
+            diagonalElement = dir[row + 1]#row + 1 is the k'th element in the vector
+            squaredElementsAccumulator += diagonalElement * diagonalElement#accumulate next step, square next element
+
+            Wk = Wkp1
+            Wkp1 = np.sqrt(squaredElementsAccumulator)
+
+            #diagonal entry in matrix
+            U = 0
+            if Wkp1 != 0:
+                U = Wk / Wkp1
+
+            rotation_matrix[row][row + 1] = -U
+
+            #denominator per row
+            denominator = Wk * Wkp1
+
+            if denominator == 0:
+                rotation_matrix[row][row] = 1
+
+            else:
+                i = 0
+                for element in dir[0:row+1]:
+                    rotation_matrix[row][i] = element*diagonalElement / denominator
+                    i+=1
+
+        #last row in matrix
+        if Wkp1 != 0:
+            rotation_matrix[dim-1] = [element / Wkp1 for element in dir]
+        else:
+            rotation_matrix[dim-1][dim-1] = 1
+
+
+        return rotation_matrix
+
+    def dimension_projection(self, support_dict):
+        #Input: full dataset for a clf, and support vectors separated into classes in a dictionary
+        #if supportvectors  -> k < n + 1 run align axis aka if(n <= currentDim) then -> align_axis
+        #align_axis
+
+        rotDim = dim = len(support_dict[0][0])
+
+        while rotDim > 2:
+            support_vectors_from_one_class = 0
+            if (len(support_dict[0]) > len(support_dict[1])):#pick class with most vectors in
+                support_vectors_from_one_class = support_dict[0]
+            else:
+                support_vectors_from_one_class = support_dict[1]
+
+            rotation_matrix = get_rotation_matrix_onto_lower_dimension(support_vectors_from_one_class, rotDim)
+
+            #rotate all datapoint
+            rotDim -= 1
+            self.data_points = [np.matmul(rotation_matrix, point)[:rotDim] for point in self.data_points]
+            support_dict[0] = [np.matmul(rotation_matrix, point)[:rotDim] for point in support_dict[0]]
+            support_dict[1] = [np.matmul(rotation_matrix, point)[:rotDim] for point in support_dict[1]]
+
+
+        return dataset, support_dict
+
+
     def create_classifier(self):
         while(len(self.clf.support_vectors_) > 2):
             self.fold()
