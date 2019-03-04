@@ -564,7 +564,6 @@ def fold(old_clf, data_points, data_labels):
 
     # merge
     new_clf = right_clf if left_or_right else left_clf
-
     # Used for highlighting the sets
     right_set[0] = np.vstack(right_set[0])
     left_set[0] = np.vstack(left_set[0])
@@ -670,6 +669,7 @@ def main():
     while(len(clf.support_vectors_) > 2):
         clf, data_points, data_labels, rotation_data = fold(clf, data_points, data_labels)
         rotation_steps.append(rotation_data)
+        print(rotation_data[2])
 
 
     old_margin = get_margin(first_clf)
@@ -681,8 +681,8 @@ def main():
 
     print(classify(clf, np.array([[6.4, -4.8],[5.4, -7.5]]), rotation_steps))
 
-    plot(first_clf, clf, data_points, data_labels)
-    plot(first_clf, clf, old_data_points, old_data_labels)
+    #plot(first_clf, clf, data_points, data_labels)
+    #plot(first_clf, clf, old_data_points, old_data_labels)
 
 if __name__ == "__main__":
     main()
