@@ -2,12 +2,14 @@ from sklearn import svm
 from sklearn import datasets
 from sklearn.model_selection import train_test_split
 from sklearn.datasets import make_blobs
-from hpf_helpers import plot
-from hpf import HPF
-
 import matplotlib.pyplot as plt
 import numpy as np
 import math
+import json
+
+from hpf_helpers import plot
+from hpf import HPF
+
 
 
 
