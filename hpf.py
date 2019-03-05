@@ -244,7 +244,10 @@ class HPF:
         left_set[0] = np.vstack(left_set[0])
 
 
-    def classify(self, points):
+    def classify(self, points, rotate=True):
+        if not rotate:
+            return self.old_clf.predict(points)
+            
         for rotation in self.rotation_data:
             #unpackage the mess
             intersection_point = rotation[0]
