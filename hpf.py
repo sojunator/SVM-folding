@@ -1,11 +1,13 @@
 from sklearn import svm
 from sklearn import datasets
 from sklearn.model_selection import train_test_split
+from sklearn.model_selection import KFold
 from sklearn.datasets import make_blobs
 
 import matplotlib.pyplot as plt
 import numpy as np
 import math
+import json
 
 
 class HPF:
@@ -153,8 +155,8 @@ class HPF:
         """
         rotation_matrix = self.get_rotation(angle)
 
-        point = np.matmul(point.T - intersection_point, rotation_matrix) + intersection_point
-
+        #point = np.matmul(point.T - intersection_point, rotation_matrix) + intersection_point
+        point = self.rot_func(point, intersection_point, rotation_matrix)
         return point
 
 
@@ -504,20 +506,34 @@ class HPF:
     def create_classifier(self):
         while(len(self.clf.support_vectors_) > 2):
             self.fold()
-            print(self.get_margin(self.clf))
+            self.new_margin = self.get_margin(self.clf)
 
 
-    def __init__(self, data_points, data_labels):
+    def __init__(self, data_points, data_labels, rot_func = lambda p, i, r : np.matmul(p.T - i, r) + i):
         self.data_points = data_points
         self.data_labels = data_labels
         self.clf = svm.SVC(kernel='linear', C=1000)
         self.old_clf = svm.SVC(kernel='linear', C=1000)
         self.rotation_data = []
+        self.rot_func = rot_func
+
 
         self.clf.fit(data_points, data_labels)
         self.old_clf.fit(data_points, data_labels)
-        
+        self.old_margin = self.get_margin(self.old_clf)
         self.support_vectors = self.clf.support_vectors_
 
 
         self.create_classifier()
+
+    def __gr__(self, other):
+        return self.new_margin - self.old_margin < other.new_margin - self.old_margin
+
+    def json(self):
+        dict = {}
+        dict["margin"] = self.new_margin
+        dict["old_margin"] = self.old_margin
+        dict["increase_margin"] = self.new_margin - self.old_margin
+        dict = json.dumps(dict)
+        dict = json.loads(dict)
+        return dict
