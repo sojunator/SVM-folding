@@ -91,6 +91,7 @@ class HPF:
         a = -w[1]
         b = w[0]
 
+        #Subtract one vector from another of the other class to get a point in the hyperplane
         cd = (vectors[0][0] - vectors[1][0]) / 2
 
         c = cd[0]
@@ -132,6 +133,7 @@ class HPF:
         support_dict = {}
 
         for vector in self.support_vectors:
+
             key = self.clf.predict([vector])[0]
 
             if key not in support_dict:
@@ -504,29 +506,27 @@ class HPF:
             #Rotate until we have three support vectors.
             nr_of_support_vectors = len(support_dict[0]) + len(support_dict[1])
             if nr_of_support_vectors < 3:
-                self.data_points = dataset
-                all_support_vectors = [val for lst in support_dict.values() for val in lst]#group support vectors into one array
-                self.support_vectors = all_support_vectors
+                #self.data_points = dataset
+                #all_support_vectors = [val for lst in support_dict.values() for val in lst]#group support vectors into one array
+                #self.support_vectors = all_support_vectors
                 return
         
             if nr_of_support_vectors == 3 and nr_of_coordinates > 2:
+
                 all_support_vectors = [val for lst in support_dict.values() for val in lst]#group support vectors into one array
+                all_support_vectors = np.stack(all_support_vectors, axis=0)
                 rotation_matrix = self.get_orthonormal_basis_from_support_vectors(all_support_vectors)
-            
+
                 for i in range(0, len(dataset)):
                     dataset[i][:nr_of_coordinates] = np.matmul(rotation_matrix, dataset[i][:nr_of_coordinates])
            
                 for i in range(0, len(all_support_vectors)):
                     all_support_vectors[i][:nr_of_coordinates] = np.matmul(rotation_matrix, all_support_vectors[i][:nr_of_coordinates])
 
-            
-        #dataset2d = np.delete(dataset, np.s_[-dim+2], axis = 1)
-        #support_dict2d = support_dict
-        #support_dict2d[0] = np.delete(support_dict2d[0], np.s_[-dim+2], axis = 1)
-        #support_dict2d[1] = np.delete(support_dict2d[1], np.s_[-dim+2], axis = 1)
-                
-                self.data_points = dataset
-                self.support_vectors = all_support_vectors
+        
+                self.data_points = [x[:2] for x in dataset]
+                self.leftover_coordinates = [x[2:] for x in dataset]
+                self.support_vectors = all_support_vectors#[x[:2] for x in all_support_vectors]
 
                 return 
 
@@ -604,6 +604,7 @@ class HPF:
     def __init__(self, data_points, data_labels, rot_func = lambda p, i, r : np.matmul(p.T - i, r) + i):
         self.data_points = data_points
         self.data_labels = data_labels
+        self.leftover_coordinates = None
         self.clf = svm.SVC(kernel='linear', C=1000)
         self.old_clf = svm.SVC(kernel='linear', C=1000)
         self.rotation_data = []
@@ -616,6 +617,13 @@ class HPF:
         self.support_vectors = self.clf.support_vectors_
 
         self.dimension_projection()
+
+        #asdf = self.support_vectors
+
+        self.clf.fit(self.data_points, self.data_labels)
+
+        
+        self.support_vectors = self.clf.support_vectors_
 
         self.create_classifier()
 

@@ -23,7 +23,7 @@ def plot(hpf):
     """
     X = hpf.data_points
     if (len(X[0]) > 2):
-     X = [x[:2] for x in X]
+        X = [x[:2] for x in X]
 
     plt.scatter(X[:, 0], X[:, 1], c=hpf.data_labels, s=30, cmap=plt.cm.Paired)
     ax = plt.gca()
