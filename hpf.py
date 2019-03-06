@@ -337,7 +337,7 @@ class HPF:
 
             for second_vector in vectors[i + 1:]:
 
-                if not(cauchy_schwarz_equal(first_vector, second_vector)):#if not equal, then they are independent.
+                if not(self.cauchy_schwarz_equal(first_vector, second_vector)):#if not equal, then they are independent.
 
                     matrix = np.array([first_vector, second_vector])
 
@@ -377,7 +377,7 @@ class HPF:
             
         return matrix
 
-    def get_orthonormal_basis_from_support_vectors(support_vectors):
+    def get_orthonormal_basis_from_support_vectors(self, support_vectors):
 
         #make the first support vector the new 'origin'
         new_origin = support_vectors[0]
@@ -387,16 +387,16 @@ class HPF:
         direction_vectors = [vector - new_origin for vector in support_vectors[1:]]
 
         #Start with finding two linearly independent vectors of any class using cauchy schwarz inequality
-        matrix = find_two_linearly_independent_vectors(direction_vectors)
+        matrix = self.find_two_linearly_independent_vectors(direction_vectors)
     
         #add the base vectors to complement for the vectors that arn't linearly independent
         direction_vectors = np.vstack([direction_vectors, np.identity(dim)])
 
         #find linearly independent vectors and add them to the matrix
-        matrix = find_linear_independent_vectors(direction_vectors, matrix)
+        matrix = self.find_linear_independent_vectors(direction_vectors, matrix)
     
         #create orthonormated vectors with grahm schmidt
-        matrix = grahm_schmidt_orthonorm(matrix)
+        matrix = self.grahm_schmidt_orthonorm(matrix)
 
         return matrix
 
@@ -490,51 +490,56 @@ class HPF:
 
         return rotation_matrix
 
-    def dimension_projection(self, dataset, clf):#Input: full dataset for a clf, and support vectors separated into classes in a dictionary
+    def dimension_projection(self):#Input: full dataset for a clf, and support vectors separated into classes in a dictionary
         #if supportvectors  -> k < n + 1 run align axis aka if(n <= currentDim) then -> align_axis
         #align_axis
 
-        support_dict = group_support_vectors(clf.support_vectors_, clf)
+        support_dict = self.group_support_vectors()
         nr_of_coordinates = len(support_dict[0][0])
+        dataset = self.data_points
+
 
         while nr_of_coordinates > 2:
         
             #Rotate until we have three support vectors.
             nr_of_support_vectors = len(support_dict[0]) + len(support_dict[1])
             if nr_of_support_vectors < 3:
-                return dataset, support_dict
-        
-            if nr_of_support_vectors == 3:
+                self.data_points = dataset
                 all_support_vectors = [val for lst in support_dict.values() for val in lst]#group support vectors into one array
-                rotation_matrix = get_orthonormal_basis_from_support_vectors(all_support_vectors)
+                self.support_vectors = all_support_vectors
+                return
+        
+            if nr_of_support_vectors == 3 and nr_of_coordinates > 2:
+                all_support_vectors = [val for lst in support_dict.values() for val in lst]#group support vectors into one array
+                rotation_matrix = self.get_orthonormal_basis_from_support_vectors(all_support_vectors)
             
                 for i in range(0, len(dataset)):
                     dataset[i][:nr_of_coordinates] = np.matmul(rotation_matrix, dataset[i][:nr_of_coordinates])
            
-                for i in range(0, len(support_dict[0])):
-                    support_dict[0][i][:nr_of_coordinates] = np.matmul(rotation_matrix, support_dict[0][i][:nr_of_coordinates])
+                for i in range(0, len(all_support_vectors)):
+                    all_support_vectors[i][:nr_of_coordinates] = np.matmul(rotation_matrix, all_support_vectors[i][:nr_of_coordinates])
 
-                for i in range(0, len(support_dict[1])):
-                    support_dict[1][i][:nr_of_coordinates] = np.matmul(rotation_matrix, support_dict[1][i][:nr_of_coordinates])
             
         #dataset2d = np.delete(dataset, np.s_[-dim+2], axis = 1)
         #support_dict2d = support_dict
         #support_dict2d[0] = np.delete(support_dict2d[0], np.s_[-dim+2], axis = 1)
         #support_dict2d[1] = np.delete(support_dict2d[1], np.s_[-dim+2], axis = 1)
+                
+                self.data_points = dataset
+                self.support_vectors = all_support_vectors
 
-
-                return dataset, support_dict
+                return 
 
 
             #choose the class with most support vectors
             max_key = max(support_dict, key= lambda x: len(support_dict[x]))
         
             #get the direction between the vectors, and removes one of them from the dictionary
-            direction, support_dict[max_key] = get_direction_between_two_vectors_in_set_with_smallest_distance(support_dict[max_key], rotDim)
+            direction, support_dict[max_key] = self.get_direction_between_two_vectors_in_set_with_smallest_distance(support_dict[max_key], rotDim)
         
 
             #calculate alignment matrix
-            rotation_matrix = align_direction_matrix(direction)
+            rotation_matrix = self.align_direction_matrix(direction)
     
 
             #rotate all datapoints and support vectors
@@ -549,8 +554,8 @@ class HPF:
         
             nr_of_coordinates -= 1 #exclude last coordinate
 
-    
-        return dataset, support_dict
+
+        return
 
         def get_distance_from_line_to_point(self, w, point, point_on_line):
             v = point - point_on_line
