@@ -26,7 +26,7 @@ data_labels = np.array([1,1,1,0,0,0,1,0])
 
 en_helt_ny_clf = HPF(data_points, data_labels)
 
-print(en_helt_ny_clf.classify(np.array([[0.,2.,6.,5.,2.]]), False))
+print(en_helt_ny_clf.classify(np.array([[0.,2.]]))) #[0.,2.,6.,5.,2.]
 
 
 # Ideally, resulst should be the same, but they ain't due to overotation
