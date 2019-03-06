@@ -7,11 +7,11 @@ import numpy as np
 import math
 import json
 
-from hpf_helpers import plot
+from hpf_helpers import plot, read_data_from_folder
 from hpf import HPF
 
 
-
+print(read_data_from_folder("datasets"))
 
 X, y = make_blobs(n_samples=40,
                   n_features=2,

@@ -1,6 +1,9 @@
 from hpf import HPF
 import numpy as np
 import matplotlib.pyplot as plt
+from os import listdir
+from os.path import isfile, join
+import pandas as pd
 
 def plot_clf(clf, ax, XX, YY, colour='k'):
     """
@@ -44,3 +47,19 @@ def plot(hpf):
 
 
     plt.show()
+
+def read_data_from_folder(folder_name):
+    onlyfiles = [f for f in listdir(folder_name) if isfile(join(folder_name, f))]
+    datasets = {}
+    for file in onlyfiles:
+            df = pd.read_csv(folder_name + "/" + file)
+            temp = []
+            for row in df.iterrows():
+                index, data = row
+                temp.append(data.tolist())
+
+            data_points = [row[:-1] for row in temp]
+            data_labels = [row[-1] for row in temp]
+            datasets[file] = (data_points, data_labels)
+
+    return datasets

@@ -4,6 +4,7 @@ from sklearn.model_selection import train_test_split
 from sklearn.model_selection import KFold
 from sklearn.datasets import make_blobs
 
+
 import matplotlib.pyplot as plt
 import numpy as np
 import math
@@ -247,7 +248,7 @@ class HPF:
     def classify(self, points, rotate=True):
         if not rotate:
             return self.old_clf.predict(points)
-            
+
         for rotation in self.rotation_data:
             #unpackage the mess
             intersection_point = rotation[0]
@@ -312,7 +313,7 @@ class HPF:
 
         return orthonormated_vectors
 
-    
+
     def cauchy_schwarz_equal(self, v1, v2):
         """
         returns true if the cauchy-schwarz inequality is equal, meaning that they are linearly dependent
