@@ -282,19 +282,19 @@ class HPF:
 
         return self.clf.predict(points)
 
-    def grahm_schmidt_orthonorm(self, linearly_independent_support_vectors):
+    def grahm_schmidt_orthonorm(self, linearly_independent_matrix):
 
-        orthonormated_vectors = []#stores the new basis
+        orthonormal_vectors = []#stores the new basis
 
-        vec = linearly_independent_support_vectors[0]
+        vec = linearly_independent_matrix[0]
         vec = vec / np.linalg.norm(vec)#first entry is just the itself normalized
-        orthonormated_vectors.append(vec)
+        orthonormal_vectors.append(vec)
 
         i = 0
-        for v in linearly_independent_support_vectors[1:]:
+        for v in linearly_independent_matrix[1:]:
 
             vec = 0
-            for u in orthonormated_vectors:
+            for u in orthonormal_vectors:
                 projection = np.dot(v,u) * u
                 projection[np.abs(projection) < 0.000001] = 0
                 vec -= projection
@@ -308,9 +308,9 @@ class HPF:
             i += 1
 
             vec = vec / np.linalg.norm(vec)
-            orthonormated_vectors.append(vec)
+            orthonormal_vectors.append(vec)
 
-        return orthonormated_vectors
+        return orthonormal_vectors
 
     
     def cauchy_schwarz_equal(self, v1, v2):
@@ -324,38 +324,81 @@ class HPF:
 
         return ipLeft * ipLeft == np.dot(v1,v1) * np.dot(v2,v2)
 
-    def get_linearly_independent_support_vectors(self, support_vectors):
+    def find_two_linearly_independent_vectors(self, vectors):
+        """
+        Returns a matrix with the first two linearly independent vectors in it
+        """
 
-        linearly_independent_support_vectors = support_vectors
-
-        progresser = 0
+        matrix = None
         i = 0
-        while i < len(linearly_independent_support_vectors) - 1:
+        while i < len(vectors) - 1:
 
-            li_vec1 = linearly_independent_support_vectors[i]
+            first_vector = vectors[i]
 
-            linearlyDependent = False
-            dependentIndexes = np.ones(len(linearly_independent_support_vectors), dtype=bool)
+            for second_vector in vectors[i + 1:]:
 
+                if not(cauchy_schwarz_equal(first_vector, second_vector)):#if not equal, then they are independent.
 
-            for k in range(progresser + 1, len(linearly_independent_support_vectors)):
+                    matrix = np.array([first_vector, second_vector])
 
-                li_vec2 = linearly_independent_support_vectors[k]
+                    #exit
+                    i = len(vectors)
+                    break
 
-                if cauchy_schwarz_equal(li_vec1, li_vec2):#if true, li_vec1 and li_vec2 are dependent according to cauchy-schwarz-inequality
-                    dependentIndexes[k] = False
-                    linearlyDependent = True
+            i += 1
 
+        return matrix
 
-            if linearlyDependent:
-                linearly_independent_support_vectors = linearly_independent_support_vectors[dependentIndexes]# remove vectors that were dependent with li_vec1
-            else:
-                progresser += 1 # increment 'progresser', since vec[i] is independent
+    def find_linear_independent_vectors(self, vectors, matrix):
+        """
+        fills matrix with linear independent vectors
+        vectors must be complemented by appending the identity matrix for the dimension
+        otherwise the matrix will not be of correct dimensions
+        """
+        dim = len(vectors[0])
+        rank = np.linalg.matrix_rank(matrix)
 
-            i = progresser # reset iteration
+        for vector in vectors:
+            new_matrix = np.vstack([matrix, vector])
+            new_rank = np.linalg.matrix_rank(new_matrix)
 
+            if new_rank > rank: #if the rank is higher, the newly introduced vector is linearly independent with the vectors in the matrix, then add it to the matrix and start over with the rest of the vectors
 
-        return linearly_independent_support_vectors
+                matrix = new_matrix#find_linear_independent_vectors(vectors[i:], new_matrix, new_rank)
+
+                if len(matrix) == dim: 
+                    if np.linalg.det(matrix) != 0: #matrix is a basis
+                        return matrix
+                    else:
+                        print("SOMETHING WENT WRONG, Error: not a basis")
+                    
+
+                rank = new_rank
+            
+        return matrix
+
+    def get_orthonormal_basis_from_support_vectors(support_vectors):
+
+        #make the first support vector the new 'origin'
+        new_origin = support_vectors[0]
+        dim = len(new_origin)
+
+        #ceate direction vectors going from the new_origin to all points
+        direction_vectors = [vector - new_origin for vector in support_vectors[1:]]
+
+        #Start with finding two linearly independent vectors of any class using cauchy schwarz inequality
+        matrix = find_two_linearly_independent_vectors(direction_vectors)
+    
+        #add the base vectors to complement for the vectors that arn't linearly independent
+        direction_vectors = np.vstack([direction_vectors, np.identity(dim)])
+
+        #find linearly independent vectors and add them to the matrix
+        matrix = find_linear_independent_vectors(direction_vectors, matrix)
+    
+        #create orthonormated vectors with grahm schmidt
+        matrix = grahm_schmidt_orthonorm(matrix)
+
+        return matrix
 
     def get_direction_between_two_vectors_in_set_with_smallest_distance(self, set, dim):
         """
@@ -364,42 +407,44 @@ class HPF:
         if (len(set) <2):
             print("Error, less than two support vectors in set")
             return
-
-        bestDir = set[0] - set[1]
-        bestDist = np.linalg.norm(bestDir)
-
+    
+        best_dir = set[0] - set[1]
+        best_dist = np.linalg.norm(best_dir)
+        index_v1 = 0
         for index_v1 in range(0, len(set)):
             vec1 = set[index_v1]
             for vec2 in set[index_v1 + 1:]:
 
                 dir = vec1 - vec2
                 dist = np.linalg.norm(dir)
-                if dist < bestDist:#found two vecs with shorter distance inbetween
-                    bestDist = dist
-                    bestDir = dir
+                if dist < best_dist:#found two vecs with shorter distance inbetween
+                    best_dist = dist
+                    best_dir = dir
 
-        return bestDir[:dim]
+        set = np.delete(set, index_v1, 0)#remove one of the support vectors
 
-    def get_rotation_matrix_onto_lower_dimension(self, support_vectors_from_one_class, dim):
+        return best_dir[:dim], set
+
+    def align_direction_matrix(self, direction):
         """
+        Inputs a direction, from one point to another.
+        Dim, is a subdim of the total featurespace.
+
         Forms a lower triangular rotation matrix
         In the function, 'diagonal' is NOT denoted as the 'center'-diagonal. It is selected as: matrix[row][row+1] for a row-major matrix
         """
-
+        dim = len(direction)
         rotation_matrix = np.zeros((dim,dim))
 
-        #d is the shortest direction between two support vectors in one of the classes
-        dir = get_direction_between_two_vectors_in_set_with_smallest_distance(support_vectors_from_one_class, dim)
-
-        #Wk = sqrt(v1^2 + v2^2 ... + vk^2)
-        squaredElementsAccumulator = dir[0] * dir[0] + dir[1] * dir[1]
-
-        Wk = dir[0]#for k = 1
-        Wkp1 = np.sqrt(squaredElementsAccumulator)
-
+        #Wk = sqrt(v1^2 + v2^2 ... + vk^2) 
+        squared_elements_accumulator = direction[0] * direction[0] + direction[1] * direction[1]
+    
+        Wk = direction[0]#for k = 1
+        Wkp1 = np.sqrt(squared_elements_accumulator)
+    
         #first row
         if Wkp1 != 0:
-            rotation_matrix[0][0] = dir[1] / Wkp1#first element
+            rotation_matrix[0][0] = direction[1] / Wkp1#first element
             rotation_matrix[0][1] = -Wk / Wkp1#first diagonal element
         else:
             rotation_matrix[0][0] = 1#first element
@@ -408,21 +453,23 @@ class HPF:
 
         #middle rows
         for row in range(1, dim - 1):
-
-            diagonalElement = dir[row + 1]#row + 1 is the k'th element in the vector
-            squaredElementsAccumulator += diagonalElement * diagonalElement#accumulate next step, square next element
+        
+            subdiagonal_element = direction[row + 1]#row + 1 is the k'th element in the vector
+            squared_elements_accumulator += subdiagonal_element * subdiagonal_element#accumulate next step, square next element
 
             Wk = Wkp1
-            Wkp1 = np.sqrt(squaredElementsAccumulator)
+            Wkp1 = np.sqrt(squared_elements_accumulator)
 
-            #diagonal entry in matrix
+        
+            #subdiagonal
             U = 0
             if Wkp1 != 0:
                 U = Wk / Wkp1
 
-            rotation_matrix[row][row + 1] = -U
+            rotation_matrix[row][row + 1] = -U #subdiagonal entry in matrix
+             
 
-            #denominator per row
+            #denominator per row 
             denominator = Wk * Wkp1
 
             if denominator == 0:
@@ -430,50 +477,87 @@ class HPF:
 
             else:
                 i = 0
-                for element in dir[0:row+1]:
-                    rotation_matrix[row][i] = element*diagonalElement / denominator
+                for element in direction[0:row+1]:
+                    rotation_matrix[row][i] = element * subdiagonal_element / denominator
                     i+=1
 
         #last row in matrix
         if Wkp1 != 0:
-            rotation_matrix[dim-1] = [element / Wkp1 for element in dir]
+            rotation_matrix[dim-1] = [element / Wkp1 for element in direction]
         else:
             rotation_matrix[dim-1][dim-1] = 1
 
 
         return rotation_matrix
 
-    def dimension_projection(self, support_dict):
-        #Input: full dataset for a clf, and support vectors separated into classes in a dictionary
+    def dimension_projection(self, dataset, clf):#Input: full dataset for a clf, and support vectors separated into classes in a dictionary
         #if supportvectors  -> k < n + 1 run align axis aka if(n <= currentDim) then -> align_axis
         #align_axis
 
-        rotDim = dim = len(support_dict[0][0])
+        support_dict = group_support_vectors(clf.support_vectors_, clf)
+        nr_of_coordinates = len(support_dict[0][0])
 
-        while rotDim > 2:
-            support_vectors_from_one_class = 0
-            if (len(support_dict[0]) > len(support_dict[1])):#pick class with most vectors in
-                support_vectors_from_one_class = support_dict[0]
-            else:
-                support_vectors_from_one_class = support_dict[1]
+        while nr_of_coordinates > 2:
+        
+            #Rotate until we have three support vectors.
+            nr_of_support_vectors = len(support_dict[0]) + len(support_dict[1])
+            if nr_of_support_vectors < 3:
+                return dataset, support_dict
+        
+            if nr_of_support_vectors == 3:
+                all_support_vectors = [val for lst in support_dict.values() for val in lst]#group support vectors into one array
+                rotation_matrix = get_orthonormal_basis_from_support_vectors(all_support_vectors)
+            
+                for i in range(0, len(dataset)):
+                    dataset[i][:nr_of_coordinates] = np.matmul(rotation_matrix, dataset[i][:nr_of_coordinates])
+           
+                for i in range(0, len(support_dict[0])):
+                    support_dict[0][i][:nr_of_coordinates] = np.matmul(rotation_matrix, support_dict[0][i][:nr_of_coordinates])
 
-            rotation_matrix = get_rotation_matrix_onto_lower_dimension(support_vectors_from_one_class, rotDim)
+                for i in range(0, len(support_dict[1])):
+                    support_dict[1][i][:nr_of_coordinates] = np.matmul(rotation_matrix, support_dict[1][i][:nr_of_coordinates])
+            
+        #dataset2d = np.delete(dataset, np.s_[-dim+2], axis = 1)
+        #support_dict2d = support_dict
+        #support_dict2d[0] = np.delete(support_dict2d[0], np.s_[-dim+2], axis = 1)
+        #support_dict2d[1] = np.delete(support_dict2d[1], np.s_[-dim+2], axis = 1)
 
-            #rotate all datapoint
-            rotDim -= 1
-            self.data_points = [np.matmul(rotation_matrix, point)[:rotDim] for point in self.data_points]
-            support_dict[0] = [np.matmul(rotation_matrix, point)[:rotDim] for point in support_dict[0]]
-            support_dict[1] = [np.matmul(rotation_matrix, point)[:rotDim] for point in support_dict[1]]
+
+                return dataset, support_dict
 
 
+            #choose the class with most support vectors
+            max_key = max(support_dict, key= lambda x: len(support_dict[x]))
+        
+            #get the direction between the vectors, and removes one of them from the dictionary
+            direction, support_dict[max_key] = get_direction_between_two_vectors_in_set_with_smallest_distance(support_dict[max_key], rotDim)
+        
+
+            #calculate alignment matrix
+            rotation_matrix = align_direction_matrix(direction)
+    
+
+            #rotate all datapoints and support vectors
+            for i in range(0, len(dataset)):
+                dataset[i][:nr_of_coordinates] = np.matmul(rotation_matrix, dataset[i][:nr_of_coordinates])
+           
+            for i in range(0, len(support_dict[0])):
+                support_dict[0][i][:nr_of_coordinates] = np.matmul(rotation_matrix, support_dict[0][i][:nr_of_coordinates])
+
+            for i in range(0, len(support_dict[1])):
+                support_dict[1][i][:nr_of_coordinates] = np.matmul(rotation_matrix, support_dict[1][i][:nr_of_coordinates])
+        
+            nr_of_coordinates -= 1 #exclude last coordinate
+
+    
         return dataset, support_dict
 
-    def get_distance_from_line_to_point(self, w, point, point_on_line):
-        v = point - point_on_line
-        proj = vector_projection(v, w)
-        distance = np.linalg.norm(v - proj)
+        def get_distance_from_line_to_point(self, w, point, point_on_line):
+            v = point - point_on_line
+            proj = vector_projection(v, w)
+            distance = np.linalg.norm(v - proj)
 
-        return distance
+            return distance
 
 
     def clean_set(self):
@@ -526,6 +610,7 @@ class HPF:
         self.old_margin = self.get_margin(self.old_clf)
         self.support_vectors = self.clf.support_vectors_
 
+        self.dimension_projection()
 
         self.create_classifier()
 
