@@ -143,6 +143,14 @@ class HPF:
 
         return support_dict
 
+    def ungroup_support_vectors(self, support_dict):
+        """
+        returns list of support vectors
+        """
+        all_support_vectors = [val for lst in support_dict.values() for val in lst]#group support vectors into one array
+        all_support_vectors = np.stack(all_support_vectors, axis=0)
+        return all_support_vectors
+
 
     def get_rotation(self, alpha):
         theta = alpha
@@ -495,53 +503,44 @@ class HPF:
     def dimension_projection(self):#Input: full dataset for a clf, and support vectors separated into classes in a dictionary
         #if supportvectors  -> k < n + 1 run align axis aka if(n <= currentDim) then -> align_axis
         #align_axis
+        dataset = self.data_points
 
         support_dict = self.group_support_vectors()
         nr_of_coordinates = len(support_dict[0][0])
-        dataset = self.data_points
+        nr_of_support_vectors = len(support_dict[0]) + len(support_dict[1])
+            
+        #if three or more support vectors. And less support vectors than the current dimension. Reduce using the orthonormal basis from support vectors
+        if nr_of_support_vectors >= 3 and nr_of_support_vectors < nr_of_coordinates:
 
+            all_support_vectors = self.ungroup_support_vectors(support_dict)
+            rotation_matrix = self.get_orthonormal_basis_from_support_vectors(all_support_vectors)
 
-        while nr_of_coordinates > 2:
-        
-            #Rotate until we have three support vectors.
-            nr_of_support_vectors = len(support_dict[0]) + len(support_dict[1])
-            if nr_of_support_vectors < 3:
-                #self.data_points = dataset
-                #all_support_vectors = [val for lst in support_dict.values() for val in lst]#group support vectors into one array
-                #self.support_vectors = all_support_vectors
-                return
-        
-            if nr_of_support_vectors == 3 and nr_of_coordinates > 2:
-
-                all_support_vectors = [val for lst in support_dict.values() for val in lst]#group support vectors into one array
-                all_support_vectors = np.stack(all_support_vectors, axis=0)
-                rotation_matrix = self.get_orthonormal_basis_from_support_vectors(all_support_vectors)
-
-                for i in range(0, len(dataset)):
-                    dataset[i][:nr_of_coordinates] = np.matmul(rotation_matrix, dataset[i][:nr_of_coordinates])
+            #transform data and support vectors into the new subspace
+            for i in range(0, len(dataset)):
+                dataset[i][:nr_of_coordinates] = np.matmul(rotation_matrix, dataset[i][:nr_of_coordinates])
            
-                for i in range(0, len(all_support_vectors)):
-                    all_support_vectors[i][:nr_of_coordinates] = np.matmul(rotation_matrix, all_support_vectors[i][:nr_of_coordinates])
+            for i in range(0, len(support_dict[0])):
+                support_dict[0][i][:nr_of_coordinates] = np.matmul(rotation_matrix, support_dict[0][i][:nr_of_coordinates])
 
-        
-                self.data_points = [x[:2] for x in dataset]
-                self.leftover_coordinates = [x[2:] for x in dataset]
-                self.support_vectors = all_support_vectors#[x[:2] for x in all_support_vectors]
+            for i in range(0, len(support_dict[1])):
+                support_dict[1][i][:nr_of_coordinates] = np.matmul(rotation_matrix, support_dict[1][i][:nr_of_coordinates])
 
-                return 
+            #post rotation the dimension is lowered to the number of support vectors - 1
+            nr_of_coordinates = nr_of_support_vectors - 1
 
 
+        #Rotate/align support vectors until we reach 2D.
+        while nr_of_coordinates > 2:
+            
             #choose the class with most support vectors
             max_key = max(support_dict, key= lambda x: len(support_dict[x]))
         
             #get the direction between the vectors, and removes one of them from the dictionary
             direction, support_dict[max_key] = self.get_direction_between_two_vectors_in_set_with_smallest_distance(support_dict[max_key], rotDim)
         
-
             #calculate alignment matrix
             rotation_matrix = self.align_direction_matrix(direction)
     
-
             #rotate all datapoints and support vectors
             for i in range(0, len(dataset)):
                 dataset[i][:nr_of_coordinates] = np.matmul(rotation_matrix, dataset[i][:nr_of_coordinates])
@@ -554,6 +553,10 @@ class HPF:
         
             nr_of_coordinates -= 1 #exclude last coordinate
 
+
+        self.data_points = [x[:2] for x in dataset]#2d coordinates
+        self.leftover_coordinates = [x[2:] for x in dataset]
+        self.support_vectors = self.ungroup_support_vectors(support_dict)
 
         return
 
@@ -618,12 +621,6 @@ class HPF:
 
         self.dimension_projection()
 
-        #asdf = self.support_vectors
-
-        self.clf.fit(self.data_points, self.data_labels)
-
-        
-        self.support_vectors = self.clf.support_vectors_
 
         self.create_classifier()
 
