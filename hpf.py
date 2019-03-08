@@ -108,12 +108,12 @@ class HPF:
 
         return tk
 
-    def get_splitting_point(self, support_dict):
+    def get_splitting_point(self):
         """
         Finds and returns the primary support vector, splitting point
         """
 
-        tk = self.ordering_support(support_dict)
+        tk = self.ordering_support(self.support_vectors_dictionary)
 
         first_class = tk[0][2]
 
@@ -127,27 +127,26 @@ class HPF:
 
     def group_support_vectors(self):
         """
-        returns a dict containing lists of dicts, where key corresponds to class
+        groups the support vectors in the currently trained clf
         """
-        # contains a dict of support vectors and class
-        support_dict = {}
+        self.support_vectors_dictionary = {}
 
-        for vector in self.support_vectors:
+        for sv in self.clf.support_vectors_:
 
-            key = self.clf.predict([vector])[0]
+            key = self.clf.predict([sv])[0]
 
-            if key not in support_dict:
-                support_dict[key] = [vector]
+            if key not in self.support_vectors_dictionary:
+                self.support_vectors_dictionary[key] = [sv]
             else:
-                support_dict[key].append(vector)
+                self.support_vectors_dictionary[key].append(sv)
 
-        return support_dict
+        
 
-    def ungroup_support_vectors(self, support_dict):
+    def get_ungrouped_support_vectors(self):
         """
         returns list of support vectors
         """
-        all_support_vectors = [val for lst in support_dict.values() for val in lst]#group support vectors into one array
+        all_support_vectors = [val for lst in self.support_vectors_dictionary.values() for val in lst]#group support vectors into one array
         all_support_vectors = np.stack(all_support_vectors, axis=0)
         return all_support_vectors
 
@@ -220,11 +219,9 @@ class HPF:
         right_clf = svm.SVC(kernel='linear', C=1000)
         left_clf = svm.SVC(kernel='linear', C=1000)
 
-        # Orginal support vectors
-        support_dict = self.group_support_vectors()
-
+        
         # Splitting point
-        primary_support_vector = self.get_splitting_point(support_dict)
+        primary_support_vector = self.get_splitting_point()
 
         # Used for plotting where the split occoured
         splitting_point = primary_support_vector[0]#x-axis-location of primary vec
@@ -247,7 +244,7 @@ class HPF:
 
         # merge
         self.clf = right_clf if left_or_right else left_clf
-        self.support_vectors = self.clf.support_vectors_
+        self.group_support_vectors()
 
         # Used for highlighting the sets
         right_set[0] = np.vstack(right_set[0])
@@ -500,30 +497,37 @@ class HPF:
 
         return rotation_matrix
 
+    def transform_data_and_support_vectors(self, matrix, nr_of_coordinates):
+
+        #transform data and support vectors into the new subspace
+        for i in range(0, len(self.data_points)):
+            self.data_points[i][:nr_of_coordinates] = np.matmul(matrix, self.data_points[i][:nr_of_coordinates])
+        
+        #first class
+        for i in range(0, len(self.support_vectors_dictionary[0])):
+            self.support_vectors_dictionary[0][i][:nr_of_coordinates] = np.matmul(matrix, self.support_vectors_dictionary[0][i][:nr_of_coordinates])
+        
+        #second class
+        for i in range(0, len(self.support_vectors_dictionary[1])):
+            self.support_vectors_dictionary[1][i][:nr_of_coordinates] = np.matmul(matrix, self.support_vectors_dictionary[1][i][:nr_of_coordinates])
+
+        return
+
     def dimension_projection(self):#Input: full dataset for a clf, and support vectors separated into classes in a dictionary
         #if supportvectors  -> k < n + 1 run align axis aka if(n <= currentDim) then -> align_axis
         #align_axis
-        dataset = self.data_points
-
-        support_dict = self.group_support_vectors()
-        nr_of_coordinates = len(support_dict[0][0])
-        nr_of_support_vectors = len(support_dict[0]) + len(support_dict[1])
+       
+        nr_of_coordinates = len(self.support_vectors_dictionary[0][0])
+        nr_of_support_vectors = len(self.support_vectors_dictionary[0]) + len(self.support_vectors_dictionary[1])
             
         #if three or more support vectors. And less support vectors than the current dimension. Reduce using the orthonormal basis from support vectors
         if nr_of_support_vectors >= 3 and nr_of_support_vectors < nr_of_coordinates:
 
-            all_support_vectors = self.ungroup_support_vectors(support_dict)
-            rotation_matrix = self.get_orthonormal_basis_from_support_vectors(all_support_vectors)
+            all_support_vectors = self.get_ungrouped_support_vectors()
+            basis_matrix = self.get_orthonormal_basis_from_support_vectors(all_support_vectors)
 
-            #transform data and support vectors into the new subspace
-            for i in range(0, len(dataset)):
-                dataset[i][:nr_of_coordinates] = np.matmul(rotation_matrix, dataset[i][:nr_of_coordinates])
-           
-            for i in range(0, len(support_dict[0])):
-                support_dict[0][i][:nr_of_coordinates] = np.matmul(rotation_matrix, support_dict[0][i][:nr_of_coordinates])
-
-            for i in range(0, len(support_dict[1])):
-                support_dict[1][i][:nr_of_coordinates] = np.matmul(rotation_matrix, support_dict[1][i][:nr_of_coordinates])
+            #rotate data and support vectors
+            self.transform_data_and_support_vectors(basis_matrix, nr_of_coordinates)
 
             #post rotation the dimension is lowered to the number of support vectors - 1
             nr_of_coordinates = nr_of_support_vectors - 1
@@ -533,30 +537,30 @@ class HPF:
         while nr_of_coordinates > 2:
             
             #choose the class with most support vectors
-            max_key = max(support_dict, key= lambda x: len(support_dict[x]))
+            max_key = max(self.support_vectors_dictionary, key= lambda x: len(self.support_vectors_dictionary[x]))
         
-            #get the direction between the vectors, and removes one of them from the dictionary
-            direction, support_dict[max_key] = self.get_direction_between_two_vectors_in_set_with_smallest_distance(support_dict[max_key], rotDim)
+            #get the direction between the two support vectors, and removes one of them from the dictionary
+            direction, self.support_vectors_dictionary[max_key] = self.get_direction_between_two_vectors_in_set_with_smallest_distance(self.support_vectors_dictionary[max_key], rotDim)
         
             #calculate alignment matrix
             rotation_matrix = self.align_direction_matrix(direction)
     
             #rotate all datapoints and support vectors
-            for i in range(0, len(dataset)):
-                dataset[i][:nr_of_coordinates] = np.matmul(rotation_matrix, dataset[i][:nr_of_coordinates])
-           
-            for i in range(0, len(support_dict[0])):
-                support_dict[0][i][:nr_of_coordinates] = np.matmul(rotation_matrix, support_dict[0][i][:nr_of_coordinates])
-
-            for i in range(0, len(support_dict[1])):
-                support_dict[1][i][:nr_of_coordinates] = np.matmul(rotation_matrix, support_dict[1][i][:nr_of_coordinates])
+            self.transform_data_and_support_vectors(rotation_matrix, nr_of_coordinates)
         
-            nr_of_coordinates -= 1 #exclude last coordinate
+            #support vectors are aligned.
+            #exclude last coordinate for further iterations.
+            nr_of_coordinates -= 1 
 
 
-        self.data_points = [x[:2] for x in dataset]#2d coordinates
-        self.leftover_coordinates = [x[2:] for x in dataset]
-        self.support_vectors = self.ungroup_support_vectors(support_dict)
+        #By now, the data should be projected into two dimensions.
+        
+        #save the rest of the coordinates to go back into higher dimensions when done with folding.
+        self.leftover_coordinates = [x[2:] for x in self.data_points]
+
+        #Overwrite datapoints, with the 2D representation
+        self.data_points = [x[:2] for x in self.data_points]#2d coordinates
+
 
         return
 
@@ -617,7 +621,8 @@ class HPF:
         self.clf.fit(data_points, data_labels)
         self.old_clf.fit(data_points, data_labels)
         self.old_margin = self.get_margin(self.old_clf)
-        self.support_vectors = self.clf.support_vectors_
+        self.group_support_vectors()
+        
 
         self.dimension_projection()
 
