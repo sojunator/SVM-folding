@@ -24,7 +24,9 @@ X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.33, random
 data_points = np.array([[2.,7.,0.,2.,2.],[1.,5.,1.,2.,2.], [-1.,5.,2.,2.,2.], [-2.,3.,4.,5.,2.], [1.,2.,4.,5.,2.], [0.,0.,5.,5.,2.], [0.,4.,-1.,2.,2.], [0.,1.,5.,5.,2.]])
 data_labels = np.array([1,1,1,0,0,0,1,0])
 
-en_helt_ny_clf = HPF(data_points, data_labels)
+en_helt_ny_clf = HPF()
+
+en_helt_ny_clf.fit(data_points, data_labels)
 
 print(en_helt_ny_clf.classify(np.array([[0.,2.]]))) #[0.,2.,6.,5.,2.]
 

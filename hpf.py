@@ -210,7 +210,7 @@ class HPF:
         y = left_set[1] + right_set[1]
 
 
-        X = np.vstack(X)
+        #X = np.vstack(X)
 
         return (X, y, left_or_right, intersection_point)
 
@@ -587,11 +587,9 @@ class HPF:
         w = np.array(w[1], w[0]) # place the vector in the direction of the line
 
         # Orginal support vectors
-        support_dict = group_support_vectors(clf.support_vectors_, clf)
+        point_on_line = (self.support_vectors_dictionary[0][0] + self.support_vectors_dictionary[1][0]) / 2
 
-        point_on_line = (support_dict[0][0] + support_dict[1][0]) / 2
-
-        margin = get_distance_from_line_to_point(w, support_dict[0][0], point_on_line)
+        margin = get_distance_from_line_to_point(w, self.support_vectors_dictionary[0][0], point_on_line)
 
         for point in self.data_points:
             distance = get_distance_from_line_to_point(w, point, point_on_line)
@@ -639,32 +637,43 @@ class HPF:
 
                 self.data_labels = np.delete(self.data_labels, index)
 
-    def create_classifier(self):
-        while(len(self.clf.support_vectors_) > 2):
-            self.fold()
-            self.new_margin = self.get_margin(self.clf)
+    
+        
 
-
-    def __init__(self, data_points, data_labels, rot_func = lambda p, i, r : np.matmul(p.T - i, r) + i):
+    def fit(self, data_points, data_labels):
         self.data_points = data_points
         self.data_labels = data_labels
+        self.clf.fit(data_points, data_labels)
+        self.old_clf.fit(data_points, data_labels)
+        self.old_margin = self.get_margin(self.old_clf)
         self.leftover_coordinates = None
+        #group into classes / create support vector dictionary
+        self.group_support_vectors()
+        
+        #project
+        self.dimension_projection()
+        #self.data_points = np.hstack((self.data_points, self.leftover_coordinates))
+        #fold
+        current_fold = 0
+        while(len(self.clf.support_vectors_) > 2 or current_fold >= self.max_nr_of_folds):
+                self.fold()
+                self.new_margin = self.get_margin(self.clf)
+                current_fold += 1
+
+        #add leftover coordinates to reach original dimension
+        self.data_points = np.hstack((self.data_points, self.leftover_coordinates))
+
+        stopper = 0
+        
+    
+    def __init__(self, rot_func = lambda p, i, r : np.matmul(p.T - i, r) + i, max_nr_of_folds = 99999):
+        
+        self.max_nr_of_folds = max_nr_of_folds
         self.clf = svm.SVC(kernel='linear', C=1000)
         self.old_clf = svm.SVC(kernel='linear', C=1000)
         self.rotation_data = []
         self.rot_func = rot_func
 
-
-        self.clf.fit(data_points, data_labels)
-        self.old_clf.fit(data_points, data_labels)
-        self.old_margin = self.get_margin(self.old_clf)
-        self.group_support_vectors()
-        
-
-        self.dimension_projection()
-
-
-        self.create_classifier()
 
     def __gr__(self, other):
         return self.new_margin - self.old_margin < other.new_margin - self.old_margin
