@@ -234,11 +234,7 @@ class HPF:
         left_clf.fit(left_set[0], left_set[1])
 
         # Rotate and merge data sets back into one
-        self.data_points, self.data_labels, left_or_right, intersection_point = self.rotate_set(left_clf,
-                                                                                left_set,
-                                                                                right_clf,
-                                                                                right_set,
-                                                                                primary_support_vector)
+        self.data_points, self.data_labels, left_or_right, intersection_point = self.rotate_set(left_clf, left_set, right_clf, right_set, primary_support_vector)
 
         self.rotation_data.append((intersection_point, primary_support_vector, left_or_right, (right_clf, left_clf)))
 
@@ -540,7 +536,7 @@ class HPF:
             max_key = max(self.support_vectors_dictionary, key= lambda x: len(self.support_vectors_dictionary[x]))
         
             #get the direction between the two support vectors, and removes one of them from the dictionary
-            direction, self.support_vectors_dictionary[max_key] = self.get_direction_between_two_vectors_in_set_with_smallest_distance(self.support_vectors_dictionary[max_key], rotDim)
+            direction, self.support_vectors_dictionary[max_key] = self.get_direction_between_two_vectors_in_set_with_smallest_distance(self.support_vectors_dictionary[max_key], nr_of_coordinates)
         
             #calculate alignment matrix
             rotation_matrix = self.align_direction_matrix(direction)
@@ -654,14 +650,14 @@ class HPF:
 
         #fold until just two support vectors exist or max_nr_of_folds is reached
         current_fold = 0
-        while(len(self.clf.support_vectors_) > 2 or current_fold >= self.max_nr_of_folds):
+        while(len(self.clf.support_vectors_) > 2 and current_fold < self.max_nr_of_folds):
                 self.fold()
                 self.new_margin = self.get_margin(self.clf)
                 current_fold += 1
 
         stopper = 0
     
-    def __init__(self, rot_func = lambda p, i, r : np.matmul(p.T - i, r) + i, max_nr_of_folds = 99999):
+    def __init__(self, rot_func = lambda p, i, r : np.matmul(p.T - i, r) + i, max_nr_of_folds = 1):
         
         self.max_nr_of_folds = max_nr_of_folds
         self.clf = svm.SVC(kernel='linear', C=1000)
