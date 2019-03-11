@@ -58,8 +58,8 @@ def read_data_from_folder(folder_name):
                 index, data = row
                 temp.append(data.tolist())
 
-            data_points = [row[:-1] for row in temp]
-            data_labels = [row[-1] for row in temp]
+            data_points = np.array([row[:-1] for row in temp])
+            data_labels = np.array([row[-1] for row in temp])
             datasets[file] = (data_points, data_labels)
 
     return datasets

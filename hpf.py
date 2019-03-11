@@ -93,7 +93,7 @@ class HPF:
         b = w[0]
 
         #Subtract one vector from another of the other class to get a point in the hyperplane
-        cd = (vectors[0][0] - vectors[1][0]) / 2
+        cd = (vectors[0][0][:2] - vectors[1][0][:2]) / 2
 
         c = cd[0]
         d = cd[1]
@@ -157,16 +157,16 @@ class HPF:
         c, s = np.cos(theta), np.sin(theta)
         return np.array(((c,-s), (s, c)))
 
-    def rotate_point(self, point, angle, primary_support, intersection_point):
+    def rotate_point_2D(self, point, angle, primary_support, intersection_point):
         """
-        Returns the point rotated accordingly to rubberband folding
+        Returns the point, with it's xy-coordinates rotated accordingly to rubberband folding
 
         Does currently not apply rubberband folding, rotates points around intersection
         """
         rotation_matrix = self.get_rotation(angle)
 
         #point = np.matmul(point.T - intersection_point, rotation_matrix) + intersection_point
-        point = self.rot_func(point, intersection_point, rotation_matrix)
+        point[:2] = self.rot_func(point[:2], intersection_point, rotation_matrix)
         return point
 
 
@@ -192,18 +192,12 @@ class HPF:
         left_or_right = -1
 
         if (right_margin > left_margin):
-            right_set[0] = [self.rotate_point(point, angle, primary_support,
-                    intersection_point) for point in right_set[0]
-                        if not (point == primary_support).all()]
-                                    
+            right_set[0] = [self.rotate_point_2D(point, angle, primary_support, intersection_point) for point in right_set[0]]
             left_or_right = 0
 
         elif (left_margin > right_margin):
-
-            left_set[0] = [self.rotate_point(point, -angle, primary_support,
-                        intersection_point) for point in left_set[0]
-                            if not (point == primary_support).all()]
-
+            left_set[0] = [self.rotate_point_2D(point, -angle, primary_support, intersection_point)
+                                for point in left_set[0]]
             left_or_right = 1
 
         else:
@@ -215,7 +209,7 @@ class HPF:
         y = left_set[1] + right_set[1]
 
 
-        X = np.vstack(X)
+        #X = np.vstack(X)
 
         return (X, y, left_or_right, intersection_point)
 
@@ -240,11 +234,7 @@ class HPF:
         left_clf.fit(left_set[0], left_set[1])
 
         # Rotate and merge data sets back into one
-        self.data_points, self.data_labels, left_or_right, intersection_point = self.rotate_set(left_clf,
-                                                                                left_set,
-                                                                                right_clf,
-                                                                                right_set,
-                                                                                primary_support_vector)
+        self.data_points, self.data_labels, left_or_right, intersection_point = self.rotate_set(left_clf, left_set, right_clf, right_set, primary_support_vector)
 
         self.rotation_data.append((intersection_point, primary_support_vector, left_or_right, (right_clf, left_clf)))
 
@@ -288,7 +278,7 @@ class HPF:
                     else:
                         none_rotated_set.append(point)
 
-            rotated_set = [self.rotate_point(point, angle, primary_support_vector, intersection_point) for point in rotated_set]
+            rotated_set = [self.rotate_point_2D(point, angle, primary_support_vector, intersection_point) for point in rotated_set]
 
             points = np.asarray(rotated_set + none_rotated_set)
 
@@ -546,7 +536,7 @@ class HPF:
             max_key = max(self.support_vectors_dictionary, key= lambda x: len(self.support_vectors_dictionary[x]))
         
             #get the direction between the two support vectors, and removes one of them from the dictionary
-            direction, self.support_vectors_dictionary[max_key] = self.get_direction_between_two_vectors_in_set_with_smallest_distance(self.support_vectors_dictionary[max_key], rotDim)
+            direction, self.support_vectors_dictionary[max_key] = self.get_direction_between_two_vectors_in_set_with_smallest_distance(self.support_vectors_dictionary[max_key], nr_of_coordinates)
         
             #calculate alignment matrix
             rotation_matrix = self.align_direction_matrix(direction)
@@ -562,10 +552,10 @@ class HPF:
         #By now, the data should be projected into two dimensions.
         
         #save the rest of the coordinates to go back into higher dimensions when done with folding.
-        self.leftover_coordinates = [x[2:] for x in self.data_points]
+        #self.leftover_coordinates = [x[2:] for x in self.data_points]
 
         #Overwrite datapoints, with the 2D representation
-        self.data_points = [x[:2] for x in self.data_points]#2d coordinates
+       # self.data_points = [x[:2] for x in self.data_points]#2d coordinates
 
 
         return
@@ -592,11 +582,9 @@ class HPF:
         w = np.array(w[1], w[0]) # place the vector in the direction of the line
 
         # Orginal support vectors
-        support_dict = group_support_vectors(clf.support_vectors_, clf)
+        point_on_line = (self.support_vectors_dictionary[0][0] + self.support_vectors_dictionary[1][0]) / 2
 
-        point_on_line = (support_dict[0][0] + support_dict[1][0]) / 2
-
-        margin = get_distance_from_line_to_point(w, support_dict[0][0], point_on_line)
+        margin = get_distance_from_line_to_point(w, self.support_vectors_dictionary[0][0], point_on_line)
 
         for point in self.data_points:
             distance = get_distance_from_line_to_point(w, point, point_on_line)
@@ -644,32 +632,39 @@ class HPF:
 
                 self.data_labels = np.delete(self.data_labels, index)
 
-    def create_classifier(self):
-        while(len(self.clf.support_vectors_) > 2):
-            self.fold()
-            self.new_margin = self.get_margin(self.clf)
+    
+        
 
-
-    def __init__(self, data_points, data_labels, rot_func = lambda p, i, r : np.matmul(p.T - i, r) + i):
+    def fit(self, data_points, data_labels):
         self.data_points = data_points
         self.data_labels = data_labels
-        self.leftover_coordinates = None
+        self.clf.fit(data_points, data_labels)
+        self.old_clf.fit(data_points, data_labels)
+        self.old_margin = self.get_margin(self.old_clf)
+
+        #group into classes = create support_vectors_dictionary
+        self.group_support_vectors()
+        
+        #project onto 2D
+        self.dimension_projection()
+
+        #fold until just two support vectors exist or max_nr_of_folds is reached
+        current_fold = 0
+        while(len(self.clf.support_vectors_) > 2 and current_fold < self.max_nr_of_folds):
+                self.fold()
+                self.new_margin = self.get_margin(self.clf)
+                current_fold += 1
+
+        stopper = 0
+    
+    def __init__(self, rot_func = lambda p, i, r : np.matmul(p.T - i, r) + i, max_nr_of_folds = 1):
+        
+        self.max_nr_of_folds = max_nr_of_folds
         self.clf = svm.SVC(kernel='linear', C=1000)
         self.old_clf = svm.SVC(kernel='linear', C=1000)
         self.rotation_data = []
         self.rot_func = rot_func
 
-
-        self.clf.fit(data_points, data_labels)
-        self.old_clf.fit(data_points, data_labels)
-        self.old_margin = self.get_margin(self.old_clf)
-        self.group_support_vectors()
-        
-
-        self.dimension_projection()
-
-
-        self.create_classifier()
 
     def __gr__(self, other):
         return self.new_margin - self.old_margin < other.new_margin - self.old_margin
