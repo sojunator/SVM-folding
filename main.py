@@ -96,9 +96,6 @@ def find_two_linearly_independent_vectors(vectors):
 
         i += 1
 
-    #if matrix == None:
-     #   print("Error, no vectors are independent")
-
     return matrix
 
 def find_linear_independent_vectors(vectors, matrix):
@@ -129,7 +126,7 @@ def find_linear_independent_vectors(vectors, matrix):
 
 
 
-def get_orthonormated_basis_from_support_vectors(support_vectors):
+def get_orthonormal_basis_from_support_vectors(support_vectors):
 
     #make the first support vector the new 'origin'
     new_origin = support_vectors[0]
@@ -182,7 +179,7 @@ def get_direction_between_two_vectors_in_set_with_smallest_distance(set, dim):
 
     return best_dir[:dim], set
 
-def get_align_points_rotation_matrix(direction):
+def align_direction_matrix(direction):
     """
     Inputs a direction, from one point to another.
     Dim, is a subdim of the total featurespace.
@@ -264,7 +261,7 @@ def dimension_projection(dataset, clf):#Input: full dataset for a clf, and suppo
         
         if nr_of_support_vectors == 3:
             all_support_vectors = [val for lst in support_dict.values() for val in lst]#group support vectors into one array
-            rotation_matrix = get_orthonormated_basis_from_support_vectors(all_support_vectors)
+            rotation_matrix = get_orthonormal_basis_from_support_vectors(all_support_vectors)
             
             for i in range(0, len(dataset)):
                 dataset[i][:nr_of_coordinates] = np.matmul(rotation_matrix, dataset[i][:nr_of_coordinates])
@@ -292,7 +289,7 @@ def dimension_projection(dataset, clf):#Input: full dataset for a clf, and suppo
         
 
         #calculate alignment matrix
-        rotation_matrix = get_align_points_rotation_matrix(direction)
+        rotation_matrix = align_direction_matrix(direction)
     
 
         #rotate all datapoints and support vectors
@@ -646,12 +643,14 @@ def classify(clf, points, rotation_steps):
 
     return clf.predict(points)
 
+
+def get_test_rot_five_d():
+
+    return np.array([[2,7,0,2,2],[1,5,1,2,2], [-1,5,2,2,2], [-2,3,4,2,2], [1,2,4,2,2], [0,0,5,2,2]]), np.array([1,1,1,0,0,0])
+
 def main():
     # Dataset
-    old_data_points, old_data_labels = data_points, data_labels = make_blobs(n_samples=1000,
-                                                                             n_features=5,
-                                                                             centers=2,
-                                                                             random_state=6)
+    old_data_points, old_data_labels = data_points, data_labels = get_test_rot_five_d()#make_blobs(n_samples=5,n_features=5,centers=2,random_state=6)
 
     # Original SVM
     first_clf = clf = svm.SVC(kernel='linear', C=1000)
