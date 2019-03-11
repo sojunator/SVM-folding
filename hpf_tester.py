@@ -28,7 +28,7 @@ en_helt_ny_clf = HPF()
 
 en_helt_ny_clf.fit(data_points, data_labels)
 
-print(en_helt_ny_clf.classify(np.array([[0.,2.]]))) #[0.,2.,6.,5.,2.]
+print(en_helt_ny_clf.classify(np.array([[0.,2.,6.,5.,2.], [1.,6.,1.5,2.,2.],[0.,1.,5.,5.,2.]]))) #[0.,2.,6.,5.,2.]
 
 
 # Ideally, resulst should be the same, but they ain't due to overotation

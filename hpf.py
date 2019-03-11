@@ -93,7 +93,7 @@ class HPF:
         b = w[0]
 
         #Subtract one vector from another of the other class to get a point in the hyperplane
-        cd = (vectors[0][0] - vectors[1][0]) / 2
+        cd = (vectors[0][0][:2] - vectors[1][0][:2]) / 2
 
         c = cd[0]
         d = cd[1]
@@ -157,16 +157,16 @@ class HPF:
         c, s = np.cos(theta), np.sin(theta)
         return np.array(((c,-s), (s, c)))
 
-    def rotate_point(self, point, angle, primary_support, intersection_point):
+    def rotate_point_2D(self, point, angle, primary_support, intersection_point):
         """
-        Returns the point rotated accordingly to rubberband folding
+        Returns the point, with it's xy-coordinates rotated accordingly to rubberband folding
 
         Does currently not apply rubberband folding, rotates points around intersection
         """
         rotation_matrix = self.get_rotation(angle)
 
         #point = np.matmul(point.T - intersection_point, rotation_matrix) + intersection_point
-        point = self.rot_func(point, intersection_point, rotation_matrix)
+        point[:2] = self.rot_func(point[:2], intersection_point, rotation_matrix)
         return point
 
 
@@ -192,12 +192,11 @@ class HPF:
         left_or_right = -1
 
         if (right_margin > left_margin):
-            right_set[0] = [self.rotate_point(point, angle, primary_support, intersection_point)
-                                for point in right_set[0]]
+            right_set[0] = [self.rotate_point_2D(point, angle, primary_support, intersection_point) for point in right_set[0]]
             left_or_right = 0
 
         elif (left_margin > right_margin):
-            left_set[0] = [self.rotate_point(point, -angle, primary_support, intersection_point)
+            left_set[0] = [self.rotate_point_2D(point, -angle, primary_support, intersection_point)
                                 for point in left_set[0]]
             left_or_right = 1
 
@@ -283,7 +282,7 @@ class HPF:
                     else:
                         none_rotated_set.append(point)
 
-            rotated_set = [self.rotate_point(point, angle, primary_support_vector, intersection_point) for point in rotated_set]
+            rotated_set = [self.rotate_point_2D(point, angle, primary_support_vector, intersection_point) for point in rotated_set]
 
             points = np.asarray(rotated_set + none_rotated_set)
 
@@ -557,10 +556,10 @@ class HPF:
         #By now, the data should be projected into two dimensions.
         
         #save the rest of the coordinates to go back into higher dimensions when done with folding.
-        self.leftover_coordinates = [x[2:] for x in self.data_points]
+        #self.leftover_coordinates = [x[2:] for x in self.data_points]
 
         #Overwrite datapoints, with the 2D representation
-        self.data_points = [x[:2] for x in self.data_points]#2d coordinates
+       # self.data_points = [x[:2] for x in self.data_points]#2d coordinates
 
 
         return
@@ -646,25 +645,21 @@ class HPF:
         self.clf.fit(data_points, data_labels)
         self.old_clf.fit(data_points, data_labels)
         self.old_margin = self.get_margin(self.old_clf)
-        self.leftover_coordinates = None
-        #group into classes / create support vector dictionary
+
+        #group into classes = create support_vectors_dictionary
         self.group_support_vectors()
         
-        #project
+        #project onto 2D
         self.dimension_projection()
-        #self.data_points = np.hstack((self.data_points, self.leftover_coordinates))
-        #fold
+
+        #fold until just two support vectors exist or max_nr_of_folds is reached
         current_fold = 0
         while(len(self.clf.support_vectors_) > 2 or current_fold >= self.max_nr_of_folds):
                 self.fold()
                 self.new_margin = self.get_margin(self.clf)
                 current_fold += 1
 
-        #add leftover coordinates to reach original dimension
-        self.data_points = np.hstack((self.data_points, self.leftover_coordinates))
-
         stopper = 0
-        
     
     def __init__(self, rot_func = lambda p, i, r : np.matmul(p.T - i, r) + i, max_nr_of_folds = 99999):
         
