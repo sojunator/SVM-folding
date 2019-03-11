@@ -24,14 +24,14 @@ def plot(hpf):
     """
     God function that removes all the jitter from main
     """
-    X = hpf.data_points
+    X = np.array(hpf.data_points)
     if (len(X[0]) > 2):
      X = [x[:2] for x in X]
 
     plt.scatter(X[:, 0], X[:, 1], c=hpf.data_labels, s=30, cmap=plt.cm.Paired)
     ax = plt.gca()
-    xlim = (2, 10)
-    ylim = (-2, -11)
+    xlim = ax.get_xlim()
+    ylim = ax.get_ylim()
 
     #plt.axvline(x=splitting_point, color='k')
 
