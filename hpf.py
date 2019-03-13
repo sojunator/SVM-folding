@@ -180,7 +180,7 @@ class HPF:
         rotation_matrix = self.get_rotation(angle)
 
         #point = np.matmul(point.T - intersection_point, rotation_matrix) + intersection_point
-        point[:2] = self.rot_func(point[:2], intersection_point, rotation_matrix)
+        point = self.rot_func(point, intersection_point, rotation_matrix)
         return point
 
 
@@ -679,6 +679,7 @@ class HPF:
                 val = self.fold()
                 self.new_margin = self.get_margin(self.clf)
                 current_fold += 1
+                print(self.new_margin)
 
         if self.verbose:
             print("Number of folds: {}".format(current_fold))
