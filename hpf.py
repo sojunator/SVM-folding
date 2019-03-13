@@ -141,7 +141,7 @@ class HPF:
             else:
                 self.support_vectors_dictionary[key].append(sv)
 
-        
+        print("Class 1: ", len(self.support_vectors_dictionary[0]), " Class  2: ", len(self.support_vectors_dictionary[1]))
 
     def get_ungrouped_support_vectors(self):
         """
@@ -650,7 +650,7 @@ class HPF:
 
         #fold until just two support vectors exist or max_nr_of_folds is reached
         current_fold = 0
-        while(len(self.clf.support_vectors_) > 2 and current_fold < self.max_nr_of_folds):
+        while(len(self.clf.support_vectors_) > 2):# and current_fold < self.max_nr_of_folds):
                 self.fold()
                 self.new_margin = self.get_margin(self.clf)
                 current_fold += 1
