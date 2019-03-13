@@ -23,13 +23,10 @@ Y_train = data_labels = np.array([0, 0, 0, 0, 0, 1, 1, 1, 0, 0])
 X_test = np.array([[6,45], [6, 20]])
 Y_test = np.array([0,1])
 """
-hpf = HPF(verbose=True, max_nr_of_folds=100)
+hpf = HPF(max_nr_of_folds=100)
 
 
-print(X_train)
 hpf.fit(X_train, Y_train)
 
 #print("\nHPF GIVEN ANSWER: ", hpf.classify(X_test))
 #print("\nEXPECTED  ANSWER: ", Y_test)
-
-plot(hpf)

@@ -130,7 +130,6 @@ class HPF:
         """
 
         tk = self.ordering_support(self.support_vectors_dictionary)
-
         first_class = tk[0][2]
 
         primary_support_vector = None
@@ -202,7 +201,7 @@ class HPF:
 
         # intersection data
         intersection_point, angle = self.get_intersection_point(left_clf, right_clf)
-
+        print(intersection_point)
         # if 1, left was rotated, 0 is right set.
         left_or_right = -1
 
@@ -221,7 +220,7 @@ class HPF:
 
         else:
             print("Cannot improve margin")
-        print(len(self.data_points))
+
 
         X = left_set[0] + right_set[0]
         y = left_set[1] + right_set[1]
@@ -253,7 +252,7 @@ class HPF:
             left_clf.fit(left_set[0], left_set[1])
         except ValueError:
             print("WARNING, ONLY ONE CLASS PRESENT IN A SET, ABORTING")
-            return
+            return -1
 
         # Rotate and merge data sets back into one
         self.data_points, self.data_labels, left_or_right, intersection_point = self.rotate_set(left_clf, left_set, right_clf, right_set, self.primary_support_vector)
@@ -267,7 +266,7 @@ class HPF:
         # Used for highlighting the sets
         right_set[0] = np.vstack(right_set[0])
         left_set[0] = np.vstack(left_set[0])
-
+        return 0
 
     def classify(self, points, rotate=True):
         if not rotate:
@@ -671,12 +670,13 @@ class HPF:
         self.group_support_vectors()
 
         #project onto 2D
-        self.dimension_projection()
+        #self.dimension_projection()
 
         #fold until just two support vectors exist or max_nr_of_folds is reached
         current_fold = 0
-        while(len(self.clf.support_vectors_) > 2):
-                self.fold()
+        val = 0
+        while(len(self.clf.support_vectors_) > 2 and val is 0):
+                val = self.fold()
                 self.new_margin = self.get_margin(self.clf)
                 current_fold += 1
 
@@ -695,8 +695,6 @@ class HPF:
 
                 print("margin of right clf: {}".format(self.get_margin(right_clf)))
 
-                print("orginal datapoints compared to new")
-                #print(self.data_points - self.old_data)
         stopper = 0
 
 
