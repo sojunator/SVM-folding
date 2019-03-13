@@ -5,20 +5,35 @@ from os import listdir
 from os.path import isfile, join
 import pandas as pd
 
-def plot_clf(clf, ax, XX, YY, colour='k'):
+def plot_hpf(hpf, ax, XX, YY, colour='k'):
     """
     Plots a clf, with margins, colour will be black
     """
 
+    clf = hpf.clf
     xy = np.vstack([XX.ravel(), YY.ravel()]).T
     Z = clf.decision_function(xy).reshape(XX.shape)
+
 
     ax.scatter(clf.support_vectors_[:, 0], clf.support_vectors_[:, 1], s=100,
            linewidth=1, facecolors='none', edgecolors=colour)
 
+    ax.scatter(hpf.primary_support_vector[0], hpf.primary_support_vector[1], s=100,
+           linewidth=4, facecolors='none', edgecolors='b')
+
     ax.contour(XX, YY, Z, colors=colour, levels=[-1, 0, 1], alpha=0.5,
            linestyles=['--', '-', '--'])
 
+    right_clf, left_clf = hpf.rotation_data[-1][-1]
+    Z = right_clf.decision_function(xy).reshape(XX.shape)
+
+    ax.contour(XX, YY, Z, colors='m', levels=[-1, 0, 1], alpha=0.5,
+           linestyles=['--', '-', '--'])
+
+    Z = left_clf.decision_function(xy).reshape(XX.shape)
+
+    ax.contour(XX, YY, Z, colors='y', levels=[-1, 0, 1], alpha=0.5,
+           linestyles=['--', '-', '--'])
 
 def plot(hpf):
     """
@@ -42,8 +57,8 @@ def plot(hpf):
     YY, XX = np.meshgrid(yy, xx)
 
 
-    plot_clf(hpf.clf, ax, XX, YY, 'g')
-    plot_clf(hpf.old_clf, ax, XX, YY, 'k')
+    plot_hpf(hpf, ax, XX, YY, 'g')
+    plot_hpf(hpf, ax, XX, YY, 'k')
 
 
     plt.show()

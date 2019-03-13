@@ -54,32 +54,6 @@ class HPF:
 
         return 1 / np.sqrt(np.sum(clf.coef_ ** 2))
 
-    def split_data(self, primary_support):
-        """
-        returns a list  containing left and right split.
-        """
-
-        right_set = [vector for vector in zip(self.data_points, self.data_labels) if vector[0][0] >= primary_support[0]]
-        left_set = [vector for vector in zip(self.data_points, self.data_labels) if vector[0][0] <= primary_support[0]]
-
-        right_x = []
-        right_y = []
-
-        for pair in right_set:
-            right_x.append(pair[0])
-            right_y.append(pair[1])
-
-
-        left_x = []
-        left_y = []
-
-        for pair in left_set:
-            left_x.append(pair[0])
-            left_y.append(pair[1])
-
-
-        return [[left_x, left_y], [right_x, right_y]]
-
     def ordering_support(self, vectors):
         """
         Returns the first possible primary support vector
@@ -92,8 +66,8 @@ class HPF:
         a = -w[1]
         b = w[0]
 
-        #Subtract one vector from another of the other class to get a point in the hyperplane
         cd = (vectors[0][0][:2] - vectors[1][0][:2]) / 2
+
 
         c = cd[0]
         d = cd[1]
@@ -108,6 +82,47 @@ class HPF:
         tk.sort(key=lambda x: x[0])
 
         return tk
+
+
+    def left_or_right_of_plane(self, point, primary_support):
+        w = self.clf.coef_[0]
+
+        a = -w[0] / w[1]
+
+        t = (point[0][0] - primary_support[0])/(-a)
+
+        if (point[0][1]) <= (primary_support[1] + t):
+            return 1
+        else:
+            return 0
+
+    def split_data(self, primary_support):
+        """
+        returns a list  containing left and right split.
+        """
+        #vector[0][0] >= primary_support[0]
+        right_set = [vector for vector in zip(self.data_points, self.data_labels) if vector[0][0] >= primary_support[0]]
+        left_set = [vector for vector in zip(self.data_points, self.data_labels) if vector[0][0] <= primary_support[0]]
+
+
+        right_x = []
+        right_y = []
+
+        # Split data and labels into different lists
+        for pair in right_set:
+            right_x.append(pair[0])
+            right_y.append(pair[1])
+
+
+        left_x = []
+        left_y = []
+
+        for pair in left_set:
+            left_x.append(pair[0])
+            left_y.append(pair[1])
+
+
+        return [[left_x, left_y], [right_x, right_y]]
 
     def get_splitting_point(self):
         """
@@ -141,7 +156,7 @@ class HPF:
             else:
                 self.support_vectors_dictionary[key].append(sv)
 
-        
+
 
     def get_ungrouped_support_vectors(self):
         """
@@ -191,21 +206,24 @@ class HPF:
         # if 1, left was rotated, 0 is right set.
         left_or_right = -1
 
-        if (right_margin > left_margin):
-            right_set[0] = [self.rotate_point_2D(point, angle, primary_support, intersection_point) for point in right_set[0]]
-            left_or_right = 0
 
+        if (right_margin > left_margin):
+            right_set[0] = [self.rotate_point_2D(point, angle, primary_support,
+                            intersection_point)
+                                for point in right_set[0]]
+            left_or_right = 0
+            print(len(right_set[0]))
         elif (left_margin > right_margin):
-            left_set[0] = [self.rotate_point_2D(point, -angle, primary_support, intersection_point)
+            left_set[0] = [self.rotate_point_2D(point, -angle, primary_support,
+                            intersection_point)
                                 for point in left_set[0]]
             left_or_right = 1
-
+            print(len(left_set[0]))
         else:
             print("Cannot improve margin")
-
+        print(len(self.data_points))
 
         X = left_set[0] + right_set[0]
-
         y = left_set[1] + right_set[1]
 
 
@@ -219,24 +237,29 @@ class HPF:
         right_clf = svm.SVC(kernel='linear', C=1000)
         left_clf = svm.SVC(kernel='linear', C=1000)
 
-        
+
         # Splitting point
-        primary_support_vector = self.get_splitting_point()
+        self.primary_support_vector = self.get_splitting_point()
 
         # Used for plotting where the split occoured
-        splitting_point = primary_support_vector[0]#x-axis-location of primary vec
+        splitting_point = self.primary_support_vector[0]#x-axis-location of primary vec
 
         # Subsets of datasets, left and right of primary support vector
-        left_set, right_set = self.split_data(primary_support_vector)
+        left_set, right_set = self.split_data(self.primary_support_vector)
 
         # New SVM, right
-        right_clf.fit(right_set[0], right_set[1])
-        left_clf.fit(left_set[0], left_set[1])
+        try:
+            right_clf.fit(right_set[0], right_set[1])
+            left_clf.fit(left_set[0], left_set[1])
+        except ValueError:
+            print("WARNING, ONLY ONE CLASS PRESENT IN A SET, ABORTING")
+            self.support_vectors = 2
+            return
 
         # Rotate and merge data sets back into one
-        self.data_points, self.data_labels, left_or_right, intersection_point = self.rotate_set(left_clf, left_set, right_clf, right_set, primary_support_vector)
+        self.data_points, self.data_labels, left_or_right, intersection_point = self.rotate_set(left_clf, left_set, right_clf, right_set, self.primary_support_vector)
 
-        self.rotation_data.append((intersection_point, primary_support_vector, left_or_right, (right_clf, left_clf)))
+        self.rotation_data.append((intersection_point, self.primary_support_vector, left_or_right, (right_clf, left_clf)))
 
         # merge
         self.clf = right_clf if left_or_right else left_clf
@@ -369,15 +392,15 @@ class HPF:
 
                 matrix = new_matrix#find_linear_independent_vectors(vectors[i:], new_matrix, new_rank)
 
-                if len(matrix) == dim: 
+                if len(matrix) == dim:
                     if np.linalg.det(matrix) != 0: #matrix is a basis
                         return matrix
                     else:
                         print("SOMETHING WENT WRONG, Error: not a basis")
-                    
+
 
                 rank = new_rank
-            
+
         return matrix
 
     def get_orthonormal_basis_from_support_vectors(self, support_vectors):
@@ -391,13 +414,13 @@ class HPF:
 
         #Start with finding two linearly independent vectors of any class using cauchy schwarz inequality
         matrix = self.find_two_linearly_independent_vectors(direction_vectors)
-    
+
         #add the base vectors to complement for the vectors that arn't linearly independent
         direction_vectors = np.vstack([direction_vectors, np.identity(dim)])
 
         #find linearly independent vectors and add them to the matrix
         matrix = self.find_linear_independent_vectors(direction_vectors, matrix)
-    
+
         #create orthonormated vectors with grahm schmidt
         matrix = self.grahm_schmidt_orthonorm(matrix)
 
@@ -410,7 +433,7 @@ class HPF:
         if (len(set) <2):
             print("Error, less than two support vectors in set")
             return
-    
+
         best_dir = set[0] - set[1]
         best_dist = np.linalg.norm(best_dir)
         index_v1 = 0
@@ -439,12 +462,12 @@ class HPF:
         dim = len(direction)
         rotation_matrix = np.zeros((dim,dim))
 
-        #Wk = sqrt(v1^2 + v2^2 ... + vk^2) 
+        #Wk = sqrt(v1^2 + v2^2 ... + vk^2)
         squared_elements_accumulator = direction[0] * direction[0] + direction[1] * direction[1]
-    
+
         Wk = direction[0]#for k = 1
         Wkp1 = np.sqrt(squared_elements_accumulator)
-    
+
         #first row
         if Wkp1 != 0:
             rotation_matrix[0][0] = direction[1] / Wkp1#first element
@@ -456,23 +479,23 @@ class HPF:
 
         #middle rows
         for row in range(1, dim - 1):
-        
+
             subdiagonal_element = direction[row + 1]#row + 1 is the k'th element in the vector
             squared_elements_accumulator += subdiagonal_element * subdiagonal_element#accumulate next step, square next element
 
             Wk = Wkp1
             Wkp1 = np.sqrt(squared_elements_accumulator)
 
-        
+
             #subdiagonal
             U = 0
             if Wkp1 != 0:
                 U = Wk / Wkp1
 
             rotation_matrix[row][row + 1] = -U #subdiagonal entry in matrix
-             
 
-            #denominator per row 
+
+            #denominator per row
             denominator = Wk * Wkp1
 
             if denominator == 0:
@@ -498,11 +521,11 @@ class HPF:
         #transform data and support vectors into the new subspace
         for i in range(0, len(self.data_points)):
             self.data_points[i][:nr_of_coordinates] = np.matmul(matrix, self.data_points[i][:nr_of_coordinates])
-        
+
         #first class
         for i in range(0, len(self.support_vectors_dictionary[0])):
             self.support_vectors_dictionary[0][i][:nr_of_coordinates] = np.matmul(matrix, self.support_vectors_dictionary[0][i][:nr_of_coordinates])
-        
+
         #second class
         for i in range(0, len(self.support_vectors_dictionary[1])):
             self.support_vectors_dictionary[1][i][:nr_of_coordinates] = np.matmul(matrix, self.support_vectors_dictionary[1][i][:nr_of_coordinates])
@@ -512,10 +535,10 @@ class HPF:
     def dimension_projection(self):#Input: full dataset for a clf, and support vectors separated into classes in a dictionary
         #if supportvectors  -> k < n + 1 run align axis aka if(n <= currentDim) then -> align_axis
         #align_axis
-       
+
         nr_of_coordinates = len(self.support_vectors_dictionary[0][0])
         nr_of_support_vectors = len(self.support_vectors_dictionary[0]) + len(self.support_vectors_dictionary[1])
-            
+
         #if three or more support vectors. And less support vectors than the current dimension. Reduce using the orthonormal basis from support vectors
         if nr_of_support_vectors >= 3 and nr_of_support_vectors < nr_of_coordinates:
 
@@ -531,26 +554,26 @@ class HPF:
 
         #Rotate/align support vectors until we reach 2D.
         while nr_of_coordinates > 2:
-            
+
             #choose the class with most support vectors
             max_key = max(self.support_vectors_dictionary, key= lambda x: len(self.support_vectors_dictionary[x]))
-        
+
             #get the direction between the two support vectors, and removes one of them from the dictionary
             direction, self.support_vectors_dictionary[max_key] = self.get_direction_between_two_vectors_in_set_with_smallest_distance(self.support_vectors_dictionary[max_key], nr_of_coordinates)
-        
+
             #calculate alignment matrix
             rotation_matrix = self.align_direction_matrix(direction)
-    
+
             #rotate all datapoints and support vectors
             self.transform_data_and_support_vectors(rotation_matrix, nr_of_coordinates)
-        
+
             #support vectors are aligned.
             #exclude last coordinate for further iterations.
-            nr_of_coordinates -= 1 
+            nr_of_coordinates -= 1
 
 
         #By now, the data should be projected into two dimensions.
-        
+
         #save the rest of the coordinates to go back into higher dimensions when done with folding.
         #self.leftover_coordinates = [x[2:] for x in self.data_points]
 
@@ -632,19 +655,22 @@ class HPF:
 
                 self.data_labels = np.delete(self.data_labels, index)
 
-    
-        
+
+
 
     def fit(self, data_points, data_labels):
         self.data_points = data_points
         self.data_labels = data_labels
+
+        self.old_data = data_points
+
         self.clf.fit(data_points, data_labels)
         self.old_clf.fit(data_points, data_labels)
         self.old_margin = self.get_margin(self.old_clf)
 
         #group into classes = create support_vectors_dictionary
         self.group_support_vectors()
-        
+
         #project onto 2D
         self.dimension_projection()
 
@@ -655,10 +681,30 @@ class HPF:
                 self.new_margin = self.get_margin(self.clf)
                 current_fold += 1
 
+        if self.verbose:
+            print("Number of folds: {}".format(current_fold))
+            print("Margin change: {}".format(self.new_margin - self.old_margin))
+            for rotation in self.rotation_data:
+                intersection_point, primary_support_vector, left_or_right, clfs = rotation
+                print("intersection point: {}".format(intersection_point))
+                print("primary_support_vector {}".format(primary_support_vector))
+                print("Left or right: {}".format(left_or_right))
+
+                left_clf, right_clf = clfs
+
+                print("margin of left clf: {}".format(self.get_margin(left_clf)))
+
+                print("margin of right clf: {}".format(self.get_margin(right_clf)))
+
+                print("orginal datapoints compared to new")
+                #print(self.data_points - self.old_data)
         stopper = 0
-    
-    def __init__(self, rot_func = lambda p, i, r : np.matmul(p.T - i, r) + i, max_nr_of_folds = 1):
-        
+
+    def diagnose(self):
+        print()
+
+    def __init__(self,rot_func = lambda p, i, r : np.matmul(p.T - i, r) + i, max_nr_of_folds = 1, verbose = False):
+        self.verbose = verbose
         self.max_nr_of_folds = max_nr_of_folds
         self.clf = svm.SVC(kernel='linear', C=1000)
         self.old_clf = svm.SVC(kernel='linear', C=1000)
