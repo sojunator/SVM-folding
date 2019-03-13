@@ -212,13 +212,13 @@ class HPF:
                             intersection_point)
                                 for point in right_set[0]]
             left_or_right = 0
-            print(len(right_set[0]))
+
         elif (left_margin > right_margin):
             left_set[0] = [self.rotate_point_2D(point, -angle, primary_support,
                             intersection_point)
                                 for point in left_set[0]]
             left_or_right = 1
-            print(len(left_set[0]))
+
         else:
             print("Cannot improve margin")
         print(len(self.data_points))
@@ -253,7 +253,6 @@ class HPF:
             left_clf.fit(left_set[0], left_set[1])
         except ValueError:
             print("WARNING, ONLY ONE CLASS PRESENT IN A SET, ABORTING")
-            self.support_vectors = 2
             return
 
         # Rotate and merge data sets back into one
@@ -676,7 +675,7 @@ class HPF:
 
         #fold until just two support vectors exist or max_nr_of_folds is reached
         current_fold = 0
-        while(len(self.clf.support_vectors_) > 2 and current_fold < self.max_nr_of_folds):
+        while(len(self.clf.support_vectors_) > 2):
                 self.fold()
                 self.new_margin = self.get_margin(self.clf)
                 current_fold += 1
@@ -700,8 +699,6 @@ class HPF:
                 #print(self.data_points - self.old_data)
         stopper = 0
 
-    def diagnose(self):
-        print()
 
     def __init__(self,rot_func = lambda p, i, r : np.matmul(p.T - i, r) + i, max_nr_of_folds = 1, verbose = False):
         self.verbose = verbose
