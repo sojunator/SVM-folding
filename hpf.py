@@ -96,6 +96,8 @@ class HPF:
         else:
             return 0
 
+
+
     def split_data(self, primary_support):
         """
         returns a list  containing left and right split.
@@ -667,7 +669,7 @@ class HPF:
         self.clf.fit(data_points, data_labels)
         self.old_clf.fit(data_points, data_labels)
         self.old_margin = self.get_margin(self.old_clf)
-
+        self.new_margin = -1
         #group into classes = create support_vectors_dictionary
         self.group_support_vectors()
 
@@ -681,22 +683,25 @@ class HPF:
                 val = self.fold()
                 self.new_margin = self.get_margin(self.clf)
                 current_fold += 1
-                print(self.new_margin)
+
 
         if self.verbose:
             print("Number of folds: {}".format(current_fold))
             print("Margin change: {}".format(self.new_margin - self.old_margin))
-            for rotation in self.rotation_data:
-                intersection_point, primary_support_vector, left_or_right, clfs = rotation
-                print("intersection point: {}".format(intersection_point))
-                print("primary_support_vector {}".format(primary_support_vector))
-                print("Left or right: {}".format(left_or_right))
+            if current_fold > 0:
+                for rotation in self.rotation_data:
+                    intersection_point, primary_support_vector, left_or_right, clfs = rotation
+                    print("intersection point: {}".format(intersection_point))
+                    print("primary_support_vector {}".format(primary_support_vector))
+                    print("Left or right: {}".format(left_or_right))
 
-                left_clf, right_clf = clfs
+                    left_clf, right_clf = clfs
 
-                print("margin of left clf: {}".format(self.get_margin(left_clf)))
+                    print("margin of left clf: {}".format(self.get_margin(left_clf)))
 
-                print("margin of right clf: {}".format(self.get_margin(right_clf)))
+                    print("margin of right clf: {}".format(self.get_margin(right_clf)))
+            else:
+                print("Only two support vectors, no folds")
 
         stopper = 0
 

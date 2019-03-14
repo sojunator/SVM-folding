@@ -9,32 +9,34 @@ def plot_hpf(hpf, ax, XX, YY, colour='k'):
     """
     Plots a clf, with margins, colour will be black
     """
-    intersection_point, primary_support_vector, left_or_right, (right_clf, left_clf) = hpf.rotation_data[-1]
-    clf = hpf.clf
-    xy = np.vstack([XX.ravel(), YY.ravel()]).T
+    if len(hpf.rotation_data) > 0:
+        intersection_point, primary_support_vector, left_or_right, (right_clf, left_clf) = hpf.rotation_data[-1]
+        clf = hpf.clf
+        xy = np.vstack([XX.ravel(), YY.ravel()]).T
 
 
-    ax.scatter(clf.support_vectors_[:, 0], clf.support_vectors_[:, 1], s=100,
-           linewidth=1, facecolors='none', edgecolors=colour)
+        ax.scatter(clf.support_vectors_[:, 0], clf.support_vectors_[:, 1], s=100,
+               linewidth=1, facecolors='none', edgecolors=colour)
 
-    ax.scatter(hpf.primary_support_vector[0], hpf.primary_support_vector[1], s=100,
-           linewidth=2, facecolors='none', edgecolors='b')
+        ax.scatter(hpf.primary_support_vector[0], hpf.primary_support_vector[1], s=100,
+               linewidth=2, facecolors='none', edgecolors='b')
 
 
-    Z = right_clf.decision_function(xy).reshape(XX.shape)
+        Z = right_clf.decision_function(xy).reshape(XX.shape)
 
-    ax.contour(XX, YY, Z, colors='m', levels=[-1, 0, 1], alpha=0.5,
-           linestyles=['--', '-', '--'])
+        ax.contour(XX, YY, Z, colors='m', levels=[-1, 0, 1], alpha=0.5,
+               linestyles=['--', '-', '--'])
 
-    Z = left_clf.decision_function(xy).reshape(XX.shape)
+        Z = left_clf.decision_function(xy).reshape(XX.shape)
 
-    ax.contour(XX, YY, Z, colors='y', levels=[-1, 0, 1], alpha=0.5,
-           linestyles=['--', '-', '--'])
+        ax.contour(XX, YY, Z, colors='y', levels=[-1, 0, 1], alpha=0.5,
+               linestyles=['--', '-', '--'])
 
-    Z = hpf.old_clf.decision_function(xy).reshape(XX.shape)
+        Z = hpf.old_clf.decision_function(xy).reshape(XX.shape)
 
-    ax.contour(XX, YY, Z, colors='k', levels=[-1, 0, 1], alpha=0.5,
-           linestyles=['--', '-', '--'])
+        ax.contour(XX, YY, Z, colors='k', levels=[-1, 0, 1], alpha=0.5,
+               linestyles=['--', '-', '--'])
+    
 
 def plot(hpf):
     """
