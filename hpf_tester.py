@@ -24,7 +24,8 @@ X_train, Y_train = data_set["hpf_test.csv"]
 
 #X_train, X_test, Y_train, Y_test = train_test_split(data_points, data_labels, test_size =0.33, random_state=42)
 
-hpf = HPF()
+
+hpf = HPF(lambda p, i, r : np.matmul(p - i, r) + i, 1)
 
 hpf.fit(X_train, Y_train)
 
