@@ -30,3 +30,5 @@ hpf.fit(X_train, Y_train)
 
 #print("\nHPF GIVEN ANSWER: ", hpf.classify(X_test))
 #print("\nEXPECTED  ANSWER: ", Y_test)
+
+plot(hpf)

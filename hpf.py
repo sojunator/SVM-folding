@@ -100,9 +100,9 @@ class HPF:
         """
         returns a list  containing left and right split.
         """
-        #vector[0][0] >= primary_support[0]
-        right_set = [vector for vector in zip(self.data_points, self.data_labels) if vector[0][0] >= primary_support[0]]
-        left_set = [vector for vector in zip(self.data_points, self.data_labels) if vector[0][0] <= primary_support[0]]
+        # Construct a new array, to remove reference
+        right_set = [np.array(vector) for vector in zip(self.data_points, self.data_labels) if self.left_or_right_of_plane(vector, primary_support)]
+        left_set = [np.array(vector) for vector in zip(self.data_points, self.data_labels) if not self.left_or_right_of_plane(vector, primary_support)]
 
 
         right_x = []
@@ -180,7 +180,10 @@ class HPF:
         rotation_matrix = self.get_rotation(angle)
 
         #point = np.matmul(point.T - intersection_point, rotation_matrix) + intersection_point
-        point = self.rot_func(point, intersection_point, rotation_matrix)
+
+        #Slica föri helvete inte point i tilldelning här
+        point = self.rot_func(point[:2], intersection_point, rotation_matrix)
+
         return point
 
 
@@ -201,7 +204,6 @@ class HPF:
 
         # intersection data
         intersection_point, angle = self.get_intersection_point(left_clf, right_clf)
-        print(intersection_point)
         # if 1, left was rotated, 0 is right set.
         left_or_right = -1
 
