@@ -17,10 +17,10 @@ data_set = read_data_from_folder("datasets")
 #X_train = data_points = np.array([[0.0, 48.0], [2.0, 40.0], [1.0, 37.0], [0.0, 21.0], [2.0, 25.0], [6.0, 22.0], [5.0, 17.0], [6.0, 19.0], [5.0, 42.0], [6.0, 52.0]])
 #Y_train = data_labels = np.array([0, 0, 0, 0, 0, 1, 1, 1, 0, 0])
 
-X_train, Y_train = data_set["align_test_4D.csv"]
+X_train, Y_train = data_set["hpf_test.csv"]
 
-X_test = np.array([[-24.4,22.45, -26.4], [22.2, 21.4, 23.3], [-1.3, -21.1, 4.4]])
-Y_test = np.array([1,1,0])
+#X_test = np.array([[-24.4,22.45, -26.4], [22.2, 21.4, 23.3], [-1.3, -21.1, 4.4]])
+#Y_test = np.array([1,1,0])
 
 #X_train, X_test, Y_train, Y_test = train_test_split(data_points, data_labels, test_size =0.33, random_state=42)
 

@@ -165,7 +165,6 @@ class HPF:
         """
         rotation_matrix = self.get_rotation(angle)
 
-        #point = np.matmul(point.T - intersection_point, rotation_matrix) + intersection_point
         point[:2] = self.rot_func(point[:2], intersection_point, rotation_matrix)
         return point
 
@@ -646,7 +645,7 @@ class HPF:
         self.group_support_vectors()
         
         #project onto 2D
-        self.dimension_projection()
+        #self.dimension_projection()
 
         #fold until just two support vectors exist or max_nr_of_folds is reached
         current_fold = 0
@@ -657,7 +656,7 @@ class HPF:
 
         stopper = 0
     
-    def __init__(self, rot_func = lambda p, i, r : np.matmul(p.T - i, r) + i, max_nr_of_folds = 1):
+    def __init__(self, rot_func = lambda p, i, r : np.matmul(p - i, r) + i, max_nr_of_folds = 1):
         
         self.max_nr_of_folds = max_nr_of_folds
         self.clf = svm.SVC(kernel='linear', C=1000)

@@ -51,6 +51,7 @@ def plot(hpf):
 def read_data_from_folder(folder_name):
     onlyfiles = [f for f in listdir(folder_name) if isfile(join(folder_name, f))]
     datasets = {}
+    
     for file in onlyfiles:
             df = pd.read_csv(folder_name + "/" + file)
             temp = []
@@ -59,7 +60,9 @@ def read_data_from_folder(folder_name):
                 temp.append(data.tolist())
 
             data_points = np.array([row[:-1] for row in temp])
+            data_points = data_points.astype('float64')
             data_labels = np.array([row[-1] for row in temp])
             datasets[file] = (data_points, data_labels)
+
 
     return datasets
