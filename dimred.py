@@ -220,12 +220,12 @@ class DR:
         return rotation_matrix
 
 
-    def combine_matrices(matrix):
+    def combine_matrices(self, matrix):
         """
         n*(m+1) matrix times m*m. After multiplication current matrix will be n*m
         """
 
-        self.matrices[self.nr_of_folds_done] = np.matmul(self.matrices[self.nr_of_folds_done], matrix)
+        self.matrices[self.folds_done] = np.matmul(self.matrices[self.folds_done], matrix)
     
         return
 
@@ -258,12 +258,12 @@ class DR:
        
         nr_of_coordinates = len(support_vectors_dictionary[0][0])
 
-        self.matrices[self.number_of_folds_done] = np.identity(nr_of_coordinates)
+        self.matrices[self.folds_done] = [np.array(x) for x in np.identity(nr_of_coordinates)]
 
         nr_of_support_vectors = len(support_vectors_dictionary[0]) + len(support_vectors_dictionary[1])
             
         #if three or more support vectors. And less support vectors than the current dimension. Reduce using the orthonormal basis from support vectors
-        if nr_of_support_vectors >= 3 and nr_of_support_vectors < nr_of_coordinates:
+        if nr_of_support_vectors >= 3 and nr_of_support_vectors <= nr_of_coordinates:
 
             all_support_vectors = self.get_ungrouped_support_vectors(support_vectors_dictionary)
             basis_matrix = self.get_orthonormal_basis_from_support_vectors(all_support_vectors)
@@ -297,18 +297,18 @@ class DR:
             nr_of_coordinates -= 1 
 
 
-        self.transform_data_and_support_vectors(self.matrices[self.number_of_folds_done], data_points,support_vectors_dictionary)
+        self.transform_data_and_support_vectors(self.matrices[self.folds_done], data_points,support_vectors_dictionary)
 
-        return
+        
 
-    def project_up(self, dataset):
+    def project_up(self, data_points):
 
         """
         Use the INVERSE of the transformation matrix that projected the data into 2D
         """
-        self.transform_data_and_support_vectors(np.linalg.inv(self.matrices[self.number_of_folds_done]), data_points, [])
+        self.transform_data_and_support_vectors(np.linalg.inv(self.matrices[self.folds_done]), data_points, [])
 
-        self.number_of_folds_done = self.number_of_folds_done + 1
+        self.folds_done = self.folds_done + 1
 
         return
 
@@ -316,6 +316,6 @@ class DR:
 
     def __init__(self):
         self.matrices = {}
-        self.number_of_folds_done = 0
+        self.folds_done = 0
 
         return

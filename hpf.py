@@ -364,7 +364,7 @@ class HPF:
         #group into classes = create support_vectors_dictionary
         self.group_support_vectors()
         
-        self.data_points = self.dim_red.project_down(self.data_points, self.support_vectors_dictionary)
+        self.dim_red.project_down(self.data_points, self.support_vectors_dictionary)
         #project onto 2D
         #self.dimension_projection()
 
