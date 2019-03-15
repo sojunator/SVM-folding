@@ -55,32 +55,6 @@ class HPF:
 
         return 1 / np.sqrt(np.sum(clf.coef_ ** 2))
 
-    def split_data(self, primary_support):
-        """
-        returns a list  containing left and right split.
-        """
-
-        right_set = [vector for vector in zip(self.data_points, self.data_labels) if vector[0][0] >= primary_support[0]]
-        left_set = [vector for vector in zip(self.data_points, self.data_labels) if vector[0][0] <= primary_support[0]]
-
-        right_x = []
-        right_y = []
-
-        for pair in right_set:
-            right_x.append(pair[0])
-            right_y.append(pair[1])
-
-
-        left_x = []
-        left_y = []
-
-        for pair in left_set:
-            left_x.append(pair[0])
-            left_y.append(pair[1])
-
-
-        return [[left_x, left_y], [right_x, right_y]]
-
     def ordering_support(self, vectors):
         """
         Returns the first possible primary support vector
@@ -93,8 +67,8 @@ class HPF:
         a = -w[1]
         b = w[0]
 
-        #Subtract one vector from another of the other class to get a point in the hyperplane
         cd = (vectors[0][0][:2] - vectors[1][0][:2]) / 2
+
 
         c = cd[0]
         d = cd[1]
@@ -110,13 +84,53 @@ class HPF:
 
         return tk
 
+
+    def left_or_right_of_plane(self, point, primary_support):
+        w = self.clf.coef_[0]
+
+        a = -w[0] / w[1]
+
+        t = (point[0][0] - primary_support[0])/(-a)
+
+        if (point[0][1]) <= (primary_support[1] + t):
+            return 1
+        else:
+            return 0
+
+    def split_data(self, primary_support):
+        """
+        returns a list  containing left and right split.
+        """
+        # Construct a new array, to remove reference
+        right_set = [np.array(vector) for vector in zip(self.data_points, self.data_labels) if self.left_or_right_of_plane(vector, primary_support)]
+        left_set = [np.array(vector) for vector in zip(self.data_points, self.data_labels) if not self.left_or_right_of_plane(vector, primary_support)]
+
+
+        right_x = []
+        right_y = []
+
+        # Split data and labels into different lists
+        for pair in right_set:
+            right_x.append(pair[0])
+            right_y.append(pair[1])
+
+
+        left_x = []
+        left_y = []
+
+        for pair in left_set:
+            left_x.append(pair[0])
+            left_y.append(pair[1])
+
+
+        return [[left_x, left_y], [right_x, right_y]]
+
     def get_splitting_point(self):
         """
         Finds and returns the primary support vector, splitting point
         """
 
         tk = self.ordering_support(self.support_vectors_dictionary)
-
         first_class = tk[0][2]
 
         primary_support_vector = None
@@ -158,7 +172,11 @@ class HPF:
         """
         rotation_matrix = self.get_rotation(angle)
 
-        point[:2] = self.rot_func(point[:2], intersection_point, rotation_matrix)
+        #point = np.matmul(point.T - intersection_point, rotation_matrix) + intersection_point
+
+        #Slica föri helvete inte point i tilldelning här
+        point = self.rot_func(point[:2], intersection_point, rotation_matrix)
+
         return point
 
 
@@ -179,16 +197,19 @@ class HPF:
 
         # intersection data
         intersection_point, angle = self.get_intersection_point(left_clf, right_clf)
-
         # if 1, left was rotated, 0 is right set.
         left_or_right = -1
 
+
         if (right_margin > left_margin):
-            right_set[0] = [self.rotate_point_2D(point, angle, primary_support, intersection_point) for point in right_set[0]]
+            right_set[0] = [self.rotate_point_2D(point, angle, primary_support,
+                            intersection_point)
+                                for point in right_set[0]]
             left_or_right = 0
 
         elif (left_margin > right_margin):
-            left_set[0] = [self.rotate_point_2D(point, -angle, primary_support, intersection_point)
+            left_set[0] = [self.rotate_point_2D(point, -angle, primary_support,
+                            intersection_point)
                                 for point in left_set[0]]
             left_or_right = 1
 
@@ -197,7 +218,6 @@ class HPF:
 
 
         X = left_set[0] + right_set[0]
-
         y = left_set[1] + right_set[1]
 
 
@@ -211,24 +231,28 @@ class HPF:
         right_clf = svm.SVC(kernel='linear', C=1000)
         left_clf = svm.SVC(kernel='linear', C=1000)
 
-        
+
         # Splitting point
-        primary_support_vector = self.get_splitting_point()
+        self.primary_support_vector = self.get_splitting_point()
 
         # Used for plotting where the split occoured
-        splitting_point = primary_support_vector[0]#x-axis-location of primary vec
+        splitting_point = self.primary_support_vector[0]#x-axis-location of primary vec
 
         # Subsets of datasets, left and right of primary support vector
-        left_set, right_set = self.split_data(primary_support_vector)
+        left_set, right_set = self.split_data(self.primary_support_vector)
 
         # New SVM, right
-        right_clf.fit(right_set[0], right_set[1])
-        left_clf.fit(left_set[0], left_set[1])
+        try:
+            right_clf.fit(right_set[0], right_set[1])
+            left_clf.fit(left_set[0], left_set[1])
+        except ValueError:
+            print("WARNING, ONLY ONE CLASS PRESENT IN A SET, ABORTING")
+            return -1
 
         # Rotate and merge data sets back into one
-        self.data_points, self.data_labels, left_or_right, intersection_point = self.rotate_set(left_clf, left_set, right_clf, right_set, primary_support_vector)
+        self.data_points, self.data_labels, left_or_right, intersection_point = self.rotate_set(left_clf, left_set, right_clf, right_set, self.primary_support_vector)
 
-        self.rotation_data.append((intersection_point, primary_support_vector, left_or_right, (right_clf, left_clf)))
+        self.rotation_data.append((intersection_point, self.primary_support_vector, left_or_right, (right_clf, left_clf)))
 
         # merge
         self.clf = right_clf if left_or_right else left_clf
@@ -237,7 +261,7 @@ class HPF:
         # Used for highlighting the sets
         right_set[0] = np.vstack(right_set[0])
         left_set[0] = np.vstack(left_set[0])
-
+        return 0
 
     def classify(self, points, rotate=True):
         if not rotate:
@@ -351,12 +375,15 @@ class HPF:
 
                 self.data_labels = np.delete(self.data_labels, index)
 
-    
-        
+
+
 
     def fit(self, data_points, data_labels):
         self.data_points = data_points
         self.data_labels = data_labels
+
+        self.old_data = data_points
+
         self.clf.fit(data_points, data_labels)
         self.old_clf.fit(data_points, data_labels)
         self.old_margin = self.get_margin(self.old_clf)
@@ -364,23 +391,42 @@ class HPF:
         #group into classes = create support_vectors_dictionary
         self.group_support_vectors()
         
-        self.data_points, self.support_vectors_dictionary = self.dim_red.project_down(self.data_points, self.support_vectors_dictionary)
         #project onto 2D
-        #self.dimension_projection()
+        self.data_points, self.support_vectors_dictionary = self.dim_red.project_down(self.data_points, self.support_vectors_dictionary)
 
+        
         #fold until just two support vectors exist or max_nr_of_folds is reached
         current_fold = 0
-        if(len(self.clf.support_vectors_) > 2):# and current_fold < self.max_nr_of_folds):
-                self.fold()
+        val = 0
+        while(len(self.clf.support_vectors_) > 2 and val is 0):
+                val = self.fold()
                 self.new_margin = self.get_margin(self.clf)
                 current_fold += 1
+                print(self.new_margin)
+
+        if self.verbose:
+            print("Number of folds: {}".format(current_fold))
+            print("Margin change: {}".format(self.new_margin - self.old_margin))
+            for rotation in self.rotation_data:
+                intersection_point, primary_support_vector, left_or_right, clfs = rotation
+                print("intersection point: {}".format(intersection_point))
+                print("primary_support_vector {}".format(primary_support_vector))
+                print("Left or right: {}".format(left_or_right))
+
+                left_clf, right_clf = clfs
+
+                print("margin of left clf: {}".format(self.get_margin(left_clf)))
+
+                print("margin of right clf: {}".format(self.get_margin(right_clf)))
+
 
         self.data_points = self.dim_red.project_up(self.data_points)
 
         stopper = 0
-    
-    def __init__(self, rot_func = lambda p, i, r : np.matmul(p - i, r) + i, max_nr_of_folds = 9999):
-        
+
+
+    def __init__(self,rot_func = lambda p, i, r : np.matmul(p.T - i, r) + i, max_nr_of_folds = 1, verbose = False):
+        self.verbose = verbose
         self.max_nr_of_folds = max_nr_of_folds
         self.clf = svm.SVC(kernel='linear', C=1000)
         self.old_clf = svm.SVC(kernel='linear', C=1000)
