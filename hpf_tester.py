@@ -27,7 +27,7 @@ X_train, Y_train = data_set["dimred_align_test_5D.csv"]
 
 hpf = HPF(max_nr_of_folds=100, verbose=True)
 
-hpf = HPF(lambda p, i, r : np.matmul(p - i, r) + i, 1)
+#hpf = HPF(lambda p, i, r : np.matmul(p - i, r) + i, 1)
 
 hpf.fit(X_train, Y_train)
 
