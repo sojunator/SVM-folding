@@ -364,7 +364,7 @@ class HPF:
         #group into classes = create support_vectors_dictionary
         self.group_support_vectors()
         
-        self.dim_red.project_down(self.data_points, self.support_vectors_dictionary)
+        self.data_points, self.support_vectors_dictionary = self.dim_red.project_down(self.data_points, self.support_vectors_dictionary)
         #project onto 2D
         #self.dimension_projection()
 
@@ -375,7 +375,7 @@ class HPF:
                 self.new_margin = self.get_margin(self.clf)
                 current_fold += 1
 
-        self.dim_red.project_up(self.data_points)
+        self.data_points = self.dim_red.project_up(self.data_points)
 
         stopper = 0
     

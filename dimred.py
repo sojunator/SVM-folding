@@ -237,11 +237,9 @@ class DR:
 
     def transform(self, matrix, data):
 
-        #transform data and support vectors into the new subspace
-        
-        return np.array([matrix * p for p in data])
+        return np.array([np.matmul(matrix, p) for p in data])
 
-       
+           
         
 
     
@@ -296,7 +294,7 @@ class DR:
         support_vectors_dictionary[0] = self.transform(self.matrices[self.folds_done], support_vectors_dictionary[0])
         support_vectors_dictionary[1] = self.transform(self.matrices[self.folds_done], support_vectors_dictionary[1])
 
-        
+        return data_points, support_vectors_dictionary
 
     def project_up(self, data_points):
 
@@ -307,7 +305,7 @@ class DR:
 
         self.folds_done = self.folds_done + 1
 
-        return
+        return data_points
 
 
 
