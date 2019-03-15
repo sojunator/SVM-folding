@@ -13,11 +13,11 @@ class DR:
 
     def grahm_schmidt_orthonorm(self, linearly_independent_matrix):
 
-            orthonormal_vectors = []#stores the new basis
+            
 
             vec = linearly_independent_matrix[0]
             vec = vec / np.linalg.norm(vec)#first entry is just the itself normalized
-            orthonormal_vectors.append(vec)
+            orthonormal_vectors = np.array([vec])#stores the new basis
 
             i = 0
             for v in linearly_independent_matrix[1:]:
@@ -37,7 +37,7 @@ class DR:
                 i += 1
 
                 vec = vec / np.linalg.norm(vec)
-                orthonormal_vectors.append(vec)
+                orthonormal_vectors = np.concatenate((orthonormal_vectors, [vec]), 0)
 
             return orthonormal_vectors
 
@@ -225,7 +225,15 @@ class DR:
         n*(m+1) matrix times m*m. After multiplication current matrix will be n*m
         """
 
-        self.matrices[self.folds_done] = np.matmul(self.matrices[self.folds_done], matrix)
+        mat = np.identity(len(self.matrices[0]))
+        matrix_dim = len(matrix[0])
+       
+        mat[:matrix_dim,:matrix_dim] = matrix[:matrix_dim,:matrix_dim]
+        
+
+
+        kek = mat * self.matrices[self.folds_done]
+        self.matrices[self.folds_done] = kek
     
         return
 
@@ -258,7 +266,7 @@ class DR:
        
         nr_of_coordinates = len(support_vectors_dictionary[0][0])
 
-        self.matrices[self.folds_done] = [np.array(x) for x in np.identity(nr_of_coordinates)]
+        self.matrices[self.folds_done] = np.identity(nr_of_coordinates)
 
         nr_of_support_vectors = len(support_vectors_dictionary[0]) + len(support_vectors_dictionary[1])
             
