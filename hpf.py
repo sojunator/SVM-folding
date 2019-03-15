@@ -158,9 +158,8 @@ class HPF:
             else:
                 self.support_vectors_dictionary[key].append(sv)
 
-        print("Class 1: ", len(self.support_vectors_dictionary[0]), " Class  2: ", len(self.support_vectors_dictionary[1]))
 
-    
+
     def get_rotation(self, alpha):
         theta = alpha
         c, s = np.cos(theta), np.sin(theta)
@@ -303,7 +302,7 @@ class HPF:
 
         return self.clf.predict(points)
 
-    
+
 
         def get_distance_from_line_to_point(self, w, point, point_on_line):
             v = point - point_on_line
@@ -392,11 +391,11 @@ class HPF:
         self.new_margin = -1
         #group into classes = create support_vectors_dictionary
         self.group_support_vectors()
-        
-        #project onto 2D
-        self.data_points, self.support_vectors_dictionary = self.dim_red.project_down(self.data_points, self.support_vectors_dictionary)
 
-        
+        #project onto 2D
+        #self.data_points, self.support_vectors_dictionary = self.dim_red.project_down(self.data_points, self.support_vectors_dictionary)
+
+
         #fold until just two support vectors exist or max_nr_of_folds is reached
         current_fold = 0
         val = 0
@@ -404,6 +403,7 @@ class HPF:
                 val = self.fold()
                 self.new_margin = self.get_margin(self.clf)
                 current_fold += 1
+                print(self.new_margin)
 
 
         if self.verbose:
@@ -425,7 +425,7 @@ class HPF:
                 print("Only two support vectors, no folds")
 
 
-        self.data_points = self.dim_red.project_up(self.data_points)
+        #self.data_points = self.dim_red.project_up(self.data_points)
 
         stopper = 0
 
