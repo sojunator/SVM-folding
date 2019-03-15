@@ -230,29 +230,19 @@ class DR:
        
         mat[:matrix_dim,:matrix_dim] = matrix[:matrix_dim,:matrix_dim]
         
-
-
-        kek = mat * self.matrices[self.folds_done]
-        self.matrices[self.folds_done] = kek
+        self.matrices[self.folds_done] = mat * self.matrices[self.folds_done].T
     
         return
 
 
-    def transform_data_and_support_vectors(self, matrix, data_points, support_vectors_dictionary):
+    def transform(self, matrix, data):
 
         #transform data and support vectors into the new subspace
-        for i in range(0, len(data_points)):
-            data_points[i] = np.matmul(matrix, data_points[i])
         
-        #first class
-        for i in range(0, len(support_vectors_dictionary[0])):
-            support_vectors_dictionary[0][i] = np.matmul(matrix, support_vectors_dictionary[0][i])
-        
-        #second class
-        for i in range(0, len(support_vectors_dictionary[1])):
-            support_vectors_dictionary[1][i] = np.matmul(matrix, support_vectors_dictionary[1][i])
+        return np.array([matrix * p for p in data])
 
-        return
+       
+        
 
     
     def project_down(self, data_points, support_vectors_dictionary):
@@ -265,9 +255,6 @@ class DR:
         """
        
         nr_of_coordinates = len(support_vectors_dictionary[0][0])
-
-        self.matrices[self.folds_done] = np.identity(nr_of_coordinates)
-
         nr_of_support_vectors = len(support_vectors_dictionary[0]) + len(support_vectors_dictionary[1])
             
         #if three or more support vectors. And less support vectors than the current dimension. Reduce using the orthonormal basis from support vectors
@@ -278,7 +265,7 @@ class DR:
 
             #rotate data and support vectors
             #self.transform_data_and_support_vectors(basis_matrix, nr_of_coordinates)
-            self.combine_matrices(basis_matrix)
+            self.matrices[self.folds_done] = basis_matrix
 
             #post rotation the dimension is lowered to the number of support vectors - 1
             nr_of_coordinates = nr_of_support_vectors - 1
@@ -305,7 +292,9 @@ class DR:
             nr_of_coordinates -= 1 
 
 
-        self.transform_data_and_support_vectors(self.matrices[self.folds_done], data_points,support_vectors_dictionary)
+        data_points = self.transform(self.matrices[self.folds_done], data_points)
+        support_vectors_dictionary[0] = self.transform(self.matrices[self.folds_done], support_vectors_dictionary[0])
+        support_vectors_dictionary[1] = self.transform(self.matrices[self.folds_done], support_vectors_dictionary[1])
 
         
 
@@ -314,7 +303,7 @@ class DR:
         """
         Use the INVERSE of the transformation matrix that projected the data into 2D
         """
-        self.transform_data_and_support_vectors(np.linalg.inv(self.matrices[self.folds_done]), data_points, [])
+        data_points = self.transform(np.linalg.inv(self.matrices[self.folds_done]), data_points)
 
         self.folds_done = self.folds_done + 1
 
