@@ -88,18 +88,14 @@ class HPF:
     def left_or_right_of_plane(self, point, primary_support):
         w = self.clf.coef_[0]
 
-        k = w[1] / w[0]
+
+        v1 = np.array(w*0.01+primary_support)
+        v2 = np.array(w*0.02+primary_support)
+
+        k = (v2[1] - v1[1]) / (v2[0]-v1[0])
+
 
         m = primary_support[1] - k * primary_support[0]
-        v1 = w + primary_support
-        v1 = v1 / np.linalg.norm(v1)
-
-        v2 = point[0] - primary_support
-        v2 = v2 / np.linalg.norm(v2)
-
-        cosang = np.dot(w,v2)
-        print(cosang)
-
 
         if k * point[0][0] + m < point[0][1]:
 
