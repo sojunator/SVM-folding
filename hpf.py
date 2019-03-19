@@ -88,15 +88,32 @@ class HPF:
     def left_or_right_of_plane(self, point, primary_support):
         w = self.clf.coef_[0]
 
-        a = -w[0] / w[1]
+        k = w[1] / w[0]
 
+        m = primary_support[1] - k * primary_support[0]
+        v1 = w + primary_support
+        v1 = v1 / np.linalg.norm(v1)
+
+        v2 = point[0] - primary_support
+        v2 = v2 / np.linalg.norm(v2)
+
+        cosang = np.dot(w,v2)
+        print(cosang)
+
+
+        if k * point[0][0] + m < point[0][1]:
+
+            return 1
+        else:
+            return 0
+        """
         t = (point[0][0] - primary_support[0])/(-a)
 
         if (point[0][1]) <= (primary_support[1] + t):
             return 1
         else:
             return 0
-
+        """
 
 
     def split_data(self, primary_support):
@@ -404,12 +421,13 @@ class HPF:
                 self.new_margin = self.get_margin(self.clf)
                 current_fold += 1
                 print(self.new_margin)
+                print(len(self.clf.support_vectors_))
 
 
         if self.verbose:
             print("Number of folds: {}".format(current_fold))
             print("Margin change: {}".format(self.new_margin - self.old_margin))
-            if current_fold > 0:
+            if len(self.rotation_data) > 0:
                 for rotation in self.rotation_data:
                     intersection_point, primary_support_vector, left_or_right, clfs = rotation
                     print("intersection point: {}".format(intersection_point))

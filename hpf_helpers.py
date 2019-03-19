@@ -13,7 +13,15 @@ def plot_hpf(hpf, ax, XX, YY, colour='k'):
         intersection_point, primary_support_vector, left_or_right, (right_clf, left_clf) = hpf.rotation_data[-1]
         clf = hpf.clf
         xy = np.vstack([XX.ravel(), YY.ravel()]).T
+        w = clf.coef_[0]
 
+        k = w[1] / w[0]
+        x = np.linspace(7,7.4,2)
+        m = primary_support_vector[1] - k * primary_support_vector[0]
+
+        plt.plot(x, k*x+m, '-r', label='y=2x+1')
+        ax.scatter(clf.support_vectors_[:, 0], clf.support_vectors_[:, 1], s=100,
+               linewidth=1, facecolors='none', edgecolors=colour)
 
         ax.scatter(clf.support_vectors_[:, 0], clf.support_vectors_[:, 1], s=100,
                linewidth=1, facecolors='none', edgecolors=colour)
@@ -36,7 +44,7 @@ def plot_hpf(hpf, ax, XX, YY, colour='k'):
 
         ax.contour(XX, YY, Z, colors='k', levels=[-1, 0, 1], alpha=0.5,
                linestyles=['--', '-', '--'])
-    
+
 
 def plot(hpf):
     """
@@ -69,7 +77,7 @@ def plot(hpf):
 def read_data_from_folder(folder_name):
     onlyfiles = [f for f in listdir(folder_name) if isfile(join(folder_name, f))]
     datasets = {}
-    
+
     for file in onlyfiles:
             df = pd.read_csv(folder_name + "/" + file)
             temp = []
