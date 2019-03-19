@@ -88,28 +88,27 @@ class HPF:
     def left_or_right_of_plane(self, point, primary_support):
         w = self.clf.coef_[0]
 
+        a = -w[1]
+        b = w[0]
+        w = [a,b]
 
-        v1 = np.array(w*0.01+primary_support)
-        v2 = np.array(w*0.02+primary_support)
+        h = w / np.linalg.norm(w)
 
-        k = (v2[1] - v1[1]) / (v2[0]-v1[0])
+        v = point[0] - primary_support
+        normv = np.linalg.norm(v)
+        if normv == 0: # adds primary in left set. Dont forget to manually add primary to right set
+            return 0
 
+        v = v / normv
 
-        m = primary_support[1] - k * primary_support[0]
+        cosang = np.dot(h,v)
+        print(cosang)
 
-        if k * point[0][0] + m < point[0][1]:
-
+        if cosang > 0:
             return 1
         else:
             return 0
-        """
-        t = (point[0][0] - primary_support[0])/(-a)
 
-        if (point[0][1]) <= (primary_support[1] + t):
-            return 1
-        else:
-            return 0
-        """
 
 
     def split_data(self, primary_support):
@@ -119,7 +118,10 @@ class HPF:
         # Construct a new array, to remove reference
         right_set = [np.array(vector) for vector in zip(self.data_points, self.data_labels) if self.left_or_right_of_plane(vector, primary_support)]
         left_set = [np.array(vector) for vector in zip(self.data_points, self.data_labels) if not self.left_or_right_of_plane(vector, primary_support)]
-
+        
+        #hack to add primary vec with label
+        l = self.clf.predict(np.array([primary_support]))
+        right_set.append(np.array([primary_support, l[0]]))
 
         right_x = []
         right_y = []

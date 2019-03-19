@@ -16,7 +16,7 @@ def plot_hpf(hpf, ax, XX, YY, colour='k'):
         w = clf.coef_[0]
 
         k = w[1] / w[0]
-        x = np.linspace(7,7.4,2)
+        x = np.linspace(0,0.5,2)
         m = primary_support_vector[1] - k * primary_support_vector[0]
 
         plt.plot(x, k*x+m, '-r', label='Splitting plane')
