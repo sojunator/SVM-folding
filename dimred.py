@@ -253,6 +253,7 @@ class DR:
         """
        
         nr_of_coordinates = len(support_vectors_dictionary[0][0])
+        self.matrices[self.folds_done] = np.identity(nr_of_coordinates)
         nr_of_support_vectors = len(support_vectors_dictionary[0]) + len(support_vectors_dictionary[1])
             
         #if three or more support vectors. And less support vectors than the current dimension. Reduce using the orthonormal basis from support vectors
@@ -263,7 +264,7 @@ class DR:
 
             #rotate data and support vectors
             #self.transform_data_and_support_vectors(basis_matrix, nr_of_coordinates)
-            self.matrices[self.folds_done] = basis_matrix
+            self.matrices[self.folds_done] = basis_matrix.T # overwrite identity with
 
             #post rotation the dimension is lowered to the number of support vectors - 1
             nr_of_coordinates = nr_of_support_vectors - 1
