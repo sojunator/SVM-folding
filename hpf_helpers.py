@@ -19,31 +19,31 @@ def plot_hpf(hpf, ax, XX, YY, colour='k'):
         x = np.linspace(7,7.4,2)
         m = primary_support_vector[1] - k * primary_support_vector[0]
 
-        plt.plot(x, k*x+m, '-r', label='y=2x+1')
+        plt.plot(x, k*x+m, '-r', label='Splitting plane')
         ax.scatter(clf.support_vectors_[:, 0], clf.support_vectors_[:, 1], s=100,
-               linewidth=1, facecolors='none', edgecolors=colour)
+               linewidth=1, facecolors='none', edgecolors=colour, label="Support vectors")
 
         ax.scatter(clf.support_vectors_[:, 0], clf.support_vectors_[:, 1], s=100,
                linewidth=1, facecolors='none', edgecolors=colour)
 
         ax.scatter(hpf.primary_support_vector[0], hpf.primary_support_vector[1], s=100,
-               linewidth=2, facecolors='none', edgecolors='b')
+               linewidth=2, facecolors='none', edgecolors='b', label="Primary support vector")
 
 
         Z = right_clf.decision_function(xy).reshape(XX.shape)
 
         ax.contour(XX, YY, Z, colors='m', levels=[-1, 0, 1], alpha=0.5,
-               linestyles=['--', '-', '--'])
+               linestyles=['--', '-', '--'], label="right clf")
 
         Z = left_clf.decision_function(xy).reshape(XX.shape)
 
         ax.contour(XX, YY, Z, colors='y', levels=[-1, 0, 1], alpha=0.5,
-               linestyles=['--', '-', '--'])
+               linestyles=['--', '-', '--'], label="Left clf")
 
         Z = hpf.old_clf.decision_function(xy).reshape(XX.shape)
 
         ax.contour(XX, YY, Z, colors='k', levels=[-1, 0, 1], alpha=0.5,
-               linestyles=['--', '-', '--'])
+               linestyles=['--', '-', '--'], label="Original clf")
 
 
 def plot(hpf):
@@ -53,7 +53,6 @@ def plot(hpf):
     X = np.array(hpf.data_points)
     if (len(X[0]) > 2):
      X = [x[:2] for x in X]
-
     plt.scatter(X[:, 0], X[:, 1], c=hpf.data_labels, s=30, cmap=plt.cm.Paired)
     ax = plt.gca()
     xlim = ax.get_xlim()
@@ -69,9 +68,10 @@ def plot(hpf):
 
 
     plot_hpf(hpf, ax, XX, YY, 'g')
-    plot_hpf(hpf, ax, XX, YY, 'k')
 
 
+
+    plt.legend(loc='upper left')
     plt.show()
 
 def read_data_from_folder(folder_name):
