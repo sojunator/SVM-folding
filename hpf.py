@@ -221,7 +221,7 @@ class HPF:
         left_or_right = -1
 
 
-        if (right_margin > left_margin):
+        if (right_margin >= left_margin):
             right_set[0] = [self.rotate_point_2D(point, angle, primary_support,
                             intersection_point)
                                 for point in right_set[0]]
@@ -233,12 +233,8 @@ class HPF:
                                 for point in left_set[0]]
             left_or_right = 1
 
-        else:
-            # Fuck it, just rotate right then
-            right_set[0] = [self.rotate_point_2D(point, angle, primary_support,
-                            intersection_point)
-                                for point in right_set[0]]
-            left_or_right = 0
+        
+            
 
 
         X = left_set[0] + right_set[0]
@@ -305,15 +301,15 @@ class HPF:
             rotated_set = []
             none_rotated_set = []
 
-
+            
             for point in points:
                 if left_or_right:
-                    if primary_support_vector[0] >= point[0]:
+                    if self.left_or_right_of_plane(point, primary_support_vector):
                         rotated_set.append(point)
                     else:
                         none_rotated_set.append(point)
                 else:
-                    if primary_support_vector[0] <= point[0]:
+                    if not self.left_or_right_of_plane(point, primary_support_vector):
                         rotated_set.append(point)
                     else:
                         none_rotated_set.append(point)
