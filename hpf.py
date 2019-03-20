@@ -116,7 +116,7 @@ class HPF:
         # Construct a new array, to remove reference
         right_set = [np.array(vector) for vector in zip(self.data_points, self.data_labels) if self.left_or_right_of_plane(vector, primary_support)]
         left_set = [np.array(vector) for vector in zip(self.data_points, self.data_labels) if not self.left_or_right_of_plane(vector, primary_support)]
-        
+
         #hack to add primary vec with label
         l = self.clf.predict(np.array([primary_support]))
         right_set.append(np.array([primary_support, l[0]]))
@@ -234,7 +234,11 @@ class HPF:
             left_or_right = 1
 
         else:
-            print("Cannot improve margin")
+            # Fuck it, just rotate right then
+            right_set[0] = [self.rotate_point_2D(point, angle, primary_support,
+                            intersection_point)
+                                for point in right_set[0]]
+            left_or_right = 0
 
 
         X = left_set[0] + right_set[0]
@@ -423,7 +427,6 @@ class HPF:
                 self.new_margin = self.get_margin(self.clf)
                 current_fold += 1
                 print(self.new_margin)
-                print(len(self.clf.support_vectors_))
 
 
         if self.verbose:

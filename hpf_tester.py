@@ -21,7 +21,7 @@ X_train, Y_train = data_set["hpf_test.csv"]
 #X_test, Y_test = np.array([[80, 60, 155]]), np.array([0])
 X_test, Y_test = np.array([[-5.0, -1],[-4.0, -4.0]]), np.array([0,0])
 
-hpf = HPF(max_nr_of_folds=100, verbose=False)
+hpf = HPF(max_nr_of_folds=100, verbose=True)
 
 #hpf = HPF(lambda p, i, r : np.matmul(p - i, r) + i, 1)
 

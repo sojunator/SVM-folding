@@ -33,17 +33,17 @@ def plot_hpf(hpf, ax, XX, YY, colour='k'):
         Z = right_clf.decision_function(xy).reshape(XX.shape)
 
         ax.contour(XX, YY, Z, colors='m', levels=[-1, 0, 1], alpha=0.5,
-               linestyles=['--', '-', '--'], label="right clf")
+               linestyles=['--', '-', '--'])
 
         Z = left_clf.decision_function(xy).reshape(XX.shape)
 
         ax.contour(XX, YY, Z, colors='y', levels=[-1, 0, 1], alpha=0.5,
-               linestyles=['--', '-', '--'], label="Left clf")
+               linestyles=['--', '-', '--'])
 
         Z = hpf.old_clf.decision_function(xy).reshape(XX.shape)
 
         ax.contour(XX, YY, Z, colors='k', levels=[-1, 0, 1], alpha=0.5,
-               linestyles=['--', '-', '--'], label="Original clf")
+               linestyles=['--', '-', '--'])
 
 
 def plot(hpf):
