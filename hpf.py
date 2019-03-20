@@ -9,14 +9,12 @@ import matplotlib.pyplot as plt
 import numpy as np
 import math
 import json
+
 from dimred import DR
 
 
 class HPF:
-    def get_rotation(self, alpha):
-        theta = alpha
-        c, s = np.cos(theta), np.sin(theta)
-        return np.array(((c,-s), (s, c)))
+
 
     def get_hyperplane(self, clf):
         """
@@ -86,25 +84,25 @@ class HPF:
 
 
     def left_or_right_of_plane(self, point, primary_support):
+        """
+        Splits the data from the primary point in the direction of the normal
+        """
         w = self.clf.coef_[0]
 
-        a = -w[1]
-        b = w[0]
-        w = [a,b]
+        h = [-w[1],w[0]] #flip weight vector to get hyperplane direction
 
-        h = w / np.linalg.norm(w)
+        h = h / np.linalg.norm(h)#normalize
 
-        v = point[0] - primary_support
+        v = point[0] - primary_support#direction from one vector to the splitting point
         normv = np.linalg.norm(v)
         if normv == 0: # adds primary in left set. Dont forget to manually add primary to right set
             return 0
 
         v = v / normv
 
-        cosang = np.dot(h,v)
-        print(cosang)
+        cosang = np.dot(h,v)#since both are normalized, according to dot products definition, returns the cosine of the angle between the directions.
 
-        if cosang > 0:
+        if cosang > 0:#if larger than 0 or less the point is on one side or the other
             return 1
         else:
             return 0
@@ -176,6 +174,11 @@ class HPF:
 
 
     def get_rotation(self, alpha):
+        """
+        Forms the rotation matrix:
+        (cos, sin)
+        (-sin, cos)
+        """
         theta = alpha
         c, s = np.cos(theta), np.sin(theta)
         return np.array(((c,-s), (s, c)))
@@ -191,8 +194,9 @@ class HPF:
         #point = np.matmul(point.T - intersection_point, rotation_matrix) + intersection_point
 
         #Slica föri helvete inte point i tilldelning här
-        point = self.rot_func(point[:2], intersection_point, rotation_matrix)
-
+        x,y = self.rot_func(point[:2], intersection_point, rotation_matrix)
+        point[0] = x
+        point[1] = y
         return point
 
 
@@ -408,7 +412,7 @@ class HPF:
         self.group_support_vectors()
 
         #project onto 2D
-        #self.data_points, self.support_vectors_dictionary = self.dim_red.project_down(self.data_points, self.support_vectors_dictionary)
+        self.data_points, self.support_vectors_dictionary = self.dim_red.project_down(self.data_points, self.support_vectors_dictionary)
 
 
         #fold until just two support vectors exist or max_nr_of_folds is reached
@@ -441,7 +445,7 @@ class HPF:
                 print("Only two support vectors, no folds")
 
 
-        #self.data_points = self.dim_red.project_up(self.data_points)
+        self.data_points = self.dim_red.project_up(self.data_points)
 
         stopper = 0
 

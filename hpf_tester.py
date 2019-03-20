@@ -18,7 +18,8 @@ data_set = read_data_from_folder("datasets")
 
 X_train, Y_train = data_set["hpf_test.csv"]
 
-X_test, Y_test = np.array([[-5.0, -1.0]]), np.array([0])
+#X_test, Y_test = np.array([[80, 60, 155]]), np.array([0])
+X_test, Y_test = np.array([[-5.0, -1],[-4.0, -4.0]]), np.array([0,0])
 
 hpf = HPF(max_nr_of_folds=100, verbose=False)
 
