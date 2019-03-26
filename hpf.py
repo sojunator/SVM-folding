@@ -13,8 +13,36 @@ import json
 from dimred import DR
 
 
+def plot_datapoints(data_points, labels):
+    x1 = []
+    y1 = []
+    x2 = []
+    y2 = []
+
+    for index, label in enumerate(labels):
+        if label == 0:
+            x1.append(data_points[index][0])
+            y1.append(data_points[index][1])
+
+        elif label == 1:
+            x2.append(data_points[index][0])
+            y2.append(data_points[index][1])
+
+    
+    plt.plot(x1, y1, 'ro')
+    plt.plot(x2, y2, 'go')
+
+    plt.axis([-20, 20, -20, 20])
+    plt.show()
+
+
 class HPF:
 
+    def vector_projection(self, v1, v2):
+        """
+        v1 projected on v2
+        """
+        return np.dot(v1, v2) / np.dot(v2,v2) * v2
 
     def get_hyperplane(self, clf):
         """
@@ -50,8 +78,10 @@ class HPF:
         https://scikit-learn.org/stable/auto_examples/svm/plot_svm_margin.html
         returns the margin of given clf
         """
-
+        
         return 1 / np.sqrt(np.sum(clf.coef_ ** 2))
+
+
 
     def ordering_support(self, vectors):
         """
@@ -87,13 +117,11 @@ class HPF:
         """
         Splits the data from the primary point in the direction of the normal
         """
-        w = self.clf.coef_[0]
-
-        h = [-w[1],w[0]] #flip weight vector to get hyperplane direction
-
+        max_key = max(self.support_vectors_dictionary, key= lambda x: len(self.support_vectors_dictionary[x]))
+        h = self.support_vectors_dictionary[max_key][0][:2] - self.support_vectors_dictionary[max_key][1][:2] #hyperplane direction
         h = h / np.linalg.norm(h)#normalize
 
-        v = point[0] - primary_support#direction from one vector to the splitting point
+        v = point[0][:2] - primary_support[:2]#direction from one vector to the splitting point
         normv = np.linalg.norm(v)
         if normv == 0: # adds primary in left set. Dont forget to manually add primary to right set
             return 0
@@ -323,12 +351,12 @@ class HPF:
 
 
 
-        def get_distance_from_line_to_point(self, w, point, point_on_line):
-            v = point - point_on_line
-            proj = vector_projection(v, w)
-            distance = np.linalg.norm(v - proj)
+    def get_distance_from_line_to_point(self, w, point, point_on_line):
+        v = point - point_on_line
+        proj = vector_projection(v, w)
+        distance = np.linalg.norm(v - proj)
 
-            return distance
+        return distance
 
 
     def clean_set(self):
@@ -357,12 +385,6 @@ class HPF:
 
                 self.data_points = np.delete(self.data_points, index, 0)
 
-    def get_distance_from_line_to_point(self, w, point, point_on_line):
-        v = point - point_on_line
-        proj = vector_projection(v, w)
-        distance = np.linalg.norm(v - proj)
-
-        return distance
 
 
     def clean_set(self):
@@ -411,19 +433,28 @@ class HPF:
         #group into classes = create support_vectors_dictionary
         self.group_support_vectors()
 
+        plot_datapoints(self.data_points, self.data_labels)
         #project onto 2D
         self.data_points, self.support_vectors_dictionary = self.dim_red.project_down(self.data_points, self.support_vectors_dictionary)
 
-
+        plot_datapoints(self.data_points, self.data_labels)
         #fold until just two support vectors exist or max_nr_of_folds is reached
         current_fold = 0
         val = 0
-        while(len(self.clf.support_vectors_) > 2 and val is 0):
-                val = self.fold()
-                self.new_margin = self.get_margin(self.clf)
-                current_fold += 1
-                print(self.new_margin)
+        #while(len(self.clf.support_vectors_) > 2 and val is 0):
+        val = self.fold()
+        
+        current_fold += 1
+        
+        
 
+        self.data_points = self.dim_red.project_up(self.data_points)
+
+        #self.clf.fit(self.data_points, self.data_labels)
+        #self.new_margin = self.get_margin(self.clf)
+        self.new_margin = self.get_margin(self.clf)
+        print(self.new_margin)
+        print(self.old_margin)
 
         if self.verbose:
             print("Number of folds: {}".format(current_fold))
@@ -444,7 +475,7 @@ class HPF:
                 print("Only two support vectors, no folds")
 
 
-        self.data_points = self.dim_red.project_up(self.data_points)
+        
 
         stopper = 0
 

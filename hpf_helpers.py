@@ -5,6 +5,8 @@ from os import listdir
 from os.path import isfile, join
 import pandas as pd
 
+
+
 def plot_hpf(hpf, ax, XX, YY, colour='k'):
     """
     Plots a clf, with margins, colour will be black

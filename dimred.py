@@ -129,6 +129,10 @@ class DR:
 
         return matrix
 
+
+
+
+
     def get_direction_between_two_vectors_in_set_with_smallest_distance(self, set, dim):
         """
         Finds the shortest distance between two vectors within the given set.
@@ -153,6 +157,40 @@ class DR:
         set = np.delete(set, index_v1, 0)#remove one of the support vectors
 
         return best_dir[:dim], set
+
+    def align(self, direction):
+        #direction = np.array([0,6,6])
+        direction = -direction
+        dim = len(direction)
+        matrix = np.identity(dim)
+
+        v1 = direction[:2]
+        w1 = np.linalg.norm(v1)
+
+        if w1 != 0:#first row
+            matrix[0][0] = direction[1] / w1
+            matrix[0][1] = -direction[0] / w1#first subdiagonal
+            
+        for i in range(1, dim - 1):#middle rows
+            
+            v2 = direction[:i+2]
+            w2 = np.linalg.norm(v2)
+
+            if w2 > 0:
+                matrix[i][i+1] = w1 / w2#subdiagonal
+
+            if w1 > 0:
+                c2 = v2[-1]
+                for k, c1 in enumerate(v1):
+                    matrix[i][k] = c1 * c2 / (w1 * w2)
+
+                v1 = v2
+                w1 = w2
+
+        if w2 > 0:#last row
+            matrix[dim-1] = [c / w2 for c in direction]
+
+        return matrix
 
     def align_direction_matrix(self, direction):
         """
@@ -186,16 +224,23 @@ class DR:
             subdiagonal_element = direction[row + 1]#row + 1 is the k'th element in the vector
             squared_elements_accumulator += subdiagonal_element * subdiagonal_element#accumulate next step, square next element
 
+            
+
+
             Wk = Wkp1
             Wkp1 = np.sqrt(squared_elements_accumulator)
 
-        
             #subdiagonal
             U = 0
             if Wkp1 != 0:
                 U = Wk / Wkp1
 
             rotation_matrix[row][row + 1] = -U #subdiagonal entry in matrix
+
+
+
+        
+            
              
 
             #denominator per row 
@@ -235,6 +280,16 @@ class DR:
         return
 
 
+    def transform_support_vectors(self, matrix, support_vectors_dictionary, dim):
+
+        for key, lst in support_vectors_dictionary.items():
+            support_vectors_dictionary[key] = [np.matmul(matrix, vector[:dim]) for vector in lst]
+
+
+
+            #best_dir[:dim]
+
+
     def transform(self, matrix, data):
 
         return np.array([np.matmul(matrix, p) for p in data])
@@ -264,7 +319,9 @@ class DR:
 
             #rotate data and support vectors
             #self.transform_data_and_support_vectors(basis_matrix, nr_of_coordinates)
-            self.combine_matrices(basis_matrix.T) 
+            self.combine_matrices(basis_matrix) 
+
+            self.transform_support_vectors(basis_matrix.T, support_vectors_dictionary, nr_of_coordinates)
 
             #post rotation the dimension is lowered to the number of support vectors - 1
             nr_of_coordinates = nr_of_support_vectors - 1
@@ -284,6 +341,8 @@ class DR:
     
             #rotate all datapoints and support vectors
             #self.transform_data_and_support_vectors(rotation_matrix, nr_of_coordinates)
+            self.transform_support_vectors(rotation_matrix, support_vectors_dictionary, nr_of_coordinates)
+
             self.combine_matrices(rotation_matrix)
 
             #support vectors are aligned.
@@ -292,8 +351,7 @@ class DR:
 
 
         data_points = self.transform(self.matrices[self.folds_done], data_points)
-        support_vectors_dictionary[0] = self.transform(self.matrices[self.folds_done], support_vectors_dictionary[0])
-        support_vectors_dictionary[1] = self.transform(self.matrices[self.folds_done], support_vectors_dictionary[1])
+        
 
         return data_points, support_vectors_dictionary
 
