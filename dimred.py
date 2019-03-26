@@ -160,7 +160,7 @@ class DR:
 
     def align(self, direction):
         #direction = np.array([0,6,6])
-        direction = -direction
+        
         dim = len(direction)
         matrix = np.identity(dim)
 
@@ -177,7 +177,7 @@ class DR:
             w2 = np.linalg.norm(v2)
 
             if w2 > 0:
-                matrix[i][i+1] = w1 / w2#subdiagonal
+                matrix[i][i+1] = -w1 / w2#subdiagonal
 
             if w1 > 0:
                 c2 = v2[-1]
@@ -224,9 +224,6 @@ class DR:
             subdiagonal_element = direction[row + 1]#row + 1 is the k'th element in the vector
             squared_elements_accumulator += subdiagonal_element * subdiagonal_element#accumulate next step, square next element
 
-            
-
-
             Wk = Wkp1
             Wkp1 = np.sqrt(squared_elements_accumulator)
 
@@ -236,12 +233,6 @@ class DR:
                 U = Wk / Wkp1
 
             rotation_matrix[row][row + 1] = -U #subdiagonal entry in matrix
-
-
-
-        
-            
-             
 
             #denominator per row 
             denominator = Wk * Wkp1
@@ -337,7 +328,7 @@ class DR:
             direction, support_vectors_dictionary[max_key] = self.get_direction_between_two_vectors_in_set_with_smallest_distance(support_vectors_dictionary[max_key], nr_of_coordinates)
         
             #calculate alignment matrix
-            rotation_matrix = self.align_direction_matrix(direction)
+            rotation_matrix = self.align(direction)
     
             #rotate all datapoints and support vectors
             #self.transform_data_and_support_vectors(rotation_matrix, nr_of_coordinates)
