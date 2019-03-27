@@ -37,7 +37,6 @@ def plot_datapoints(data_points, labels):
 
 
 class HPF:
-
     def vector_projection(self, v1, v2):
         """
         v1 projected on v2
@@ -121,7 +120,7 @@ class HPF:
         Splits the data from the primary point in the direction of the normal
         """
         #w = self.clf.coef_[0]
-        
+
         max_key = max(self.support_vectors_dictionary, key= lambda x: len(self.support_vectors_dictionary[x]))
 
         h = self.support_vectors_dictionary[max_key][0][:2] + self.support_vectors_dictionary[max_key][1][:2] #hyperplane direction
@@ -188,7 +187,8 @@ class HPF:
             if (vector[2] is not first_class):
                 primary_support_vector = vector[1]
 
-        return primary_support_vector
+                return primary_support_vector
+        return None
 
     def group_support_vectors(self):
         """
@@ -288,7 +288,6 @@ class HPF:
 
         # Splitting point
         self.primary_support_vector = self.get_splitting_point()
-        print(self.primary_support_vector)
         # Subsets of datasets, left and right of primary support vector
         left_set, right_set = self.split_data(self.primary_support_vector)
 
