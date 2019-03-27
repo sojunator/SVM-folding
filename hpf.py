@@ -87,13 +87,16 @@ class HPF:
         """
         Returns the first possible primary support vector
         """
-        w = self.clf.coef_[0]
+        #w = self.clf.coef_[0]
+
+        max_key = max(self.support_vectors_dictionary, key= lambda x: len(self.support_vectors_dictionary[x]))
+        w = self.support_vectors_dictionary[max_key][0][:2] + self.support_vectors_dictionary[max_key][1][:2]
 
         # As normal for the line is W = (b, -a)
         # direction is then given by as a = (-(-a), b))
 
-        a = -w[1]
-        b = w[0]
+        a = w[0]
+        b = w[1]
 
         cd = (vectors[0][0][:2] - vectors[1][0][:2]) / 2
 
@@ -117,8 +120,11 @@ class HPF:
         """
         Splits the data from the primary point in the direction of the normal
         """
+        #w = self.clf.coef_[0]
+        
         max_key = max(self.support_vectors_dictionary, key= lambda x: len(self.support_vectors_dictionary[x]))
-        h = self.support_vectors_dictionary[max_key][0][:2] - self.support_vectors_dictionary[max_key][1][:2] #hyperplane direction
+
+        h = self.support_vectors_dictionary[max_key][0][:2] + self.support_vectors_dictionary[max_key][1][:2] #hyperplane direction
         h = h / np.linalg.norm(h)#normalize
 
         v = point[:2] - primary_support[:2]#direction from one vector to the splitting point
@@ -282,7 +288,7 @@ class HPF:
 
         # Splitting point
         self.primary_support_vector = self.get_splitting_point()
-
+        print(self.primary_support_vector)
         # Subsets of datasets, left and right of primary support vector
         left_set, right_set = self.split_data(self.primary_support_vector)
 
@@ -436,26 +442,27 @@ class HPF:
 
         plot_datapoints(self.data_points, self.data_labels)
         #project onto 2D
-        #while(len(self.clf.support_vectors_) > 2 and val is 0):
-        self.data_points, self.support_vectors_dictionary = self.dim_red.project_down(self.data_points, self.support_vectors_dictionary)
-
-        plot_datapoints(self.data_points, self.data_labels)
-        #fold until just two support vectors exist or max_nr_of_folds is reached
         current_fold = 0
         val = 0
+        while(len(self.clf.support_vectors_) > 2 and val is 0):
+            self.data_points, self.support_vectors_dictionary = self.dim_red.project_down(self.data_points, self.support_vectors_dictionary)
 
-        self.clf.fit(self.data_points, self.data_labels)
-        val = self.fold()
-
-        current_fold += 1
+            plot_datapoints(self.data_points, self.data_labels)
+            #fold until just two support vectors exist or max_nr_of_folds is reached
 
 
+            self.clf.fit(self.data_points, self.data_labels)
+            val = self.fold()
 
-        self.data_points = self.dim_red.project_up(self.data_points)
+            current_fold += 1
 
-        plot_datapoints(self.data_points, self.data_labels)
 
-        self.clf.fit(self.data_points, self.data_labels)
+
+            self.data_points = self.dim_red.project_up(self.data_points)
+
+            plot_datapoints(self.data_points, self.data_labels)
+
+        #self.clf.fit(self.data_points, self.data_labels)
         #self.new_margin = self.get_margin(self.clf)
         self.new_margin = self.get_margin(self.clf)
         print(self.new_margin)
