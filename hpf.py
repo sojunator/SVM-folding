@@ -28,7 +28,7 @@ def plot_datapoints(data_points, labels):
             x2.append(data_points[index][0])
             y2.append(data_points[index][1])
 
-    
+
     plt.plot(x1, y1, 'ro')
     plt.plot(x2, y2, 'go')
 
@@ -78,7 +78,7 @@ class HPF:
         https://scikit-learn.org/stable/auto_examples/svm/plot_svm_margin.html
         returns the margin of given clf
         """
-        
+
         return 1 / np.sqrt(np.sum(clf.coef_ ** 2))
 
 
@@ -121,7 +121,7 @@ class HPF:
         h = self.support_vectors_dictionary[max_key][0][:2] - self.support_vectors_dictionary[max_key][1][:2] #hyperplane direction
         h = h / np.linalg.norm(h)#normalize
 
-        v = point[0][:2] - primary_support[:2]#direction from one vector to the splitting point
+        v = point[:2] - primary_support[:2]#direction from one vector to the splitting point
         normv = np.linalg.norm(v)
         if normv == 0: # adds primary in left set. Dont forget to manually add primary to right set
             return 0
@@ -142,8 +142,8 @@ class HPF:
         returns a list  containing left and right split.
         """
         # Construct a new array, to remove reference
-        right_set = [np.array(vector) for vector in zip(self.data_points, self.data_labels) if self.left_or_right_of_plane(vector, primary_support)]
-        left_set = [np.array(vector) for vector in zip(self.data_points, self.data_labels) if not self.left_or_right_of_plane(vector, primary_support)]
+        right_set = [np.array(vector) for vector in zip(self.data_points, self.data_labels) if self.left_or_right_of_plane(vector[0], primary_support)]
+        left_set = [np.array(vector) for vector in zip(self.data_points, self.data_labels) if not self.left_or_right_of_plane(vector[0], primary_support)]
 
         #hack to add primary vec with label
         l = self.clf.predict(np.array([primary_support]))
@@ -261,8 +261,8 @@ class HPF:
                                 for point in left_set[0]]
             left_or_right = 1
 
-        
-            
+
+
 
 
         X = left_set[0] + right_set[0]
@@ -329,7 +329,7 @@ class HPF:
             rotated_set = []
             none_rotated_set = []
 
-            
+
             for point in points:
                 if left_or_right:
                     if self.left_or_right_of_plane(point, primary_support_vector):
@@ -446,10 +446,10 @@ class HPF:
 
         self.clf.fit(self.data_points, self.data_labels)
         val = self.fold()
-        
+
         current_fold += 1
-        
-        
+
+
 
         self.data_points = self.dim_red.project_up(self.data_points)
 
@@ -480,7 +480,7 @@ class HPF:
                 print("Only two support vectors, no folds")
 
 
-        
+
 
         stopper = 0
 
