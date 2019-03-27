@@ -134,10 +134,12 @@ class HPF:
         
         h = self.get_hyperplane_direction()
 
+        
+
         v = point[:2] - self.primary_support_vector[:2]#direction from one vector to the splitting point
         normv = np.linalg.norm(v)
         if normv < 0.000001: # adds primary in left set. Dont forget to manually add primary to right set
-            return 0
+            print("error: denominator = 0")
 
         v = v / normv
 
@@ -146,7 +148,7 @@ class HPF:
         if cosang > 0:#Left / right
             return 1
         else:
-            return -1
+            return 0
 
 
 
@@ -160,14 +162,18 @@ class HPF:
         left_set = []
 
         for vector in zip(self.data_points, self.data_labels):
-            left_or_right = self.left_or_right_of_plane(vector[0])
-            if 1 == left_or_right:
-                right_set.append(vector)
-            elif -1 == left_or_right:
-                left_set.append(vector)
-            else:
+
+            if all(vector[0] == self.primary_support_vector):
                 right_set.append(vector)
                 left_set.append(vector)
+            else :
+                
+                if self.left_or_right_of_plane(vector[0]):
+                    right_set.append(vector)
+                else:
+                    left_set.append(vector)
+            
+                
 
        # right_set = [np.array(vector) for vector in zip(self.data_points, self.data_labels) if self.left_or_right_of_plane(vector[0], primary_support)]
        # left_set = [np.array(vector) for vector in zip(self.data_points, self.data_labels) if not self.left_or_right_of_plane(vector[0], primary_support)]
