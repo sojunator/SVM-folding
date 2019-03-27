@@ -32,7 +32,7 @@ def plot_datapoints(data_points, labels):
     plt.plot(x1, y1, 'ro')
     plt.plot(x2, y2, 'go')
 
-    plt.axis([-200, 200, -200, 200])
+    plt.axis([-15, 15, -15, 15])
     plt.show()
 
 
@@ -53,6 +53,19 @@ class HPF:
         a = -w[0] / w[1]
 
         return (a, (-clf.intercept_[0]) / w[1])
+
+    def get_hyperplane_direction(self):
+        max_key = max(self.support_vectors_dictionary, key= lambda x: len(self.support_vectors_dictionary[x]))
+
+        if len(self.support_vectors_dictionary[max_key]) < 2:
+            print("Too few support vectors to get hyerplane direction from dict")
+
+        h = self.support_vectors_dictionary[max_key][0][:2] + self.support_vectors_dictionary[max_key][1][:2]
+        normh = np.linalg.norm(h)
+        if normh < 0.000001: # == 0 ??
+            print("Error: denominatro is zero")
+        h = h / normh;
+        return h
 
     def get_intersection_point(self, left, right):
         """
@@ -83,22 +96,19 @@ class HPF:
 
 
 
-    def ordering_support(self, vectors):
+    def ordering_support(self):
         """
         Returns the first possible primary support vector
         """
-        #w = self.clf.coef_[0]
-
-        max_key = max(self.support_vectors_dictionary, key= lambda x: len(self.support_vectors_dictionary[x]))
-        w = self.support_vectors_dictionary[max_key][0][:2] + self.support_vectors_dictionary[max_key][1][:2]
+        h = self.get_hyperplane_direction()
 
         # As normal for the line is W = (b, -a)
         # direction is then given by as a = (-(-a), b))
 
-        a = w[0]
-        b = w[1]
+        a = h[0]
+        b = h[1]
 
-        cd = (vectors[0][0][:2] - vectors[1][0][:2]) / 2
+        cd = (self.support_vectors_dictionary[0][0][:2] - self.support_vectors_dictionary[1][0][:2]) / 2
 
 
         c = cd[0]
@@ -106,8 +116,8 @@ class HPF:
 
         tk = []
 
-        for key in vectors:
-            for vector in vectors[key]:
+        for key in self.support_vectors_dictionary:
+            for vector in self.support_vectors_dictionary[key]:
                 tk.append((((a * (vector[0] - c) + b * (vector[1] - d)) /
                                 ( a * a + b * b)), vector, key))
 
@@ -116,44 +126,55 @@ class HPF:
         return tk
 
 
-    def left_or_right_of_plane(self, point, primary_support):
+    def left_or_right_of_plane(self, point):
         """
         Splits the data from the primary point in the direction of the normal
         """
         #w = self.clf.coef_[0]
         
-        max_key = max(self.support_vectors_dictionary, key= lambda x: len(self.support_vectors_dictionary[x]))
+        h = self.get_hyperplane_direction()
 
-        h = self.support_vectors_dictionary[max_key][0][:2] + self.support_vectors_dictionary[max_key][1][:2] #hyperplane direction
-        h = h / np.linalg.norm(h)#normalize
-
-        v = point[:2] - primary_support[:2]#direction from one vector to the splitting point
+        v = point[:2] - self.primary_support_vector[:2]#direction from one vector to the splitting point
         normv = np.linalg.norm(v)
-        if normv == 0: # adds primary in left set. Dont forget to manually add primary to right set
+        if normv < 0.000001: # adds primary in left set. Dont forget to manually add primary to right set
             return 0
 
         v = v / normv
 
         cosang = np.dot(h,v)#since both are normalized, according to dot products definition, returns the cosine of the angle between the directions.
 
-        if cosang > 0:#if larger than 0 or less the point is on one side or the other
+        if cosang > 0:#Left / right
             return 1
         else:
-            return 0
+            return -1
 
 
 
-    def split_data(self, primary_support):
+    def split_data(self):
         """
         returns a list  containing left and right split.
         """
         # Construct a new array, to remove reference
-        right_set = [np.array(vector) for vector in zip(self.data_points, self.data_labels) if self.left_or_right_of_plane(vector[0], primary_support)]
-        left_set = [np.array(vector) for vector in zip(self.data_points, self.data_labels) if not self.left_or_right_of_plane(vector[0], primary_support)]
+
+        right_set = []
+        left_set = []
+
+        for vector in zip(self.data_points, self.data_labels):
+            left_or_right = self.left_or_right_of_plane(vector[0])
+            if 1 == left_or_right:
+                right_set.append(vector)
+            elif -1 == left_or_right:
+                left_set.append(vector)
+            else:
+                right_set.append(vector)
+                left_set.append(vector)
+
+       # right_set = [np.array(vector) for vector in zip(self.data_points, self.data_labels) if self.left_or_right_of_plane(vector[0], primary_support)]
+       # left_set = [np.array(vector) for vector in zip(self.data_points, self.data_labels) if not self.left_or_right_of_plane(vector[0], primary_support)]
 
         #hack to add primary vec with label
-        l = self.clf.predict(np.array([primary_support]))
-        right_set.append(np.array([primary_support, l[0]]))
+       # l = self.clf.predict(np.array([primary_support]))
+       # right_set.append(np.array([primary_support, l[0]]))
 
         right_x = []
         right_y = []
@@ -179,16 +200,18 @@ class HPF:
         Finds and returns the primary support vector, splitting point
         """
 
-        tk = self.ordering_support(self.support_vectors_dictionary)
+        tk = self.ordering_support()
         first_class = tk[0][2]
 
         primary_support_vector = None
 
         for vector in tk:
             if (vector[2] is not first_class):
-                primary_support_vector = vector[1]
+                return vector[1]
 
-        return primary_support_vector
+
+        print("No primary vector found")
+#        return primary_support_vector
 
     def group_support_vectors(self):
         """
@@ -290,7 +313,7 @@ class HPF:
         self.primary_support_vector = self.get_splitting_point()
         print(self.primary_support_vector)
         # Subsets of datasets, left and right of primary support vector
-        left_set, right_set = self.split_data(self.primary_support_vector)
+        left_set, right_set = self.split_data()
 
         # New SVM, right
         try:
@@ -444,23 +467,23 @@ class HPF:
         #project onto 2D
         current_fold = 0
         val = 0
-        while(len(self.clf.support_vectors_) > 2 and val is 0):
-            self.data_points, self.support_vectors_dictionary = self.dim_red.project_down(self.data_points, self.support_vectors_dictionary)
+       # while(len(self.clf.support_vectors_) > 2 and val is 0):
+        self.data_points, self.support_vectors_dictionary = self.dim_red.project_down(self.data_points, self.support_vectors_dictionary)
 
-            plot_datapoints(self.data_points, self.data_labels)
-            #fold until just two support vectors exist or max_nr_of_folds is reached
-
-
-            self.clf.fit(self.data_points, self.data_labels)
-            val = self.fold()
-
-            current_fold += 1
+        plot_datapoints(self.data_points, self.data_labels)
+        #fold until just two support vectors exist or max_nr_of_folds is reached
 
 
+        # self.clf.fit(self.data_points, self.data_labels)
+        val = self.fold()
 
-            self.data_points = self.dim_red.project_up(self.data_points)
+        current_fold += 1
 
-            plot_datapoints(self.data_points, self.data_labels)
+        self.data_points = self.dim_red.project_up(self.data_points)
+
+        plot_datapoints(self.data_points, self.data_labels)
+
+        
 
         #self.clf.fit(self.data_points, self.data_labels)
         #self.new_margin = self.get_margin(self.clf)

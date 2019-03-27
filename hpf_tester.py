@@ -16,7 +16,7 @@ data_set = read_data_from_folder("datasets")
 
 #X_train, X_test, Y_train, Y_test = train_test_split(X, y, test_size=0.0, random_state=42)
 
-X_train, Y_train = data_set["bmiv2.csv"]
+X_train, Y_train = data_set["dimred_test.csv"]
 
 X_test, Y_test = np.array([[80, 60, 155]]), np.array([0])
 #X_test, Y_test = np.array([[0.0, 0.0, -4.0, 0.0]]), np.array([0])
