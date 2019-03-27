@@ -32,7 +32,7 @@ def plot_datapoints(data_points, labels):
     plt.plot(x1, y1, 'ro')
     plt.plot(x2, y2, 'go')
 
-    plt.axis([-20, 20, -20, 20])
+    plt.axis([-200, 200, -200, 200])
     plt.show()
 
 
@@ -283,9 +283,6 @@ class HPF:
         # Splitting point
         self.primary_support_vector = self.get_splitting_point()
 
-        # Used for plotting where the split occoured
-        splitting_point = self.primary_support_vector[0]#x-axis-location of primary vec
-
         # Subsets of datasets, left and right of primary support vector
         left_set, right_set = self.split_data(self.primary_support_vector)
 
@@ -315,7 +312,10 @@ class HPF:
         if not rotate:
             return self.old_clf.predict(points)
 
-        for rotation in self.rotation_data:
+        for idx, rotation in enumerate(self.rotation_data):
+
+            points = self.dim_red.classify_project_down(points, idx)
+
             #unpackage the mess
             intersection_point = rotation[0]
             primary_support_vector = rotation[1]
@@ -346,6 +346,7 @@ class HPF:
 
             points = np.asarray(rotated_set + none_rotated_set)
 
+            points = self.dim_red.classify_project_up(points, idx)
 
         return self.clf.predict(points)
 
@@ -435,13 +436,15 @@ class HPF:
 
         plot_datapoints(self.data_points, self.data_labels)
         #project onto 2D
+        #while(len(self.clf.support_vectors_) > 2 and val is 0):
         self.data_points, self.support_vectors_dictionary = self.dim_red.project_down(self.data_points, self.support_vectors_dictionary)
 
         plot_datapoints(self.data_points, self.data_labels)
         #fold until just two support vectors exist or max_nr_of_folds is reached
         current_fold = 0
         val = 0
-        #while(len(self.clf.support_vectors_) > 2 and val is 0):
+
+        self.clf.fit(self.data_points, self.data_labels)
         val = self.fold()
         
         current_fold += 1
@@ -450,7 +453,9 @@ class HPF:
 
         self.data_points = self.dim_red.project_up(self.data_points)
 
-        #self.clf.fit(self.data_points, self.data_labels)
+        plot_datapoints(self.data_points, self.data_labels)
+
+        self.clf.fit(self.data_points, self.data_labels)
         #self.new_margin = self.get_margin(self.clf)
         self.new_margin = self.get_margin(self.clf)
         print(self.new_margin)

@@ -78,6 +78,12 @@ class DR:
 
         return matrix
 
+   # def get_two_cauchy_schwarz_unequal_vectors_as_matrix(self, vectors):
+
+    #    for vector in vectors:
+     #       matrix = np.array([vector])
+        
+
     def find_linear_independent_vectors(self, vectors, matrix):
         """
         fills matrix with linear independent vectors
@@ -358,6 +364,11 @@ class DR:
         return data_points
 
 
+    def classify_project_down(self, data_points, foldId):
+        return self.transform(self.matrices[foldId], data_points)
+
+    def classify_project_up(self, data_points, foldId):
+        return self.transform(np.linalg.inv(self.matrices[foldId]), data_points)
 
     def __init__(self):
         self.matrices = {}
