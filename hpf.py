@@ -54,16 +54,42 @@ class HPF:
 
         return (a, (-clf.intercept_[0]) / w[1])
 
-    def get_hyperplane_direction(self):
-        max_key = max(self.support_vectors_dictionary, key= lambda x: len(self.support_vectors_dictionary[x]))
+    def get_hyperplane_direction(self, grouped_support_vectors):
+        """
+        Input: Dictionary containing lists of support vectors of each class
+        Output: The hyperplanes direction.
+        Note, Input must have one support vector in each class.
+        """
+        max_key = max(grouped_support_vectors, key= lambda x: len(grouped_support_vectors[x]))
 
-        if len(self.support_vectors_dictionary[max_key]) < 2:
-            print("Too few support vectors to get hyerplane direction from dict")
+        h = [0,0]
+        normh = 1
 
-        h = self.support_vectors_dictionary[max_key][0][:2] - self.support_vectors_dictionary[max_key][1][:2]
-        normh = np.linalg.norm(h)
-        if normh < 0.000001: # == 0 ??
-            print("Error: denominatro is zero")
+        if len(grouped_support_vectors[max_key]) < 2: #only one support vector in each class?
+            
+            w = grouped_support_vectors[0][0][:2] - grouped_support_vectors[1][0][:2]
+            h[0] = -w[1]
+            h[1] = w[0]
+
+            normh = np.linalg.norm(h)
+            if normh < 0.000001: # Flip direction
+                w = grouped_support_vectors[1][0][:2] - grouped_support_vectors[0][0][:2]
+                h[0] = -w[1]
+                h[1] = w[0]
+                normh = np.linalg.norm(h)
+                if normh < 0.000001: # == 0 ??
+                    print("Error in get hyperplane direction")
+
+        else:
+            h = grouped_support_vectors[max_key][0][:2] - grouped_support_vectors[max_key][1][:2]
+            normh = np.linalg.norm(h)
+            if normh < 0.000001: # flip direction
+                h = grouped_support_vectors[max_key][1][:2] - grouped_support_vectors[max_key][0][:2]
+                normh = np.linalg.norm(h)
+                if normh < 0.000001: # == 0 ??
+                    print("Error in get hyperplane direction")
+        
+
         h = h / normh;
         return h
 
@@ -86,6 +112,24 @@ class HPF:
         return ((x, y), angle)
 
 
+    def get_intersection_between_SVMs(self, left_clf, right_clf):
+
+        left_grouped = self.group_support_vectors(left_clf)
+        right_grouped = self.group_support_vectors(right_clf)
+
+        left_point_on_line = left_grouped[0][0][:2] - left_grouped[1][0][:2]
+        right_point_on_line = right_grouped[0][0][:2] - right_grouped[1][0][:2]
+
+        left_direction = self.get_hyperplane_direction(left_grouped)
+        right_direction = self.get_hyperplane_direction(right_grouped)
+
+        stopper = 0
+
+        return None
+
+
+
+
     def get_margin(self, clf):
         """
         https://scikit-learn.org/stable/auto_examples/svm/plot_svm_margin.html
@@ -100,7 +144,7 @@ class HPF:
         """
         Returns the first possible primary support vector
         """
-        h = self.get_hyperplane_direction()
+        h = self.get_hyperplane_direction(self.support_vectors_dictionary)
 
         # As normal for the line is W = (b, -a)
         # direction is then given by as a = (-(-a), b))
@@ -132,14 +176,13 @@ class HPF:
         """
         #w = self.clf.coef_[0]
         
-        h = self.get_hyperplane_direction()
+        h = self.get_hyperplane_direction(self.support_vectors_dictionary)
 
-        
 
         v = point[:2] - self.primary_support_vector[:2]#direction from one vector to the splitting point
         normv = np.linalg.norm(v)
-        if normv < 0.000001: # adds primary in left set. Dont forget to manually add primary to right set
-            print("error: denominator = 0")
+        if normv < 0.000001: #same point as primary support vector in 2d. Add into left set? or both? TODO:
+            return 0
 
         v = v / normv
 
@@ -173,14 +216,6 @@ class HPF:
                 else:
                     left_set.append(vector)
             
-                
-
-       # right_set = [np.array(vector) for vector in zip(self.data_points, self.data_labels) if self.left_or_right_of_plane(vector[0], primary_support)]
-       # left_set = [np.array(vector) for vector in zip(self.data_points, self.data_labels) if not self.left_or_right_of_plane(vector[0], primary_support)]
-
-        #hack to add primary vec with label
-       # l = self.clf.predict(np.array([primary_support]))
-       # right_set.append(np.array([primary_support, l[0]]))
 
         right_x = []
         right_y = []
@@ -216,22 +251,23 @@ class HPF:
 
         print("No primary vector found")
 
-    def group_support_vectors(self):
+    def group_support_vectors(self, clf):
         """
-        groups the support vectors in the currently trained clf
+        Input: a trained SVS
+        Output: support vectors grouped into classes in a dictionary
         """
-        self.support_vectors_dictionary = {}
+        grouped_support_vectors = {}
 
-        for sv in self.clf.support_vectors_:
+        for sv in clf.support_vectors_:
 
-            key = self.clf.predict([sv])[0]
+            key = clf.predict([sv])[0]
 
-            if key not in self.support_vectors_dictionary:
-                self.support_vectors_dictionary[key] = [sv]
+            if key not in grouped_support_vectors:
+                grouped_support_vectors[key] = [sv]
             else:
-                self.support_vectors_dictionary[key].append(sv)
+                grouped_support_vectors[key].append(sv)
 
-
+        return grouped_support_vectors
 
     def get_rotation(self, alpha):
         """
@@ -260,7 +296,7 @@ class HPF:
         return point
 
 
-    def rotate_set(self, left_clf, left_set, right_clf, right_set, primary_support):
+    def rotate_set(self, left_clf, left_set, right_clf, right_set, primary_support_vector):
         """
         Performs rotation on the set with biggest margin
         Currently rotates around the intersection point
@@ -276,19 +312,19 @@ class HPF:
 
 
         # intersection data
-        intersection_point, angle = self.get_intersection_point(left_clf, right_clf)
+        intersection_point, angle = self.get_intersection_between_SVMs(left_clf, right_clf)#self.get_intersection_point(left_clf, right_clf)
         # if 1, left was rotated, 0 is right set.
         left_or_right = -1
 
 
         if (right_margin >= left_margin):
-            right_set[0] = [self.rotate_point_2D(point, angle, primary_support,
+            right_set[0] = [self.rotate_point_2D(point, angle, primary_support_vector,
                             intersection_point)
                                 for point in right_set[0]]
             left_or_right = 0
 
         elif (left_margin > right_margin):
-            left_set[0] = [self.rotate_point_2D(point, -angle, primary_support,
+            left_set[0] = [self.rotate_point_2D(point, -angle, primary_support_vector,
                             intersection_point)
                                 for point in left_set[0]]
             left_or_right = 1
@@ -332,12 +368,12 @@ class HPF:
         self.rotation_data.append((intersection_point, self.primary_support_vector, left_or_right, (right_clf, left_clf)))
 
         # merge
-        self.clf = right_clf if left_or_right else left_clf
-        self.group_support_vectors()
+        #self.clf = right_clf if left_or_right else left_clf
+        #self.group_support_vectors(self.clf)
 
         # Used for highlighting the sets
-        right_set[0] = np.vstack(right_set[0])
-        left_set[0] = np.vstack(left_set[0])
+        #right_set[0] = np.vstack(right_set[0])
+        #left_set[0] = np.vstack(left_set[0])
         return 0
 
     def classify(self, points, rotate=True):
@@ -384,74 +420,6 @@ class HPF:
 
 
 
-    def get_distance_from_line_to_point(self, w, point, point_on_line):
-        v = point - point_on_line
-        proj = vector_projection(v, w)
-        distance = np.linalg.norm(v - proj)
-
-        return distance
-
-
-    def clean_set(self):
-        """
-        Returns a cleaned dataset, turns soft into hard.
-
-        Function does not calculate margin as get_margin does, something could be
-        wrong with the assumption that len w is the margin. Instead it calculates
-        the margin by calculating the distance from the decision_function to
-        a support vector.
-        """
-
-        w = self.clf.coef_[0]
-        w = np.array(w[1], w[0]) # place the vector in the direction of the line
-
-        # Orginal support vectors
-        point_on_line = (self.support_vectors_dictionary[0][0] + self.support_vectors_dictionary[1][0]) / 2
-
-        margin = get_distance_from_line_to_point(w, self.support_vectors_dictionary[0][0], point_on_line)
-
-        for point in self.data_points:
-            distance = get_distance_from_line_to_point(w, point, point_on_line)
-
-            if (distance < margin):
-                index = np.where(self.data_points==point)
-
-                self.data_points = np.delete(self.data_points, index, 0)
-
-
-
-    def clean_set(self):
-        """
-        Returns a cleaned dataset, turns soft into hard.
-
-        Function does not calculate margin as get_margin does, something could be
-        wrong with the assumption that len w is the margin. Instead it calculates
-        the margin by calculating the distance from the decision_function to
-        a support vector.
-        """
-
-        w = self.clf.coef_[0]
-        w = np.array(w[1], w[0]) # place the vector in the direction of the line
-
-        # Orginal support vectors
-        support_dict = group_support_vectors(clf.support_vectors_, clf)
-
-        point_on_line = (support_dict[0][0] + support_dict[1][0]) / 2
-
-        margin = get_distance_from_line_to_point(w, support_dict[0][0], point_on_line)
-
-        for point in self.data_points:
-            distance = get_distance_from_line_to_point(w, point, point_on_line)
-
-            if (distance < margin):
-                index = np.where(self.data_points==point)
-
-                self.data_points = np.delete(self.data_points, index, 0)
-
-                self.data_labels = np.delete(self.data_labels, index)
-
-
-
 
     def fit(self, data_points, data_labels):
         self.data_points = data_points
@@ -459,33 +427,35 @@ class HPF:
 
         self.old_data = data_points
 
-        self.clf.fit(data_points, data_labels)
+        
         self.old_clf.fit(data_points, data_labels)
         self.old_margin = self.get_margin(self.old_clf)
         self.new_margin = -1
-        #group into classes = create support_vectors_dictionary
-        self.group_support_vectors()
+        
 
         plot_datapoints(self.data_points, self.data_labels)
         #project onto 2D
         current_fold = 0
         val = 0
-       # while(len(self.clf.support_vectors_) > 2 and val is 0):
-        self.data_points, self.support_vectors_dictionary = self.dim_red.project_down(self.data_points, self.support_vectors_dictionary)
+        self.clf.fit(data_points, data_labels)
+        self.support_vectors_dictionary = self.group_support_vectors(self.clf) #group into classes = create support_vectors_dictionary
+        while(len(self.clf.support_vectors_) > 2 and val is 0):
+            
 
-        plot_datapoints(self.data_points, self.data_labels)
-        #fold until just two support vectors exist or max_nr_of_folds is reached
+            self.data_points, self.support_vectors_dictionary = self.dim_red.project_down(self.data_points, self.support_vectors_dictionary)
 
+            #plot_datapoints(self.data_points, self.data_labels)
+            #fold until just two support vectors exist or max_nr_of_folds is reached
 
-        # self.clf.fit(self.data_points, self.data_labels)
-        val = self.fold()
+            val = self.fold()
 
-        current_fold += 1
+            current_fold += 1
 
-        self.data_points = self.dim_red.project_up(self.data_points)
+            self.data_points = self.dim_red.project_up(self.data_points)
 
-        plot_datapoints(self.data_points, self.data_labels)
-
+            #plot_datapoints(self.data_points, self.data_labels)
+            self.clf.fit(data_points, data_labels)#fit for next iteration or exitcontidion of just two support vectors
+            self.support_vectors_dictionary = self.group_support_vectors(self.clf) #regroup
         
 
         #self.clf.fit(self.data_points, self.data_labels)
