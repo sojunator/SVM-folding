@@ -60,7 +60,7 @@ class HPF:
         if len(self.support_vectors_dictionary[max_key]) < 2:
             print("Too few support vectors to get hyerplane direction from dict")
 
-        h = self.support_vectors_dictionary[max_key][0][:2] + self.support_vectors_dictionary[max_key][1][:2]
+        h = self.support_vectors_dictionary[max_key][0][:2] - self.support_vectors_dictionary[max_key][1][:2]
         normh = np.linalg.norm(h)
         if normh < 0.000001: # == 0 ??
             print("Error: denominatro is zero")
@@ -203,15 +203,12 @@ class HPF:
         tk = self.ordering_support()
         first_class = tk[0][2]
 
-        primary_support_vector = None
 
         for vector in tk:
             if (vector[2] is not first_class):
-                return vector[1]
-
+                return vector[1] 
 
         print("No primary vector found")
-#        return primary_support_vector
 
     def group_support_vectors(self):
         """
