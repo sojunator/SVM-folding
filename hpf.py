@@ -71,26 +71,17 @@ class HPF:
             h[0] = -w[1]
             h[1] = w[0]
 
-            normh = np.linalg.norm(h)
-            if normh < 0.000001: # Flip direction
-                w = grouped_support_vectors[1][0][:2] - grouped_support_vectors[0][0][:2]
-                h[0] = -w[1]
-                h[1] = w[0]
-                normh = np.linalg.norm(h)
-                if normh < 0.000001: # == 0 ??
-                    print("Error in get hyperplane direction")
 
         else:
             h = grouped_support_vectors[max_key][0][:2] - grouped_support_vectors[max_key][1][:2]
-            normh = np.linalg.norm(h)
-            if normh < 0.000001: # flip direction
-                h = grouped_support_vectors[max_key][1][:2] - grouped_support_vectors[max_key][0][:2]
-                normh = np.linalg.norm(h)
-                if normh < 0.000001: # == 0 ??
-                    print("Error in get hyperplane direction")
-        
+            
+                
+        normh = np.linalg.norm(h)
 
-        h = h / normh;
+        if normh < 0.000001: # == 0 ??
+            print("Error in get hyperplane direction")
+
+        h = h / normh;#normalize
         return h
 
     def get_intersection_point(self, left, right):
@@ -117,23 +108,37 @@ class HPF:
         left_grouped = self.group_support_vectors(left_clf)
         right_grouped = self.group_support_vectors(right_clf)
 
-        left_point_on_line = (left_grouped[0][0][:2] - left_grouped[1][0][:2]) / 2
-        right_point_on_line = (right_grouped[0][0][:2] - right_grouped[1][0][:2]) / 2
+        first_left_point_on_line = (left_grouped[0][0][:2] - left_grouped[1][0][:2]) / 2
+        first_right_point_on_line = (right_grouped[0][0][:2] - right_grouped[1][0][:2]) / 2
 
         left_direction = self.get_hyperplane_direction(left_grouped)
         right_direction = self.get_hyperplane_direction(right_grouped)
 
+        second_left_point_on_line = first_left_point_on_line + left_direction
+        second_right_point_on_line = first_right_point_on_line + right_direction
 
-        asdf = -left_direction[0] * left_point_on_line[0]
-        kkkk = - left_direction[1] * left_point_on_line[1]
-        left_intercept = -left_direction[0] * left_point_on_line[0] - left_direction[1] * left_point_on_line[1]
-        right_intercept = -right_direction[0] * right_point_on_line[0] - right_direction[1] * right_point_on_line[1]
+        x1 = first_left_point_on_line[0]
+        x2 = second_left_point_on_line[0]
+        y1 = first_left_point_on_line[1]
+        y2 = second_left_point_on_line[1]
 
-        asdfasdfasdf = left_point_on_line[0]
+        x3 = first_right_point_on_line[0]
+        x4 = second_right_point_on_line[0]
+        y3 = first_right_point_on_line[1]
+        y4 = second_right_point_on_line[1]
 
-        stopper = 0
 
-        return None
+        x = ( (x1*y2-y1*x2)*(x3-x4) - (x1-x2) *(x3*y4-y3*x4) )/ ( (x1-x2)*(y3-y4) - (y1-y2)*(x3-x4) )
+        y = ( (x1*y2-y1*x2)*(y3-y4) - (y1-y2) *(x3*y4-y3*x4) )/ ( (x1-x2)*(y3-y4) - (y1-y2)*(x3-x4) )
+
+        angle = math.acos(np.dot(left_direction, right_direction))
+
+        #left_slope = (second_left_point_on_line[1] - first_left_point_on_line[1]) / (second_left_point_on_line[0] - first_left_point_on_line[0])
+        #right_slope = (second_right_point_on_line[1] - first_right_point_on_line[1]) / (second_right_point_on_line[0] - first_right_point_on_line[0])
+
+       
+
+        return [x, y], angle
 
 
 
