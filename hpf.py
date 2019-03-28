@@ -123,8 +123,13 @@ class HPF:
         left_direction = self.get_hyperplane_direction(left_grouped)
         right_direction = self.get_hyperplane_direction(right_grouped)
 
+
+        asdf = -left_direction[0] * left_point_on_line[0]
+        kkkk = - left_direction[1] * left_point_on_line[1]
         left_intercept = -left_direction[0] * left_point_on_line[0] - left_direction[1] * left_point_on_line[1]
         right_intercept = -right_direction[0] * right_point_on_line[0] - right_direction[1] * right_point_on_line[1]
+
+        asdfasdfasdf = left_point_on_line[0]
 
         stopper = 0
 
@@ -210,15 +215,21 @@ class HPF:
         for vector in zip(self.data[0], self.data[1]):
             vector = (np.array(vector[0][:2]), vector[1])
 
-            if all(vector[0] == self.primary_support_vector[:2]):
-                right_set.append(vector)
-                left_set.append(vector)
-            else :
+            #Uses failchecks to not add any duplicates
+            if all(vector[0] == self.primary_support_vector[:2]):#is primary support vector
+
+                if not any(all(vector[0] == x[0]) for x in right_set):
+                    right_set.append(vector)
+                if not any(all(vector[0] == x[0]) for x in left_set):
+                    left_set.append(vector)
+            else:
                 
                 if self.left_or_right_of_plane(vector[0]):
-                    right_set.append(vector)
+                    if not any(all(vector[0] == x[0]) for x in right_set):
+                        right_set.append(vector)
                 else:
-                    left_set.append(vector)
+                    if not any(all(vector[0] == x[0]) for x in left_set):
+                        left_set.append(vector)
             
 
         right_x = []
@@ -447,7 +458,7 @@ class HPF:
         while(len(self.clf.support_vectors_) > 2 and val is 0):
             
 
-            self.data, self.support_vectors_dictionary = self.dim_red.project_down(self.data, self.support_vectors_dictionary)
+            self.data[0], self.support_vectors_dictionary = self.dim_red.project_down(self.data[0], self.support_vectors_dictionary)
 
             #plot_datapoints(self.data)
             #fold until just two support vectors exist or max_nr_of_folds is reached
