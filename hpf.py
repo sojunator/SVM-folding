@@ -13,20 +13,20 @@ import json
 from dimred import DR
 
 
-def plot_datapoints(data_points, labels):
+def plot_datapoints(data):
     x1 = []
     y1 = []
     x2 = []
     y2 = []
 
-    for index, label in enumerate(labels):
+    for index, label in enumerate(data[1]):
         if label == 0:
-            x1.append(data_points[index][0])
-            y1.append(data_points[index][1])
+            x1.append(data[0][index][0])
+            y1.append(data[0][index][1])
 
         elif label == 1:
-            x2.append(data_points[index][0])
-            y2.append(data_points[index][1])
+            x2.append(data[0][index][0])
+            y2.append(data[0][index][1])
 
 
     plt.plot(x1, y1, 'ro')
@@ -117,11 +117,14 @@ class HPF:
         left_grouped = self.group_support_vectors(left_clf)
         right_grouped = self.group_support_vectors(right_clf)
 
-        left_point_on_line = left_grouped[0][0][:2] - left_grouped[1][0][:2]
-        right_point_on_line = right_grouped[0][0][:2] - right_grouped[1][0][:2]
+        left_point_on_line = (left_grouped[0][0][:2] - left_grouped[1][0][:2]) / 2
+        right_point_on_line = (right_grouped[0][0][:2] - right_grouped[1][0][:2]) / 2
 
         left_direction = self.get_hyperplane_direction(left_grouped)
         right_direction = self.get_hyperplane_direction(right_grouped)
+
+        left_intercept = -left_direction[0] * left_point_on_line[0] - left_direction[1] * left_point_on_line[1]
+        right_intercept = -right_direction[0] * right_point_on_line[0] - right_direction[1] * right_point_on_line[1]
 
         stopper = 0
 
@@ -204,9 +207,10 @@ class HPF:
         right_set = []
         left_set = []
 
-        for vector in zip(self.data_points, self.data_labels):
+        for vector in zip(self.data[0], self.data[1]):
+            vector = (np.array(vector[0][:2]), vector[1])
 
-            if all(vector[0] == self.primary_support_vector):
+            if all(vector[0] == self.primary_support_vector[:2]):
                 right_set.append(vector)
                 left_set.append(vector)
             else :
@@ -363,7 +367,7 @@ class HPF:
             return -1
 
         # Rotate and merge data sets back into one
-        self.data_points, self.data_labels, left_or_right, intersection_point = self.rotate_set(left_clf, left_set, right_clf, right_set, self.primary_support_vector)
+        self.data[0], self.data[1], left_or_right, intersection_point = self.rotate_set(left_clf, left_set, right_clf, right_set, self.primary_support_vector)
 
         self.rotation_data.append((intersection_point, self.primary_support_vector, left_or_right, (right_clf, left_clf)))
 
@@ -422,8 +426,9 @@ class HPF:
 
 
     def fit(self, data_points, data_labels):
-        self.data_points = data_points
-        self.data_labels = data_labels
+        #self.data_points = data_points
+        #self.data_labels = data_labels
+        self.data = [data_points, data_labels]
 
         self.old_data = data_points
 
@@ -433,7 +438,7 @@ class HPF:
         self.new_margin = -1
         
 
-        plot_datapoints(self.data_points, self.data_labels)
+        plot_datapoints(self.data)
         #project onto 2D
         current_fold = 0
         val = 0
@@ -442,18 +447,17 @@ class HPF:
         while(len(self.clf.support_vectors_) > 2 and val is 0):
             
 
-            self.data_points, self.support_vectors_dictionary = self.dim_red.project_down(self.data_points, self.support_vectors_dictionary)
+            self.data, self.support_vectors_dictionary = self.dim_red.project_down(self.data, self.support_vectors_dictionary)
 
-            #plot_datapoints(self.data_points, self.data_labels)
+            #plot_datapoints(self.data)
             #fold until just two support vectors exist or max_nr_of_folds is reached
-
             val = self.fold()
 
             current_fold += 1
 
-            self.data_points = self.dim_red.project_up(self.data_points)
+            self.data[0] = self.dim_red.project_up(self.data[0])
 
-            #plot_datapoints(self.data_points, self.data_labels)
+            #plot_datapoints(self.data)
             self.clf.fit(data_points, data_labels)#fit for next iteration or exitcontidion of just two support vectors
             self.support_vectors_dictionary = self.group_support_vectors(self.clf) #regroup
         

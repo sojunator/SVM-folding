@@ -139,20 +139,20 @@ class DR:
 
 
 
-    def get_direction_between_two_vectors_in_set_with_smallest_distance(self, set, dim):
+    def get_direction_between_two_vectors_in_set_with_smallest_distance(self, support_vectors, dim, data):
         """
         Finds the shortest distance between two vectors within the given set.
         """
-        if (len(set) <2):
+        if (len(support_vectors) <2):
             print("Error, less than two support vectors in set")
             return
     
-        best_dir = set[0] - set[1]
+        best_dir = support_vectors[0] - support_vectors[1]
         best_dist = np.linalg.norm(best_dir)
         index_v1 = 0
-        for index_v1 in range(0, len(set)):
-            vec1 = set[index_v1]
-            for vec2 in set[index_v1 + 1:]:
+        for index_v1 in range(0, len(support_vectors)):
+            vec1 = support_vectors[index_v1]
+            for vec2 in support_vectors[index_v1 + 1:]:
 
                 dir = vec1 - vec2
                 dist = np.linalg.norm(dir)
@@ -160,9 +160,16 @@ class DR:
                     best_dist = dist
                     best_dir = dir
 
-        set = np.delete(set, index_v1, 0)#remove one of the support vectors
+        
+        #Remove duplicate datapoint and corresponding support vector
+        for idx, data_point in enumerate(data[0]):
+            if np.array_equal(support_vectors[index_v1], data_point):
+                data[0] = np.delete(data[0], idx, 0)
+                data[1] = np.delete(data[1], idx, 0)
+                
+        support_vectors = np.delete(support_vectors, index_v1, 0)#remove one of the support vectors
 
-        return best_dir[:dim], set
+        return best_dir[:dim], support_vectors, data
 
     def align(self, direction):
         #direction = np.array([0,6,6])
@@ -295,7 +302,7 @@ class DR:
         
 
     
-    def project_down(self, data_points, support_vectors_dictionary):
+    def project_down(self, data, support_vectors_dictionary):
 
         """
         Input: All data_points, support vectors grouped into the two classes
@@ -331,7 +338,7 @@ class DR:
             max_key = max(support_vectors_dictionary, key= lambda x: len(support_vectors_dictionary[x]))
         
             #get the direction between the two support vectors, and removes one of them from the dictionary
-            direction, support_vectors_dictionary[max_key] = self.get_direction_between_two_vectors_in_set_with_smallest_distance(support_vectors_dictionary[max_key], nr_of_coordinates)
+            direction, support_vectors_dictionary[max_key], data = self.get_direction_between_two_vectors_in_set_with_smallest_distance(support_vectors_dictionary[max_key], nr_of_coordinates, data)
         
             #calculate alignment matrix
             rotation_matrix = self.align(direction)
@@ -347,10 +354,9 @@ class DR:
             nr_of_coordinates -= 1 
 
 
-        data_points = self.transform(self.matrices[self.folds_done], data_points)
+        data[0] = self.transform(self.matrices[self.folds_done], data[0])
         
-
-        return data_points, support_vectors_dictionary
+        return data, support_vectors_dictionary
 
     def project_up(self, data_points):
 
