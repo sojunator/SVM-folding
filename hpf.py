@@ -20,7 +20,9 @@ def plot_datapoints(data):
     y2 = []
 
     for index, label in enumerate(data[1]):
+        print(index)
         if label == 0:
+            
             x1.append(data[0][index][0])
             y1.append(data[0][index][1])
 
@@ -32,6 +34,7 @@ def plot_datapoints(data):
     plt.plot(x1, y1, 'ro')
     plt.plot(x2, y2, 'go')
 
+#    plt.axis([-200, 200, -200, 200])
     plt.axis([-15, 15, -15, 15])
     plt.show()
 
@@ -224,39 +227,40 @@ class HPF:
         left_set_2d = [[],[]]
 
         for vector in zip(self.data[0], self.data[1]):
-            vector_2d = (np.array(vector[0][:2]), vector[1])
+            vector_2d = (vector[0][:2], vector[1])
+            
 
             #Uses failchecks to NOT add any duplicates. One of the aligned vectors needs to be excluded from training
 
 
             if all(vector[0] == self.primary_support_vector):#is primary support vector
-                right_set[0].append(vector[0])
+                right_set[0].append(np.array(vector[0]))
                 right_set[1].append(vector[1])
 
-                left_set[0].append(vector[0])
+                left_set[0].append(np.array(vector[0]))
                 left_set[1].append(vector[1])
 
             #if all(vector_2d[0] == self.primary_support_vector[:2]):#is primary support vector
                 if not any(all(vector_2d[0] == x) for x in right_set_2d[0]):
-                    right_set_2d[0].append(vector_2d[0])
+                    right_set_2d[0].append(np.array(vector_2d[0]))
                     right_set_2d[1].append(vector_2d[1])
                 if not any(all(vector_2d[0] == x) for x in left_set_2d[0]):
-                    left_set_2d[0].append(vector_2d[0])
+                    left_set_2d[0].append(np.array(vector_2d[0]))
                     left_set_2d[1].append(vector_2d[1])
             else:
                 
                 if self.left_or_right_of_plane(vector[0]):
-                    right_set[0].append(vector[0])
+                    right_set[0].append(np.array(vector[0]))
                     right_set[1].append(vector[1])
 
                     if not any(all(vector_2d[0] == x) for x in right_set_2d[0]):
-                        right_set_2d[0].append(vector_2d[0])
+                        right_set_2d[0].append(np.array(vector_2d[0]))
                         right_set_2d[1].append(vector_2d[1])
                 else:
-                    left_set[0].append(vector[0])
+                    left_set[0].append(np.array(vector[0]))
                     left_set[1].append(vector[1])
                     if not any(all(vector_2d[0] == x) for x in left_set_2d[0]):
-                        left_set_2d[0].append(vector_2d[0])
+                        left_set_2d[0].append(np.array(vector_2d[0]))
                         left_set_2d[1].append(vector_2d[1])
             
 
@@ -472,18 +476,18 @@ class HPF:
         while(len(self.clf.support_vectors_) > 2 and val is 0):
             
 
-            self.data[0], self.support_vectors_dictionary = self.dim_red.project_down(self.data[0], self.support_vectors_dictionary)
+           # self.data[0], self.support_vectors_dictionary = self.dim_red.project_down(self.data[0], self.support_vectors_dictionary)
 
-            #plot_datapoints(self.data)
+           # plot_datapoints(self.data)
             #fold until just two support vectors exist or max_nr_of_folds is reached
             val = self.fold()
 
             current_fold += 1
+           # plot_datapoints(self.data)
+            #self.data[0] = self.dim_red.project_up(self.data[0])
 
-            self.data[0] = self.dim_red.project_up(self.data[0])
-
-            #plot_datapoints(self.data)
-            self.clf.fit(data_points, data_labels)#fit for next iteration or exitcontidion of just two support vectors
+#            plot_datapoints(self.data)
+            self.clf.fit(self.data[0], self.data[1])#fit for next iteration or exitcontidion of just two support vectors
             self.support_vectors_dictionary = self.group_support_vectors(self.clf) #regroup
         
 
