@@ -65,7 +65,7 @@ class HPF:
         h = [0,0]
         normh = 1
 
-        if len(grouped_support_vectors[max_key]) < 2: #only one support vector in each class?
+        if len(grouped_support_vectors[max_key]) < 2: #when only one support vector in each class
             
             w = grouped_support_vectors[0][0][:2] - grouped_support_vectors[1][0][:2]
             h[0] = -w[1]
@@ -108,8 +108,11 @@ class HPF:
         left_grouped = self.group_support_vectors(left_clf)
         right_grouped = self.group_support_vectors(right_clf)
 
-        first_left_point_on_line = (left_grouped[0][0][:2] - left_grouped[1][0][:2]) / 2
-        first_right_point_on_line = (right_grouped[0][0][:2] - right_grouped[1][0][:2]) / 2
+
+        test = (left_grouped[0][0][:2] + left_grouped[1][0][:2])
+
+        first_left_point_on_line = (left_grouped[0][0][:2] + left_grouped[1][0][:2]) / 2
+        first_right_point_on_line = (right_grouped[0][0][:2] + right_grouped[1][0][:2]) / 2
 
         left_direction = self.get_hyperplane_direction(left_grouped)
         right_direction = self.get_hyperplane_direction(right_grouped)
@@ -214,47 +217,52 @@ class HPF:
         """
         # Construct a new array, to remove reference
 
-        right_set = []
-        left_set = []
+        right_set = [[],[]]
+        left_set = [[],[]]
+
+        right_set_2d = [[],[]]
+        left_set_2d = [[],[]]
 
         for vector in zip(self.data[0], self.data[1]):
-            vector = (np.array(vector[0][:2]), vector[1])
+            vector_2d = (np.array(vector[0][:2]), vector[1])
 
-            #Uses failchecks to not add any duplicates
-            if all(vector[0] == self.primary_support_vector[:2]):#is primary support vector
+            #Uses failchecks to NOT add any duplicates. One of the aligned vectors needs to be excluded from training
 
-                if not any(all(vector[0] == x[0]) for x in right_set):
-                    right_set.append(vector)
-                if not any(all(vector[0] == x[0]) for x in left_set):
-                    left_set.append(vector)
+
+            if all(vector[0] == self.primary_support_vector):#is primary support vector
+                right_set[0].append(vector[0])
+                right_set[1].append(vector[1])
+
+                left_set[0].append(vector[0])
+                left_set[1].append(vector[1])
+
+            #if all(vector_2d[0] == self.primary_support_vector[:2]):#is primary support vector
+                if not any(all(vector_2d[0] == x) for x in right_set_2d[0]):
+                    right_set_2d[0].append(vector_2d[0])
+                    right_set_2d[1].append(vector_2d[1])
+                if not any(all(vector_2d[0] == x) for x in left_set_2d[0]):
+                    left_set_2d[0].append(vector_2d[0])
+                    left_set_2d[1].append(vector_2d[1])
             else:
                 
                 if self.left_or_right_of_plane(vector[0]):
-                    if not any(all(vector[0] == x[0]) for x in right_set):
-                        right_set.append(vector)
+                    right_set[0].append(vector[0])
+                    right_set[1].append(vector[1])
+
+                    if not any(all(vector_2d[0] == x) for x in right_set_2d[0]):
+                        right_set_2d[0].append(vector_2d[0])
+                        right_set_2d[1].append(vector_2d[1])
                 else:
-                    if not any(all(vector[0] == x[0]) for x in left_set):
-                        left_set.append(vector)
+                    left_set[0].append(vector[0])
+                    left_set[1].append(vector[1])
+                    if not any(all(vector_2d[0] == x) for x in left_set_2d[0]):
+                        left_set_2d[0].append(vector_2d[0])
+                        left_set_2d[1].append(vector_2d[1])
             
 
-        right_x = []
-        right_y = []
-
-        # Split data and labels into different lists
-        for pair in right_set:
-            right_x.append(pair[0])
-            right_y.append(pair[1])
 
 
-        left_x = []
-        left_y = []
-
-        for pair in left_set:
-            left_x.append(pair[0])
-            left_y.append(pair[1])
-
-
-        return [[left_x, left_y], [right_x, right_y]]
+        return left_set, left_set_2d, right_set, right_set_2d
 
     def get_splitting_point(self):
         """
@@ -337,6 +345,7 @@ class HPF:
         left_or_right = -1
 
 
+
         if (right_margin >= left_margin):
             right_set[0] = [self.rotate_point_2D(point, angle, primary_support_vector,
                             intersection_point)
@@ -372,12 +381,12 @@ class HPF:
         self.primary_support_vector = self.get_splitting_point()
         print(self.primary_support_vector)
         # Subsets of datasets, left and right of primary support vector
-        left_set, right_set = self.split_data()
+        left_set, left_set_2d, right_set, right_set_2d = self.split_data()
 
         # New SVM, right
         try:
-            right_clf.fit(right_set[0], right_set[1])
-            left_clf.fit(left_set[0], left_set[1])
+            right_clf.fit(right_set_2d[0], right_set_2d[1])
+            left_clf.fit(left_set_2d[0], left_set_2d[1])
         except ValueError:
             print("WARNING, ONLY ONE CLASS PRESENT IN A SET, ABORTING")
             return -1
