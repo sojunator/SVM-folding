@@ -39,7 +39,46 @@ def plot_datapoints(data):
     plt.show()
 
 
+
 class HPF:
+
+    def plot_data_and_plane(self):
+
+        x1 = []
+        y1 = []
+        x2 = []
+        y2 = []
+
+        for index, label in enumerate(self.data[1]):
+            
+            if label == 0:
+            
+                x1.append(self.data[0][index][0])
+                y1.append(self.data[0][index][1])
+
+            elif label == 1:
+                x2.append(self.data[0][index][0])
+                y2.append(self.data[0][index][1])
+
+        h = self.get_hyperplane_direction(self.support_vectors_dictionary)
+
+        p = (self.support_vectors_dictionary[0][0][:2] + self.support_vectors_dictionary[1][0][:2]) / 2
+
+        hx1 = p[0] + h[0] * 100
+        hy1 = p[1] + h[1] * 100
+
+        hx2 = p[0] + h[0] * -100
+        hy2 = p[1] + h[1] * -100
+
+        plt.figure()
+
+        plt.plot(x1, y1, 'ro')
+        plt.plot(x2, y2, 'go')
+        plt.plot([hx1,hx2],[hy1, hy2], 'b')
+
+    #    plt.axis([-200, 200, -200, 200])
+        plt.axis([-15, 15, -15, 15])
+        
 
     def vector_projection(self, v1, v2):
         """
@@ -467,7 +506,7 @@ class HPF:
         self.new_margin = -1
         
 
-        plot_datapoints(self.data)
+      #  plot_datapoints(self.data, self.clf)
         #project onto 2D
         current_fold = 0
         val = 0
@@ -480,15 +519,22 @@ class HPF:
 
            # plot_datapoints(self.data)
             #fold until just two support vectors exist or max_nr_of_folds is reached
+            self.plot_data_and_plane()
             val = self.fold()
-
+            
             current_fold += 1
-           # plot_datapoints(self.data)
+    #        plot_datapoints(self.data)
+            
             #self.data[0] = self.dim_red.project_up(self.data[0])
-
+            
 #            plot_datapoints(self.data)
             self.clf.fit(self.data[0], self.data[1])#fit for next iteration or exitcontidion of just two support vectors
             self.support_vectors_dictionary = self.group_support_vectors(self.clf) #regroup
+            
+            self.plot_data_and_plane()
+            plt.show()
+
+            print("nr of support {}".format(len(self.clf.support_vectors_)))
         
 
         #self.clf.fit(self.data_points, self.data_labels)
