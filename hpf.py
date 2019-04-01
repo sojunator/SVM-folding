@@ -472,9 +472,11 @@ class HPF:
 
         # Splitting point
         self.primary_support_vector = self.get_splitting_point()
-        #print(self.primary_support_vector)
+        print(self.primary_support_vector)
         # Subsets of datasets, left and right of primary support vector
         left_set, left_set_2d, right_set, right_set_2d = self.split_data()
+
+        self.plot_data_and_plane()
 
         # New SVM, right
         try:
@@ -493,14 +495,20 @@ class HPF:
         #plt.axis([-15, 15, -15, 15])
         #plt.show()
 
+        self.plot_plane(right_clf, True)
+        self.plot_plane(left_clf)
+        self.plot_data_points(self.data)
+        plt.axis([-15, 15, -15, 15])
+        
+
         # Rotate and merge data sets back into one
         self.data[0], self.data[1], left_or_right, intersection_point = self.rotate_set(left_clf, left_set, right_clf, right_set, self.primary_support_vector)
 
-        #self.plot_plane(right_clf, True)
-        #self.plot_plane(left_clf)
-        #self.plot_data_points(self.data)
-        #plt.axis([-15, 15, -15, 15])
-        #plt.show()
+        self.plot_plane(right_clf, True)
+        self.plot_plane(left_clf)
+        self.plot_data_points(self.data)
+        plt.axis([-15, 15, -15, 15])
+        plt.show()
 
         self.rotation_data.append((intersection_point, self.primary_support_vector, left_or_right, (right_clf, left_clf)))
 
@@ -580,7 +588,7 @@ class HPF:
         while(len(self.clf.support_vectors_) > 2 and val is 0):
             
 
-           # self.data[0], self.support_vectors_dictionary = self.dim_red.project_down(self.data[0], self.support_vectors_dictionary)
+            self.data[0], self.support_vectors_dictionary = self.dim_red.project_down(self.data[0], self.support_vectors_dictionary)
 
            # plot_datapoints(self.data)
             #fold until just two support vectors exist or max_nr_of_folds is reached
@@ -590,7 +598,7 @@ class HPF:
             current_fold += 1
     #        plot_datapoints(self.data)
             
-            #self.data[0] = self.dim_red.project_up(self.data[0])
+            self.data[0] = self.dim_red.project_up(self.data[0])
             
 #            plot_datapoints(self.data)
             self.clf.fit(self.data[0], self.data[1])#fit for next iteration or exitcontidion of just two support vectors
