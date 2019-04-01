@@ -289,7 +289,7 @@ class HPF:
 
         v = point[:2] - self.primary_support_vector[:2]#direction from one vector to the splitting point
         normv = np.linalg.norm(v)
-        if normv < 0.000001: #same point as primary support vector in 2d. Add into left set? or both? TODO:
+        if normv < 0.00000001: #same point as primary support vector in 2d. Add into left set? or both? TODO:
             return 0
 
         v = v / normv
@@ -329,7 +329,7 @@ class HPF:
                 left_set[0].append(np.array(vector[0]))
                 left_set[1].append(np.array(vector[1]))
 
-            #if all(vector_2d[0] == self.primary_support_vector[:2]):#is primary support vector
+            if all(vector_2d[0] == self.primary_support_vector[:2]):#is primary support vector
                 if not any(all(vector_2d[0] == x) for x in right_set_2d[0]):
                     right_set_2d[0].append(np.array(vector_2d[0]))
                     right_set_2d[1].append(np.array(vector_2d[1]))
@@ -478,6 +478,9 @@ class HPF:
 
         self.plot_data_and_plane()
 
+
+        #self.plot_data_points(right_set_2d)
+        #plt.show()
         # New SVM, right
         try:
             right_clf.fit(right_set_2d[0], right_set_2d[1])
