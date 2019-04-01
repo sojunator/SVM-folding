@@ -13,30 +13,73 @@ import json
 from dimred import DR
 
 
-def plot_datapoints(data_points, labels):
+def plot_datapoints(data):
     x1 = []
     y1 = []
     x2 = []
     y2 = []
 
-    for index, label in enumerate(labels):
+    for index, label in enumerate(data[1]):
+        print(index)
         if label == 0:
-            x1.append(data_points[index][0])
-            y1.append(data_points[index][1])
+
+            x1.append(data[0][index][0])
+            y1.append(data[0][index][1])
 
         elif label == 1:
-            x2.append(data_points[index][0])
-            y2.append(data_points[index][1])
+            x2.append(data[0][index][0])
+            y2.append(data[0][index][1])
 
 
     plt.plot(x1, y1, 'ro')
     plt.plot(x2, y2, 'go')
 
-    plt.axis([-200, 200, -200, 200])
+#    plt.axis([-200, 200, -200, 200])
+    plt.axis([-15, 15, -15, 15])
     plt.show()
 
 
+
 class HPF:
+
+    def plot_data_and_plane(self):
+
+        x1 = []
+        y1 = []
+        x2 = []
+        y2 = []
+
+        for index, label in enumerate(self.data[1]):
+
+            if label == 0:
+
+                x1.append(self.data[0][index][0])
+                y1.append(self.data[0][index][1])
+
+            elif label == 1:
+                x2.append(self.data[0][index][0])
+                y2.append(self.data[0][index][1])
+
+        h = self.get_hyperplane_direction(self.support_vectors_dictionary)
+
+        p = (self.support_vectors_dictionary[0][0][:2] + self.support_vectors_dictionary[1][0][:2]) / 2
+
+        hx1 = p[0] + h[0] * 100
+        hy1 = p[1] + h[1] * 100
+
+        hx2 = p[0] + h[0] * -100
+        hy2 = p[1] + h[1] * -100
+
+        plt.figure()
+
+        plt.plot(x1, y1, 'ro')
+        plt.plot(x2, y2, 'go')
+        plt.plot([hx1,hx2],[hy1, hy2], 'b')
+
+    #    plt.axis([-200, 200, -200, 200])
+        plt.axis([-15, 15, -15, 15])
+
+
     def vector_projection(self, v1, v2):
         """
         v1 projected on v2
@@ -52,6 +95,36 @@ class HPF:
         a = -w[0] / w[1]
 
         return (a, (-clf.intercept_[0]) / w[1])
+
+    def get_hyperplane_direction(self, grouped_support_vectors):
+        """
+        Input: Dictionary containing lists of support vectors of each class
+        Output: The hyperplanes direction.
+        Note, Input must have one support vector in each class.
+        """
+        max_key = max(grouped_support_vectors, key= lambda x: len(grouped_support_vectors[x]))
+
+        h = [0,0]
+        normh = 1
+
+        if len(grouped_support_vectors[max_key]) < 2: #when only one support vector in each class
+
+            w = grouped_support_vectors[0][0][:2] - grouped_support_vectors[1][0][:2]
+            h[0] = -w[1]
+            h[1] = w[0]
+
+
+        else:
+            h = grouped_support_vectors[max_key][0][:2] - grouped_support_vectors[max_key][1][:2]
+
+
+        normh = np.linalg.norm(h)
+
+        if normh < 0.000001: # == 0 ??
+            print("Error in get hyperplane direction")
+
+        h = h / normh;#normalize
+        return h
 
     def get_intersection_point(self, left, right):
         """
@@ -72,6 +145,49 @@ class HPF:
         return ((x, y), angle)
 
 
+    def get_intersection_between_SVMs(self, left_clf, right_clf):
+
+        left_grouped = self.group_support_vectors(left_clf)
+        right_grouped = self.group_support_vectors(right_clf)
+
+
+        test = (left_grouped[0][0][:2] + left_grouped[1][0][:2])
+
+        first_left_point_on_line = (left_grouped[0][0][:2] + left_grouped[1][0][:2]) / 2
+        first_right_point_on_line = (right_grouped[0][0][:2] + right_grouped[1][0][:2]) / 2
+
+        left_direction = self.get_hyperplane_direction(left_grouped)
+        right_direction = self.get_hyperplane_direction(right_grouped)
+
+        second_left_point_on_line = first_left_point_on_line + left_direction
+        second_right_point_on_line = first_right_point_on_line + right_direction
+
+        x1 = first_left_point_on_line[0]
+        x2 = second_left_point_on_line[0]
+        y1 = first_left_point_on_line[1]
+        y2 = second_left_point_on_line[1]
+
+        x3 = first_right_point_on_line[0]
+        x4 = second_right_point_on_line[0]
+        y3 = first_right_point_on_line[1]
+        y4 = second_right_point_on_line[1]
+
+
+        x = ( (x1*y2-y1*x2)*(x3-x4) - (x1-x2) *(x3*y4-y3*x4) )/ ( (x1-x2)*(y3-y4) - (y1-y2)*(x3-x4) )
+        y = ( (x1*y2-y1*x2)*(y3-y4) - (y1-y2) *(x3*y4-y3*x4) )/ ( (x1-x2)*(y3-y4) - (y1-y2)*(x3-x4) )
+
+        angle = math.acos(np.dot(left_direction, right_direction))
+
+        #left_slope = (second_left_point_on_line[1] - first_left_point_on_line[1]) / (second_left_point_on_line[0] - first_left_point_on_line[0])
+        #right_slope = (second_right_point_on_line[1] - first_right_point_on_line[1]) / (second_right_point_on_line[0] - first_right_point_on_line[0])
+
+
+
+        return [x, y], angle
+
+
+
+
     def get_margin(self, clf):
         """
         https://scikit-learn.org/stable/auto_examples/svm/plot_svm_margin.html
@@ -82,22 +198,19 @@ class HPF:
 
 
 
-    def ordering_support(self, vectors):
+    def ordering_support(self):
         """
         Returns the first possible primary support vector
         """
-        #w = self.clf.coef_[0]
-
-        max_key = max(self.support_vectors_dictionary, key= lambda x: len(self.support_vectors_dictionary[x]))
-        w = self.support_vectors_dictionary[max_key][0][:2] + self.support_vectors_dictionary[max_key][1][:2]
+        h = self.get_hyperplane_direction(self.support_vectors_dictionary)
 
         # As normal for the line is W = (b, -a)
         # direction is then given by as a = (-(-a), b))
 
-        a = w[0]
-        b = w[1]
+        a = h[0]
+        b = h[1]
 
-        cd = (vectors[0][0][:2] - vectors[1][0][:2]) / 2
+        cd = (self.support_vectors_dictionary[0][0][:2] - self.support_vectors_dictionary[1][0][:2]) / 2
 
 
         c = cd[0]
@@ -105,8 +218,8 @@ class HPF:
 
         tk = []
 
-        for key in vectors:
-            for vector in vectors[key]:
+        for key in self.support_vectors_dictionary:
+            for vector in self.support_vectors_dictionary[key]:
                 tk.append((((a * (vector[0] - c) + b * (vector[1] - d)) /
                                 ( a * a + b * b)), vector, key))
 
@@ -115,97 +228,117 @@ class HPF:
         return tk
 
 
-    def left_or_right_of_plane(self, point, primary_support):
+    def left_or_right_of_plane(self, point):
         """
         Splits the data from the primary point in the direction of the normal
         """
         #w = self.clf.coef_[0]
 
-        max_key = max(self.support_vectors_dictionary, key= lambda x: len(self.support_vectors_dictionary[x]))
+        h = self.get_hyperplane_direction(self.support_vectors_dictionary)
 
-        h = self.support_vectors_dictionary[max_key][0][:2] + self.support_vectors_dictionary[max_key][1][:2] #hyperplane direction
-        h = h / np.linalg.norm(h)#normalize
 
-        v = point[:2] - primary_support[:2]#direction from one vector to the splitting point
+        v = point[:2] - self.primary_support_vector[:2]#direction from one vector to the splitting point
         normv = np.linalg.norm(v)
-        if normv == 0: # adds primary in left set. Dont forget to manually add primary to right set
+        if normv < 0.000001: #same point as primary support vector in 2d. Add into left set? or both? TODO:
             return 0
 
         v = v / normv
 
         cosang = np.dot(h,v)#since both are normalized, according to dot products definition, returns the cosine of the angle between the directions.
 
-        if cosang > 0:#if larger than 0 or less the point is on one side or the other
+        if cosang > 0:#Left / right
             return 1
         else:
             return 0
 
 
 
-    def split_data(self, primary_support):
+    def split_data(self):
         """
         returns a list  containing left and right split.
         """
         # Construct a new array, to remove reference
-        right_set = [np.array(vector) for vector in zip(self.data_points, self.data_labels) if self.left_or_right_of_plane(vector[0], primary_support)]
-        left_set = [np.array(vector) for vector in zip(self.data_points, self.data_labels) if not self.left_or_right_of_plane(vector[0], primary_support)]
 
-        #hack to add primary vec with label
-        l = self.clf.predict(np.array([primary_support]))
-        right_set.append(np.array([primary_support, l[0]]))
+        right_set = [[],[]]
+        left_set = [[],[]]
 
-        right_x = []
-        right_y = []
+        right_set_2d = [[],[]]
+        left_set_2d = [[],[]]
 
-        # Split data and labels into different lists
-        for pair in right_set:
-            right_x.append(pair[0])
-            right_y.append(pair[1])
+        for vector in zip(self.data[0], self.data[1]):
+            vector_2d = (vector[0][:2], vector[1])
 
 
-        left_x = []
-        left_y = []
-
-        for pair in left_set:
-            left_x.append(pair[0])
-            left_y.append(pair[1])
+            #Uses failchecks to NOT add any duplicates. One of the aligned vectors needs to be excluded from training
 
 
-        return [[left_x, left_y], [right_x, right_y]]
+            if all(vector[0] == self.primary_support_vector):#is primary support vector
+                right_set[0].append(np.array(vector[0]))
+                right_set[1].append(vector[1])
+
+                left_set[0].append(np.array(vector[0]))
+                left_set[1].append(vector[1])
+
+            #if all(vector_2d[0] == self.primary_support_vector[:2]):#is primary support vector
+                if not any(all(vector_2d[0] == x) for x in right_set_2d[0]):
+                    right_set_2d[0].append(np.array(vector_2d[0]))
+                    right_set_2d[1].append(vector_2d[1])
+                if not any(all(vector_2d[0] == x) for x in left_set_2d[0]):
+                    left_set_2d[0].append(np.array(vector_2d[0]))
+                    left_set_2d[1].append(vector_2d[1])
+            else:
+
+                if self.left_or_right_of_plane(vector[0]):
+                    right_set[0].append(np.array(vector[0]))
+                    right_set[1].append(vector[1])
+
+                    if not any(all(vector_2d[0] == x) for x in right_set_2d[0]):
+                        right_set_2d[0].append(np.array(vector_2d[0]))
+                        right_set_2d[1].append(vector_2d[1])
+                else:
+                    left_set[0].append(np.array(vector[0]))
+                    left_set[1].append(vector[1])
+                    if not any(all(vector_2d[0] == x) for x in left_set_2d[0]):
+                        left_set_2d[0].append(np.array(vector_2d[0]))
+                        left_set_2d[1].append(vector_2d[1])
+
+
+
+
+        return left_set, left_set_2d, right_set, right_set_2d
 
     def get_splitting_point(self):
         """
         Finds and returns the primary support vector, splitting point
         """
 
-        tk = self.ordering_support(self.support_vectors_dictionary)
+        tk = self.ordering_support()
         first_class = tk[0][2]
 
-        primary_support_vector = None
 
         for vector in tk:
             if (vector[2] is not first_class):
-                primary_support_vector = vector[1]
+                return vector[1]
 
-                return primary_support_vector
-        return None
+        print("No primary vector found")
 
-    def group_support_vectors(self):
+    def group_support_vectors(self, clf):
         """
-        groups the support vectors in the currently trained clf
+        Input: a trained SVS
+        Output: support vectors grouped into classes in a dictionary
         """
-        self.support_vectors_dictionary = {}
+        grouped_support_vectors = {}
 
-        for sv in self.clf.support_vectors_:
+        for sv in clf.support_vectors_:
 
-            key = self.clf.predict([sv])[0]
+            key = clf.predict([sv])[0]
 
-            if key not in self.support_vectors_dictionary:
-                self.support_vectors_dictionary[key] = [sv]
+            if key not in grouped_support_vectors:
+                grouped_support_vectors[key] = [sv]
             else:
-                self.support_vectors_dictionary[key].append(sv)
+                grouped_support_vectors[key].append(sv)
 
-
+        return grouped_support_vectors
 
     def get_rotation(self, alpha):
         """
@@ -234,7 +367,7 @@ class HPF:
         return point
 
 
-    def rotate_set(self, left_clf, left_set, right_clf, right_set, primary_support):
+    def rotate_set(self, left_clf, left_set, right_clf, right_set, primary_support_vector):
         """
         Performs rotation on the set with biggest margin
         Currently rotates around the intersection point
@@ -250,19 +383,20 @@ class HPF:
 
 
         # intersection data
-        intersection_point, angle = self.get_intersection_point(left_clf, right_clf)
+        intersection_point, angle = self.get_intersection_between_SVMs(left_clf, right_clf)#self.get_intersection_point(left_clf, right_clf)
         # if 1, left was rotated, 0 is right set.
         left_or_right = -1
 
 
+
         if (right_margin >= left_margin):
-            right_set[0] = [self.rotate_point_2D(point, angle, primary_support,
+            right_set[0] = [self.rotate_point_2D(point, -angle, primary_support_vector,
                             intersection_point)
                                 for point in right_set[0]]
             left_or_right = 0
 
         elif (left_margin > right_margin):
-            left_set[0] = [self.rotate_point_2D(point, -angle, primary_support,
+            left_set[0] = [self.rotate_point_2D(point, angle, primary_support_vector,
                             intersection_point)
                                 for point in left_set[0]]
             left_or_right = 1
@@ -289,28 +423,28 @@ class HPF:
         # Splitting point
         self.primary_support_vector = self.get_splitting_point()
         # Subsets of datasets, left and right of primary support vector
-        left_set, right_set = self.split_data(self.primary_support_vector)
+        left_set, left_set_2d, right_set, right_set_2d = self.split_data()
 
         # New SVM, right
         try:
-            right_clf.fit(right_set[0], right_set[1])
-            left_clf.fit(left_set[0], left_set[1])
+            right_clf.fit(right_set_2d[0], right_set_2d[1])
+            left_clf.fit(left_set_2d[0], left_set_2d[1])
         except ValueError:
             print("WARNING, ONLY ONE CLASS PRESENT IN A SET, ABORTING")
             return -1
 
         # Rotate and merge data sets back into one
-        self.data_points, self.data_labels, left_or_right, intersection_point = self.rotate_set(left_clf, left_set, right_clf, right_set, self.primary_support_vector)
+        self.data[0], self.data[1], left_or_right, intersection_point = self.rotate_set(left_clf, left_set, right_clf, right_set, self.primary_support_vector)
 
         self.rotation_data.append((intersection_point, self.primary_support_vector, left_or_right, (right_clf, left_clf)))
 
         # merge
-        self.clf = right_clf if left_or_right else left_clf
-        self.group_support_vectors()
+        #self.clf = right_clf if left_or_right else left_clf
+        #self.group_support_vectors(self.clf)
 
         # Used for highlighting the sets
-        right_set[0] = np.vstack(right_set[0])
-        left_set[0] = np.vstack(left_set[0])
+        #right_set[0] = np.vstack(right_set[0])
+        #left_set[0] = np.vstack(left_set[0])
         return 0
 
     def classify(self, points, rotate=True):
@@ -357,109 +491,50 @@ class HPF:
 
 
 
-    def get_distance_from_line_to_point(self, w, point, point_on_line):
-        v = point - point_on_line
-        proj = vector_projection(v, w)
-        distance = np.linalg.norm(v - proj)
-
-        return distance
-
-
-    def clean_set(self):
-        """
-        Returns a cleaned dataset, turns soft into hard.
-
-        Function does not calculate margin as get_margin does, something could be
-        wrong with the assumption that len w is the margin. Instead it calculates
-        the margin by calculating the distance from the decision_function to
-        a support vector.
-        """
-
-        w = self.clf.coef_[0]
-        w = np.array(w[1], w[0]) # place the vector in the direction of the line
-
-        # Orginal support vectors
-        point_on_line = (self.support_vectors_dictionary[0][0] + self.support_vectors_dictionary[1][0]) / 2
-
-        margin = get_distance_from_line_to_point(w, self.support_vectors_dictionary[0][0], point_on_line)
-
-        for point in self.data_points:
-            distance = get_distance_from_line_to_point(w, point, point_on_line)
-
-            if (distance < margin):
-                index = np.where(self.data_points==point)
-
-                self.data_points = np.delete(self.data_points, index, 0)
-
-
-
-    def clean_set(self):
-        """
-        Returns a cleaned dataset, turns soft into hard.
-
-        Function does not calculate margin as get_margin does, something could be
-        wrong with the assumption that len w is the margin. Instead it calculates
-        the margin by calculating the distance from the decision_function to
-        a support vector.
-        """
-
-        w = self.clf.coef_[0]
-        w = np.array(w[1], w[0]) # place the vector in the direction of the line
-
-        # Orginal support vectors
-        support_dict = group_support_vectors(clf.support_vectors_, clf)
-
-        point_on_line = (support_dict[0][0] + support_dict[1][0]) / 2
-
-        margin = get_distance_from_line_to_point(w, support_dict[0][0], point_on_line)
-
-        for point in self.data_points:
-            distance = get_distance_from_line_to_point(w, point, point_on_line)
-
-            if (distance < margin):
-                index = np.where(self.data_points==point)
-
-                self.data_points = np.delete(self.data_points, index, 0)
-
-                self.data_labels = np.delete(self.data_labels, index)
-
-
-
 
     def fit(self, data_points, data_labels):
-        self.data_points = data_points
-        self.data_labels = data_labels
+        #self.data_points = data_points
+        #self.data_labels = data_labels
+        self.data = [data_points, data_labels]
 
         self.old_data = data_points
 
-        self.clf.fit(data_points, data_labels)
+
         self.old_clf.fit(data_points, data_labels)
         self.old_margin = self.get_margin(self.old_clf)
         self.new_margin = -1
-        #group into classes = create support_vectors_dictionary
-        self.group_support_vectors()
 
-        plot_datapoints(self.data_points, self.data_labels)
+
+      #  plot_datapoints(self.data, self.clf)
         #project onto 2D
         current_fold = 0
         val = 0
+        self.clf.fit(data_points, data_labels)
+        self.support_vectors_dictionary = self.group_support_vectors(self.clf) #group into classes = create support_vectors_dictionary
         while(len(self.clf.support_vectors_) > 2 and val is 0):
-            self.data_points, self.support_vectors_dictionary = self.dim_red.project_down(self.data_points, self.support_vectors_dictionary)
 
-            plot_datapoints(self.data_points, self.data_labels)
+
+           # self.data[0], self.support_vectors_dictionary = self.dim_red.project_down(self.data[0], self.support_vectors_dictionary)
+
+           # plot_datapoints(self.data)
             #fold until just two support vectors exist or max_nr_of_folds is reached
-
-
-            self.clf.fit(self.data_points, self.data_labels)
+            self.plot_data_and_plane()
             val = self.fold()
 
             current_fold += 1
+    #        plot_datapoints(self.data)
 
+            #self.data[0] = self.dim_red.project_up(self.data[0])
 
+#            plot_datapoints(self.data)
+            self.clf.fit(self.data[0], self.data[1])#fit for next iteration or exitcontidion of just two support vectors
+            self.support_vectors_dictionary = self.group_support_vectors(self.clf) #regroup
 
-            self.data_points = self.dim_red.project_up(self.data_points)
+            self.plot_data_and_plane()
+            plt.show()
 
-            plot_datapoints(self.data_points, self.data_labels)
+            print("nr of support {}".format(len(self.clf.support_vectors_)))
+
 
         #self.clf.fit(self.data_points, self.data_labels)
         #self.new_margin = self.get_margin(self.clf)

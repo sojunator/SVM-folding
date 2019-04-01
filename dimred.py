@@ -139,20 +139,20 @@ class DR:
 
 
 
-    def get_direction_between_two_vectors_in_set_with_smallest_distance(self, set, dim):
+    def get_direction_between_two_vectors_in_set_with_smallest_distance(self, support_vectors, dim):
         """
         Finds the shortest distance between two vectors within the given set.
         """
-        if (len(set) <2):
+        if (len(support_vectors) <2):
             print("Error, less than two support vectors in set")
             return
     
-        best_dir = set[0] - set[1]
+        best_dir = support_vectors[0] - support_vectors[1]
         best_dist = np.linalg.norm(best_dir)
         index_v1 = 0
-        for index_v1 in range(0, len(set)):
-            vec1 = set[index_v1]
-            for vec2 in set[index_v1 + 1:]:
+        for index_v1 in range(0, len(support_vectors)):
+            vec1 = support_vectors[index_v1]
+            for vec2 in support_vectors[index_v1 + 1:]:
 
                 dir = vec1 - vec2
                 dist = np.linalg.norm(dir)
@@ -160,9 +160,9 @@ class DR:
                     best_dist = dist
                     best_dir = dir
 
-        set = np.delete(set, index_v1, 0)#remove one of the support vectors
+        support_vectors = np.delete(support_vectors, index_v1, 0)#remove one of the support vectors
 
-        return best_dir[:dim], set
+        return best_dir[:dim], support_vectors
 
     def align(self, direction):
         #direction = np.array([0,6,6])
