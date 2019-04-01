@@ -20,7 +20,7 @@ def plot_datapoints(data):
     y2 = []
 
     for index, label in enumerate(data[1]):
-        print(index)
+        #print(index)
         if label == 0:
 
             x1.append(data[0][index][0])
@@ -41,6 +41,48 @@ def plot_datapoints(data):
 
 
 class HPF:
+
+    def plot_plane(self, clf, new_figure_ = False):
+        if new_figure_:
+            plt.figure()
+
+        g = self.group_support_vectors(clf)
+
+        h = self.get_hyperplane_direction(g)
+
+        p = (g[0][0][:2] + g[1][0][:2]) / 2
+
+        hx1 = p[0] + h[0] * 100
+        hy1 = p[1] + h[1] * 100
+
+        hx2 = p[0] + h[0] * -100
+        hy2 = p[1] + h[1] * -100
+
+        plt.plot([hx1,hx2],[hy1, hy2], 'b')
+
+    def plot_data_points(self, data, new_figure_ = False):
+
+        if new_figure_:
+            plt.figure()
+
+        x1 = []
+        y1 = []
+        x2 = []
+        y2 = []
+
+        for index, label in enumerate(data[1]):
+
+            if label == 0:
+
+                x1.append(data[0][index][0])
+                y1.append(data[0][index][1])
+
+            elif label == 1:
+                x2.append(data[0][index][0])
+                y2.append(data[0][index][1])
+
+        plt.plot(x1, y1, 'ro')
+        plt.plot(x2, y2, 'go')
 
     def plot_data_and_plane(self):
 
@@ -120,8 +162,10 @@ class HPF:
 
         normh = np.linalg.norm(h)
 
-        if normh < 0.000001: # == 0 ??
-            print("Error in get hyperplane direction")
+        if normh < 0.000000001: # == 0 ??
+            print("Error in get hyperplane direction asdf asdf")
+
+
 
         h = h / normh;#normalize
         return h
@@ -142,6 +186,7 @@ class HPF:
         y = right_hyperplane[0] * x + right_hyperplane[1]
 
         angle = np.arctan(right_hyperplane[0]) - np.arctan(left_hyperplane[0])
+
         return ((x, y), angle)
 
 
@@ -176,14 +221,19 @@ class HPF:
         x = ( (x1*y2-y1*x2)*(x3-x4) - (x1-x2) *(x3*y4-y3*x4) )/ ( (x1-x2)*(y3-y4) - (y1-y2)*(x3-x4) )
         y = ( (x1*y2-y1*x2)*(y3-y4) - (y1-y2) *(x3*y4-y3*x4) )/ ( (x1-x2)*(y3-y4) - (y1-y2)*(x3-x4) )
 
-        angle = math.acos(np.dot(left_direction, right_direction))
+        angle = math.acos(np.dot(right_direction, left_direction))
+
+        xy, angle = self.get_intersection_point(left_clf, right_clf)
+
+        angle = -angle
+        #print(angle*180 /3.1415)
 
         #left_slope = (second_left_point_on_line[1] - first_left_point_on_line[1]) / (second_left_point_on_line[0] - first_left_point_on_line[0])
         #right_slope = (second_right_point_on_line[1] - first_right_point_on_line[1]) / (second_right_point_on_line[0] - first_right_point_on_line[0])
 
 
 
-        return [x, y], angle
+        return [xy[0], xy[1]], angle
 
 
 
@@ -274,33 +324,33 @@ class HPF:
 
             if all(vector[0] == self.primary_support_vector):#is primary support vector
                 right_set[0].append(np.array(vector[0]))
-                right_set[1].append(vector[1])
+                right_set[1].append(np.array(vector[1]))
 
                 left_set[0].append(np.array(vector[0]))
-                left_set[1].append(vector[1])
+                left_set[1].append(np.array(vector[1]))
 
             #if all(vector_2d[0] == self.primary_support_vector[:2]):#is primary support vector
                 if not any(all(vector_2d[0] == x) for x in right_set_2d[0]):
                     right_set_2d[0].append(np.array(vector_2d[0]))
-                    right_set_2d[1].append(vector_2d[1])
+                    right_set_2d[1].append(np.array(vector_2d[1]))
                 if not any(all(vector_2d[0] == x) for x in left_set_2d[0]):
                     left_set_2d[0].append(np.array(vector_2d[0]))
-                    left_set_2d[1].append(vector_2d[1])
+                    left_set_2d[1].append(np.array(vector_2d[1]))
             else:
 
                 if self.left_or_right_of_plane(vector[0]):
                     right_set[0].append(np.array(vector[0]))
-                    right_set[1].append(vector[1])
+                    right_set[1].append(np.array(vector[1]))
 
                     if not any(all(vector_2d[0] == x) for x in right_set_2d[0]):
                         right_set_2d[0].append(np.array(vector_2d[0]))
-                        right_set_2d[1].append(vector_2d[1])
+                        right_set_2d[1].append(np.array(vector_2d[1]))
                 else:
                     left_set[0].append(np.array(vector[0]))
-                    left_set[1].append(vector[1])
+                    left_set[1].append(np.array(vector[1]))
                     if not any(all(vector_2d[0] == x) for x in left_set_2d[0]):
                         left_set_2d[0].append(np.array(vector_2d[0]))
-                        left_set_2d[1].append(vector_2d[1])
+                        left_set_2d[1].append(np.array(vector_2d[1]))
 
 
 
@@ -425,6 +475,8 @@ class HPF:
         # Subsets of datasets, left and right of primary support vector
         left_set, left_set_2d, right_set, right_set_2d = self.split_data()
 
+        self.plot_data_and_plane()
+
         # New SVM, right
         try:
             right_clf.fit(right_set_2d[0], right_set_2d[1])
@@ -433,8 +485,29 @@ class HPF:
             print("WARNING, ONLY ONE CLASS PRESENT IN A SET, ABORTING")
             return -1
 
+
+        #self.plot_plane(right_clf, True)
+        #self.plot_data_points(left_set_2d)
+        #self.plot_data_points(right_set_2d)
+        #self.plot_plane(left_clf)
+        #plt.axis([-15, 15, -15, 15])
+        #plt.axis([-15, 15, -15, 15])
+        #plt.show()
+
+        self.plot_plane(right_clf, True)
+        self.plot_plane(left_clf)
+        self.plot_data_points(self.data)
+        plt.axis([-15, 15, -15, 15])
+
+
         # Rotate and merge data sets back into one
         self.data[0], self.data[1], left_or_right, intersection_point = self.rotate_set(left_clf, left_set, right_clf, right_set, self.primary_support_vector)
+
+        self.plot_plane(right_clf, True)
+        self.plot_plane(left_clf)
+        self.plot_data_points(self.data)
+        plt.axis([-15, 15, -15, 15])
+        plt.show()
 
         self.rotation_data.append((intersection_point, self.primary_support_vector, left_or_right, (right_clf, left_clf)))
 
@@ -514,26 +587,29 @@ class HPF:
         while(len(self.clf.support_vectors_) > 2 and val is 0):
 
 
-           # self.data[0], self.support_vectors_dictionary = self.dim_red.project_down(self.data[0], self.support_vectors_dictionary)
+            self.data[0], self.support_vectors_dictionary = self.dim_red.project_down(self.data[0], self.support_vectors_dictionary)
 
            # plot_datapoints(self.data)
             #fold until just two support vectors exist or max_nr_of_folds is reached
-            self.plot_data_and_plane()
+            #self.plot_data_and_plane()
             val = self.fold()
 
             current_fold += 1
     #        plot_datapoints(self.data)
 
-            #self.data[0] = self.dim_red.project_up(self.data[0])
+            self.data[0] = self.dim_red.project_up(self.data[0])
 
 #            plot_datapoints(self.data)
             self.clf.fit(self.data[0], self.data[1])#fit for next iteration or exitcontidion of just two support vectors
             self.support_vectors_dictionary = self.group_support_vectors(self.clf) #regroup
 
-            self.plot_data_and_plane()
-            plt.show()
+            #self.plot_data_and_plane()
+            #plt.show()
+            self.new_margin = self.get_margin(self.clf)
+        print(self.new_margin)
+        print(self.old_margin)
 
-            print("nr of support {}".format(len(self.clf.support_vectors_)))
+        print("nr of support {}".format(len(self.clf.support_vectors_)))
 
 
         #self.clf.fit(self.data_points, self.data_labels)
