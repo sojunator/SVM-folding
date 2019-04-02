@@ -156,7 +156,7 @@ class HPF:
                     sum2 = v2[0] + v2[1]
                     if sum1 == sum2:
                         del lst[n]
-                        
+
 
         max_key = max(grouped_support_vectors, key= lambda x: len(grouped_support_vectors[x]))
 
@@ -236,7 +236,7 @@ class HPF:
         y = ( (x1*y2-y1*x2)*(y3-y4) - (y1-y2) *(x3*y4-y3*x4) )/ ( (x1-x2)*(y3-y4) - (y1-y2)*(x3-x4) )
 
         cosang = np.abs(np.dot(right_direction, left_direction))
-        
+
         #angle = math.acos()*180 /3.1415
 
  #       return [x, y], angle
@@ -247,12 +247,8 @@ class HPF:
         #left_slope = (second_left_point_on_line[1] - first_left_point_on_line[1]) / (second_left_point_on_line[0] - first_left_point_on_line[0])
         #right_slope = (second_right_point_on_line[1] - first_right_point_on_line[1]) / (second_right_point_on_line[0] - first_right_point_on_line[0])
 
-<<<<<<< HEAD
 
-=======
-        
         xy, angle = self.get_intersection_point(left_clf, right_clf)
->>>>>>> 8f56606acaee6b24d7b9314cc7d26f1db8b26089
 
         return [xy[0], xy[1]], -angle
 
@@ -371,13 +367,8 @@ class HPF:
                     left_set[1].append(vector[1])
                     if not any(all(vector_2d[0] == x) for x in left_set_2d[0]):
                         left_set_2d[0].append(np.array(vector_2d[0]))
-<<<<<<< HEAD
                         left_set_2d[1].append(np.array(vector_2d[1]))
 
-=======
-                        left_set_2d[1].append(vector_2d[1])
-            
->>>>>>> 8f56606acaee6b24d7b9314cc7d26f1db8b26089
 
 
 
@@ -437,10 +428,10 @@ class HPF:
         test = math.asin(sin_angle)
         test2 = math.acos(cos_angle)
 
-        
+
         return np.array(((cos_angle,-sin_angle), (sin_angle, cos_angle)))
 
-    
+
 
     def rotate_point_2D(self, point, angle, primary_support, intersection_point):
         """
@@ -550,15 +541,9 @@ class HPF:
         #plt.axis([-15, 15, -15, 15])
         self.plot_plane(right_clf, True)
         self.plot_plane(left_clf)
-<<<<<<< HEAD
         self.plot_data_points(self.data)
         plt.axis([-15, 15, -15, 15])
 
-=======
-        self.plot_data_points(left_set_2d)
-        self.plot_data_points(right_set_2d)
-        plt.show()
->>>>>>> 8f56606acaee6b24d7b9314cc7d26f1db8b26089
 
         # Rotate and merge data sets back into one
         self.data[0], self.data[1], left_or_right, intersection_point = self.rotate_set(left_clf, left_set, right_clf, right_set, self.primary_support_vector)
@@ -569,7 +554,7 @@ class HPF:
         #plt.axis([-15, 15, -15, 15])
         #4plt.show()
 
-        
+
         self.rotation_data.append((intersection_point, self.primary_support_vector, left_or_right, (right_clf, left_clf)))
 
         # merge
@@ -646,11 +631,7 @@ class HPF:
         self.clf.fit(data_points, data_labels)
         self.support_vectors_dictionary = self.group_support_vectors(self.clf) #group into classes = create support_vectors_dictionary
         while(len(self.clf.support_vectors_) > 2 and val is 0):
-<<<<<<< HEAD
 
-=======
-            #plot_datapoints(self.data)
->>>>>>> 8f56606acaee6b24d7b9314cc7d26f1db8b26089
 
             self.data[0], self.support_vectors_dictionary = self.dim_red.project_down(self.data[0], self.support_vectors_dictionary)
 
@@ -660,17 +641,10 @@ class HPF:
             #fold until just two support vectors exist or max_nr_of_folds is reached
             #self.plot_data_and_plane()
             val = self.fold()
-<<<<<<< HEAD
 
             current_fold += 1
     #        plot_datapoints(self.data)
 
-=======
-            
-            self.current_fold += 1
-            
-            
->>>>>>> 8f56606acaee6b24d7b9314cc7d26f1db8b26089
             self.data[0] = self.dim_red.project_up(self.data[0])
 
 #            plot_datapoints(self.data)
