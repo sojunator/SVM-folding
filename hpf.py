@@ -696,6 +696,9 @@ class HPF:
         val = 0
         self.clf.fit(data_points, data_labels)
         self.support_vectors_dictionary = self.group_support_vectors(self.clf) #group into classes = create support_vectors_dictionary
+
+        previous_margin = self.old_margin
+        margins = []
         while(len(self.clf.support_vectors_) > 2 and val is 0):
 
 
@@ -713,13 +716,28 @@ class HPF:
 
             self.data[0] = self.dim_red.project_up(self.data[0])
 
+
+
 #            plot_datapoints(self.data)
             self.clf.fit(self.data[0], self.data[1])#fit for next iteration or exit contidion of just two support vectors
             self.support_vectors_dictionary = self.group_support_vectors(self.clf) #regroup
 
+            
+
             #self.plot_data_and_plane()
             #plt.show()
             self.new_margin = self.get_margin(self.clf)
+            margins.append(math.fabs(self.new_margin - previous_margin))
+            previous_margin = self.new_margin
+
+            if len(margins) == 10:
+                avg = sum(margins) / len(margins)
+                if avg < 0.00001:
+                    val = -1
+                    print("termination due to floating point")
+                margins.clear()
+
+
         print(self.new_margin)
         print(self.old_margin)
 
