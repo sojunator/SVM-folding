@@ -34,8 +34,8 @@ def plot_datapoints(data):
     plt.plot(x1, y1, 'ro')
     plt.plot(x2, y2, 'go')
 
-    plt.axis([-200, 200, -200, 200])
-   # plt.axis([-15, 15, -15, 15])
+    #plt.axis([-200, 200, -200, 200])
+    plt.axis([-15, 15, -15, 15])
     plt.show()
 
 
@@ -46,9 +46,13 @@ class HPF:
         if new_figure_:
             plt.figure()
 
-        g = self.group_support_vectors(clf)
-
+       # g = self.group_support_vectors(clf)
+        g = clf
         h = self.get_hyperplane_direction(g)
+
+        w = [0,0]
+        w[0] = -h[1]
+        w[1] = h[0]
 
         p = (g[0][0][:2] + g[1][0][:2]) / 2
 
@@ -59,6 +63,16 @@ class HPF:
         hy2 = p[1] + h[1] * -100
 
         plt.plot([hx1,hx2],[hy1, hy2], 'b')
+
+        hx1 = p[0] + w[0] * 100
+        hy1 = p[1] + w[1] * 100
+
+        hx2 = p[0] + w[0] * -100
+        hy2 = p[1] + w[1] * -100
+
+        plt.plot([hx1,hx2],[hy1, hy2], 'r')
+
+       
 
     def plot_data_points(self, data, new_figure_ = False):
 
@@ -146,16 +160,24 @@ class HPF:
         """
 
         #Remove duplicate 2d points
+        if len(grouped_support_vectors) < 2:
+            print("To few classes?")
+
+        if len(grouped_support_vectors[0][0]) < 2:
+            print("error, vector dimension to small")
+
         for lst_idx in grouped_support_vectors:
             lst = grouped_support_vectors[lst_idx]
+
             for n, v1 in enumerate(lst):
-                if len(v1) < 2:
-                    print("error, vector dimension to small")
-                sum1 = v1[0] + v1[1]
+                
+                
                 for v2 in lst[n+1:]:
-                    sum2 = v2[0] + v2[1]
-                    if sum1 == sum2:
+                    s = (v1[0] - v2[0]) + (v1[1] - v2[1])
+
+                    if  s*s < 0.000000001:
                         del lst[n]
+                        print("Deleted vector")
 
 
         max_key = max(grouped_support_vectors, key= lambda x: len(grouped_support_vectors[x]))
@@ -176,7 +198,7 @@ class HPF:
 
         normh = np.linalg.norm(h)
 
-        if normh == 0: #< 0.000000001
+        if normh < 0.000000001:
             print("Error in get hyperplane direction asdf asdf")
 
 
@@ -235,11 +257,17 @@ class HPF:
         x = ( (x1*y2-y1*x2)*(x3-x4) - (x1-x2) *(x3*y4-y3*x4) )/ ( (x1-x2)*(y3-y4) - (y1-y2)*(x3-x4) )
         y = ( (x1*y2-y1*x2)*(y3-y4) - (y1-y2) *(x3*y4-y3*x4) )/ ( (x1-x2)*(y3-y4) - (y1-y2)*(x3-x4) )
 
-        cosang = np.abs(np.dot(right_direction, left_direction))
+        cosang = np.dot(right_direction, left_direction)
 
-        #angle = math.acos()*180 /3.1415
+        angle = math.acos(cosang)*180 /3.1415
 
- #       return [x, y], angle
+        print(angle)
+
+        #cosang = math.sqrt((1 + cosang) / 2)
+        angle2 = math.acos(cosang)*180 / 3.1415
+        print(angle2)
+
+        #return [x, y], np.abs(cosang)
 
 
         #print(angle*180 /3.1415)
@@ -277,7 +305,7 @@ class HPF:
         a = h[0]
         b = h[1]
 
-        cd = (self.support_vectors_dictionary[0][0][:2] - self.support_vectors_dictionary[1][0][:2]) / 2
+        cd = (self.support_vectors_dictionary[0][0][:2] + self.support_vectors_dictionary[1][0][:2]) / 2
 
 
         c = cd[0]
@@ -301,12 +329,15 @@ class HPF:
         """
         #w = self.clf.coef_[0]
 
+        
+
         h = self.get_hyperplane_direction(self.support_vectors_dictionary)
 
 
         v = point[:2] - self.primary_support_vector[:2]#direction from one vector to the splitting point
         normv = np.linalg.norm(v)
-        if normv == 0: #< 0.000000001 #same point as primary support vector in 2d. Add into left set? or both? TODO:
+        if normv < 0.000000001: #same point as primary support vector in 2d. Add into left set? or both? TODO:
+            print("same as primary")
             return 0
 
         v = v / normv
@@ -367,7 +398,7 @@ class HPF:
                     left_set[1].append(vector[1])
                     if not any(all(vector_2d[0] == x) for x in left_set_2d[0]):
                         left_set_2d[0].append(np.array(vector_2d[0]))
-                        left_set_2d[1].append(np.array(vector_2d[1]))
+                        left_set_2d[1].append(vector_2d[1])
 
 
 
@@ -417,13 +448,18 @@ class HPF:
         c, s = np.cos(theta), np.sin(theta)
         return np.array(((c,-s), (s, c)))
 
-    def get_rotation_aaa(self, cos_angle):
+    def get_rotation_a(self, cos_angle):
         """
         Forms the rotation matrix:
         (cos, sin)
         (-sin, cos)
         """
-        sin_angle = np.sqrt(1 - cos_angle * cos_angle)
+        sin_angle = math.sin(math.acos(cos_angle))
+
+        if cos_angle > 0:
+            sin_angle = -sin_angle
+
+        
 
         test = math.asin(sin_angle)
         test2 = math.acos(cos_angle)
@@ -499,13 +535,23 @@ class HPF:
 
     def fold(self):
         # folding sets
-        right_clf = svm.SVC(kernel='linear', C=10000000)
-        left_clf = svm.SVC(kernel='linear', C=10000000)
+        right_clf = svm.SVC(kernel='linear', C=1000)
+        left_clf = svm.SVC(kernel='linear', C=1000)
 
 
         # Splitting point
         self.primary_support_vector = self.get_splitting_point()
+        
         # Subsets of datasets, left and right of primary support vector
+
+        if self.current_fold > 30:
+            self.plot_plane(self.support_vectors_dictionary, True)
+            self.plot_data_points(self.data)
+            plt.show()
+            stopper = 0
+
+       
+
         left_set, left_set_2d, right_set, right_set_2d = self.split_data()
 
         #self.plot_data_and_plane()
@@ -521,17 +567,22 @@ class HPF:
             print("WARNING, ONLY ONE CLASS PRESENT IN A SET, ABORTING")
             return -1
 
-        if self.current_fold > 30:
-            self.plot_plane(right_clf, True)
-            self.plot_plane(left_clf)
-            self.plot_data_points(self.data)
-            plt.show()
+        #if self.current_fold > 30:
+         #   print(self.primary_support_vector)
+          #  self.plot_plane(self.support_vectors_dictionary, True)
+           # self.plot_data_points(self.data)
+            
+            #self.plot_plane(right_clf, True)
+            #self.plot_plane(left_clf)
+           # self.plot_data_points(self.data)
+           # plt.show()
 
         #self.plot_plane(right_clf, True)
         #self.plot_data_points(left_set_2d)
         #self.plot_data_points(right_set_2d)
         #self.plot_plane(left_clf)
         #plt.axis([-15, 15, -15, 15])
+
         #plt.axis([-15, 15, -15, 15])
         #plt.show()
 
@@ -539,14 +590,23 @@ class HPF:
         #self.plot_plane(left_clf)
         #self.plot_data_points(self.data)
         #plt.axis([-15, 15, -15, 15])
-        self.plot_plane(right_clf, True)
-        self.plot_plane(left_clf)
-        self.plot_data_points(self.data)
-        plt.axis([-15, 15, -15, 15])
-
+        
 
         # Rotate and merge data sets back into one
         self.data[0], self.data[1], left_or_right, intersection_point = self.rotate_set(left_clf, left_set, right_clf, right_set, self.primary_support_vector)
+
+
+        #if self.current_fold > 30:
+         #   self.plot_plane(self.support_vectors_dictionary, True)
+          #  self.plot_data_points(self.data)
+            #plt.show()
+
+
+        #self.plot_plane(right_clf, True)
+        #self.plot_plane(left_clf)
+        #self.plot_data_points(self.data)
+        #plt.axis([-15, 15, -15, 15])
+        #plt.show()
 
         #self.plot_plane(right_clf, True)
         #self.plot_plane(left_clf)
@@ -648,7 +708,7 @@ class HPF:
             self.data[0] = self.dim_red.project_up(self.data[0])
 
 #            plot_datapoints(self.data)
-            self.clf.fit(self.data[0], self.data[1])#fit for next iteration or exitcontidion of just two support vectors
+            self.clf.fit(self.data[0], self.data[1])#fit for next iteration or exit contidion of just two support vectors
             self.support_vectors_dictionary = self.group_support_vectors(self.clf) #regroup
 
             #self.plot_data_and_plane()
