@@ -642,7 +642,7 @@ class HPF:
             #self.plot_data_and_plane()
             val = self.fold()
 
-            current_fold += 1
+            self.current_fold += 1
     #        plot_datapoints(self.data)
 
             self.data[0] = self.dim_red.project_up(self.data[0])
