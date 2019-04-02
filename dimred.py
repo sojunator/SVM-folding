@@ -307,6 +307,9 @@ class DR:
         nr_of_coordinates = len(support_vectors_dictionary[0][0])
         self.matrices[self.folds_done] = np.identity(nr_of_coordinates)#start with the identity
         nr_of_support_vectors = len(support_vectors_dictionary[0]) + len(support_vectors_dictionary[1])
+
+        if nr_of_support_vectors > nr_of_coordinates + 1:
+            print("Are you sure the data is linearly seperable?")
             
         #if three or more support vectors. And less support vectors than the current dimension. Reduce using the orthonormal basis from support vectors
         if nr_of_support_vectors >= 3 and nr_of_support_vectors <= nr_of_coordinates:
