@@ -38,6 +38,15 @@ def plot_datapoints(data):
     plt.axis([-15, 15, -15, 15])
     plt.show()
 
+def vec_equal(vec1, vec2):
+    acc = 0.0
+    for elements in zip(vec1, vec2):
+        acc += elements[0] - elements[1]
+        
+    if acc * acc < 0.00000001:
+        return True
+
+    return False
 
 
 class HPF:
@@ -175,7 +184,7 @@ class HPF:
                 for v2 in lst[n+1:]:
                     s = (v1[0] - v2[0]) + (v1[1] - v2[1])
 
-                    if  s*s < 0.000000001:
+                    if  s*s < 0.00001:
                         del lst[n]
                         print("Deleted vector")
 
@@ -254,8 +263,8 @@ class HPF:
         y4 = second_right_point_on_line[1]
 
 
-        x = ( (x1*y2-y1*x2)*(x3-x4) - (x1-x2) *(x3*y4-y3*x4) )/ ( (x1-x2)*(y3-y4) - (y1-y2)*(x3-x4) )
-        y = ( (x1*y2-y1*x2)*(y3-y4) - (y1-y2) *(x3*y4-y3*x4) )/ ( (x1-x2)*(y3-y4) - (y1-y2)*(x3-x4) )
+        #x = ( (x1*y2-y1*x2)*(x3-x4) - (x1-x2) *(x3*y4-y3*x4) )/ ( (x1-x2)*(y3-y4) - (y1-y2)*(x3-x4) )
+        #y = ( (x1*y2-y1*x2)*(y3-y4) - (y1-y2) *(x3*y4-y3*x4) )/ ( (x1-x2)*(y3-y4) - (y1-y2)*(x3-x4) )
 
         cosang = np.dot(right_direction, left_direction)
 
@@ -349,7 +358,7 @@ class HPF:
         else:
             return 0
 
-
+    
 
     def split_data(self):
         """
@@ -366,22 +375,19 @@ class HPF:
         for vector in zip(self.data[0], self.data[1]):
             vector_2d = (vector[0][:2], vector[1])
 
-
             #Uses failchecks to NOT add any duplicates. One of the aligned vectors needs to be excluded from training
-
-
-            if all(vector[0] == self.primary_support_vector):#is primary support vector
+            if vec_equal(vector[0], self.primary_support_vector):#all(vector[0] == self.primary_support_vector):#is primary support vector
                 right_set[0].append(np.array(vector[0]))
                 right_set[1].append(vector[1])
 
                 left_set[0].append(np.array(vector[0]))
                 left_set[1].append(vector[1])
 
-            if all(vector_2d[0] == self.primary_support_vector[:2]):#is primary support vector
-                if not any(all(vector_2d[0] == x) for x in right_set_2d[0]):
+            if vec_equal(vector_2d[0], self.primary_support_vector[:2]):#is primary support vector
+                if not any(vec_equal(vector_2d[0], x) for x in right_set_2d[0]):
                     right_set_2d[0].append(np.array(vector_2d[0]))
                     right_set_2d[1].append(vector_2d[1])
-                if not any(all(vector_2d[0] == x) for x in left_set_2d[0]):
+                if not any(vec_equal(vector_2d[0], x) for x in left_set_2d[0]):
                     left_set_2d[0].append(np.array(vector_2d[0]))
                     left_set_2d[1].append(vector_2d[1])
             else:
@@ -390,13 +396,13 @@ class HPF:
                     right_set[0].append(np.array(vector[0]))
                     right_set[1].append(vector[1])
 
-                    if not any(all(vector_2d[0] == x) for x in right_set_2d[0]):
+                    if not any(vec_equal(vector_2d[0], x) for x in right_set_2d[0]):
                         right_set_2d[0].append(np.array(vector_2d[0]))
                         right_set_2d[1].append(vector_2d[1])
                 else:
                     left_set[0].append(np.array(vector[0]))
                     left_set[1].append(vector[1])
-                    if not any(all(vector_2d[0] == x) for x in left_set_2d[0]):
+                    if not any(vec_equal(vector_2d[0], x) for x in left_set_2d[0]):
                         left_set_2d[0].append(np.array(vector_2d[0]))
                         left_set_2d[1].append(vector_2d[1])
 
@@ -544,11 +550,11 @@ class HPF:
         
         # Subsets of datasets, left and right of primary support vector
 
-        if self.current_fold > 30:
-            self.plot_plane(self.support_vectors_dictionary, True)
-            self.plot_data_points(self.data)
-            plt.show()
-            stopper = 0
+        #if self.current_fold > 30:
+         #   self.plot_plane(self.support_vectors_dictionary, True)
+          #  self.plot_data_points(self.data)
+           # plt.show()
+            #stopper = 0
 
        
 
