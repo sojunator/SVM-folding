@@ -56,7 +56,7 @@ class HPF:
             plt.figure()
 
        # g = self.group_support_vectors(clf)
-        g = clf
+        g = self.group_support_vectors(clf)
         h = self.get_hyperplane_direction(g)
 
         w = [0,0]
@@ -182,9 +182,9 @@ class HPF:
                 
                 
                 for v2 in lst[n+1:]:
-                    s = (v1[0] - v2[0]) + (v1[1] - v2[1])
+#                    s = (v1[0] - v2[0]) + (v1[1] - v2[1])
 
-                    if  s*s < 0.00001:
+                    if  vec_equal(v1[:2], v2[:2]):
                         del lst[n]
                         print("Deleted vector")
 
@@ -549,22 +549,8 @@ class HPF:
         self.primary_support_vector = self.get_splitting_point()
         
         # Subsets of datasets, left and right of primary support vector
-
-        #if self.current_fold > 30:
-         #   self.plot_plane(self.support_vectors_dictionary, True)
-          #  self.plot_data_points(self.data)
-           # plt.show()
-            #stopper = 0
-
-       
-
         left_set, left_set_2d, right_set, right_set_2d = self.split_data()
 
-        #self.plot_data_and_plane()
-
-
-        #self.plot_data_points(right_set_2d)
-        #plt.show()
         # New SVM, right
         try:
             right_clf.fit(right_set_2d[0], right_set_2d[1])
@@ -573,63 +559,25 @@ class HPF:
             print("WARNING, ONLY ONE CLASS PRESENT IN A SET, ABORTING")
             return -1
 
-        #if self.current_fold > 30:
-         #   print(self.primary_support_vector)
-          #  self.plot_plane(self.support_vectors_dictionary, True)
-           # self.plot_data_points(self.data)
-            
-            #self.plot_plane(right_clf, True)
-            #self.plot_plane(left_clf)
-           # self.plot_data_points(self.data)
-           # plt.show()
-
-        #self.plot_plane(right_clf, True)
-        #self.plot_data_points(left_set_2d)
-        #self.plot_data_points(right_set_2d)
-        #self.plot_plane(left_clf)
-        #plt.axis([-15, 15, -15, 15])
-
-        #plt.axis([-15, 15, -15, 15])
-        #plt.show()
-
-        #self.plot_plane(right_clf, True)
-        #self.plot_plane(left_clf)
-        #self.plot_data_points(self.data)
-        #plt.axis([-15, 15, -15, 15])
         
 
+        self.plot_plane(right_clf, True)
+        self.plot_data_points(left_set_2d)
+        self.plot_data_points(right_set_2d)
+        self.plot_plane(left_clf)
+ 
+        
         # Rotate and merge data sets back into one
         self.data[0], self.data[1], left_or_right, intersection_point = self.rotate_set(left_clf, left_set, right_clf, right_set, self.primary_support_vector)
 
-
-        #if self.current_fold > 30:
-         #   self.plot_plane(self.support_vectors_dictionary, True)
-          #  self.plot_data_points(self.data)
-            #plt.show()
-
-
-        #self.plot_plane(right_clf, True)
-        #self.plot_plane(left_clf)
-        #self.plot_data_points(self.data)
-        #plt.axis([-15, 15, -15, 15])
-        #plt.show()
-
-        #self.plot_plane(right_clf, True)
-        #self.plot_plane(left_clf)
-        #self.plot_data_points(self.data)
-        #plt.axis([-15, 15, -15, 15])
-        #4plt.show()
-
+        self.plot_plane(right_clf)
+        self.plot_data_points(left_set_2d)
+        self.plot_data_points(right_set_2d)
+        self.plot_plane(left_clf)
+        plt.show()
 
         self.rotation_data.append((intersection_point, self.primary_support_vector, left_or_right, (right_clf, left_clf)))
 
-        # merge
-        #self.clf = right_clf if left_or_right else left_clf
-        #self.group_support_vectors(self.clf)
-
-        # Used for highlighting the sets
-        #right_set[0] = np.vstack(right_set[0])
-        #left_set[0] = np.vstack(left_set[0])
         return 0
 
     def classify(self, points, rotate=True):
