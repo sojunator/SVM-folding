@@ -475,12 +475,13 @@ class HPF:
 
 
 
-    def rotate_point_2D(self, point, angle, primary_support, intersection_point):
+    def rotate_point_2D(self, point, angle, primary_support, intersection_point, clf):
         """
         Returns the point, with it's xy-coordinates rotated accordingly to rubberband folding
 
         Does currently not apply rubberband folding, rotates points around intersection
         """
+        
         rotation_matrix = self.get_rotation(angle)
 
         #point = np.matmul(point.T - intersection_point, rotation_matrix) + intersection_point
@@ -516,13 +517,13 @@ class HPF:
 
         if (right_margin >= left_margin):
             right_set[0] = [self.rotate_point_2D(point, -cos_angle, primary_support_vector,
-                            intersection_point)
+                            intersection_point, right_clf)
                                 for point in right_set[0]]
             left_or_right = 0
 
         elif (left_margin > right_margin):
             left_set[0] = [self.rotate_point_2D(point, cos_angle, primary_support_vector,
-                            intersection_point)
+                            intersection_point, left_clf)
                                 for point in left_set[0]]
             left_or_right = 1
 
