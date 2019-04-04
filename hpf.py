@@ -42,7 +42,7 @@ def vec_equal(vec1, vec2):
     acc = 0.0
     for elements in zip(vec1, vec2):
         acc += elements[0] - elements[1]
-        
+
     if acc * acc < 0.00000001:
         return True
 
@@ -81,7 +81,7 @@ class HPF:
 
         plt.plot([hx1,hx2],[hy1, hy2], 'r')
 
-       
+
 
     def plot_data_points(self, data, new_figure_ = False):
 
@@ -179,8 +179,8 @@ class HPF:
             lst = grouped_support_vectors[lst_idx]
 
             for n, v1 in enumerate(lst):
-                
-                
+
+
                 for v2 in lst[n+1:]:
 #                    s = (v1[0] - v2[0]) + (v1[1] - v2[1])
 
@@ -338,7 +338,7 @@ class HPF:
         """
         #w = self.clf.coef_[0]
 
-        
+
 
         h = self.get_hyperplane_direction(self.support_vectors_dictionary)
 
@@ -358,7 +358,7 @@ class HPF:
         else:
             return 0
 
-    
+
 
     def split_data(self):
         """
@@ -465,7 +465,7 @@ class HPF:
         if cos_angle > 0:
             sin_angle = -sin_angle
 
-        
+
 
         test = math.asin(sin_angle)
         test2 = math.acos(cos_angle)
@@ -481,8 +481,15 @@ class HPF:
 
         Does currently not apply rubberband folding, rotates points around intersection
         """
-        
-        rotation_matrix = self.get_rotation(angle)
+        norm = np.linalg.norm(clf.coef_[0])
+        v = intersection_point + norm
+
+        cosang = np.dot(v, intersection_point - point[:2])
+        sinang = np.linalg.norm(np.cross(v, intersection_point - point[:2]))
+        angle2 = np.arctan2(sinang, cosang)
+        print(angle, angle2)
+
+        rotation_matrix = self.get_rotation(min(angle, angle2))
 
         #point = np.matmul(point.T - intersection_point, rotation_matrix) + intersection_point
 
@@ -517,13 +524,13 @@ class HPF:
 
         if (right_margin >= left_margin):
             right_set[0] = [self.rotate_point_2D(point, -cos_angle, primary_support_vector,
-                            intersection_point, right_clf)
+                            intersection_point, left_clf)
                                 for point in right_set[0]]
             left_or_right = 0
 
         elif (left_margin > right_margin):
             left_set[0] = [self.rotate_point_2D(point, cos_angle, primary_support_vector,
-                            intersection_point, left_clf)
+                            intersection_point, right_clf)
                                 for point in left_set[0]]
             left_or_right = 1
 
@@ -548,7 +555,7 @@ class HPF:
 
         # Splitting point
         self.primary_support_vector = self.get_splitting_point()
-        
+
         # Subsets of datasets, left and right of primary support vector
         left_set, left_set_2d, right_set, right_set_2d = self.split_data()
 
@@ -560,14 +567,14 @@ class HPF:
             print("WARNING, ONLY ONE CLASS PRESENT IN A SET, ABORTING")
             return -1
 
-        
+
 
         self.plot_plane(right_clf, True)
         self.plot_data_points(left_set_2d)
         self.plot_data_points(right_set_2d)
         self.plot_plane(left_clf)
- 
-        
+
+
         # Rotate and merge data sets back into one
         self.data[0], self.data[1], left_or_right, intersection_point = self.rotate_set(left_clf, left_set, right_clf, right_set, self.primary_support_vector)
 
@@ -671,7 +678,7 @@ class HPF:
             self.clf.fit(self.data[0], self.data[1])#fit for next iteration or exit contidion of just two support vectors
             self.support_vectors_dictionary = self.group_support_vectors(self.clf) #regroup
 
-            
+
 
             #self.plot_data_and_plane()
             #plt.show()
@@ -681,7 +688,8 @@ class HPF:
 
             if len(margins) == 10:
                 avg = sum(margins) / len(margins)
-                if avg < 0.00001:
+                print(avg)
+                if avg < 0.001:
                     val = -1
                     print("termination due to floating point")
                 margins.clear()
