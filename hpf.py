@@ -332,18 +332,23 @@ class HPF:
         return tk
 
 
-    def left_or_right_of_plane(self, point):
+    def left_or_right_of_plane(self, point, support_vectors_dictionary = None, primary_support_vector = None):
         """
         Splits the data from the primary point in the direction of the normal
         """
         #w = self.clf.coef_[0]
 
+        h = None
+        v = None
 
+        if support_vectors_dictionary is None:
+            h = self.get_hyperplane_direction(self.support_vectors_dictionary)
+            v = point[:2] - self.primary_support_vector[:2]#direction from one vector to the splitting point
 
-        h = self.get_hyperplane_direction(self.support_vectors_dictionary)
+        else:
+            h = self.get_hyperplane_direction(support_vectors_dictionary)
+            v = point[:2] - primary_support_vector[:2]#direction from one vector to the splitting point
 
-
-        v = point[:2] - self.primary_support_vector[:2]#direction from one vector to the splitting point
         normv = np.linalg.norm(v)
         if normv < 0.000000001: #same point as primary support vector in 2d. Add into left set? or both? TODO:
             print("same as primary")
@@ -582,9 +587,9 @@ class HPF:
         self.plot_data_points(left_set_2d)
         self.plot_data_points(right_set_2d)
         self.plot_plane(left_clf)
-        plt.show()
+        #plt.show()
 
-        self.rotation_data.append((intersection_point, self.primary_support_vector, left_or_right, (right_clf, left_clf)))
+        self.rotation_data.append((intersection_point, self.primary_support_vector, left_or_right, (right_clf, left_clf), self.support_vectors_dictionary))
 
         return 0
 
@@ -602,6 +607,8 @@ class HPF:
             left_or_right = rotation[2]
             right_clf = rotation[3][0]
             left_clf = rotation[3][1]
+            support_vectors_dictionary = rotation[4]
+
 
             _, angle = self.get_intersection_point(left_clf, right_clf)
             rotation_matrix = self.get_rotation(angle)
@@ -609,20 +616,22 @@ class HPF:
             rotated_set = []
             none_rotated_set = []
 
-
+            clf_for_rotation = None
             for point in points:
                 if left_or_right:
-                    if self.left_or_right_of_plane(point, primary_support_vector):
+                    if self.left_or_right_of_plane(point, support_vectors_dictionary, primary_support_vector):
                         rotated_set.append(point)
+                        clf_for_rotation = left_clf
                     else:
                         none_rotated_set.append(point)
                 else:
-                    if not self.left_or_right_of_plane(point, primary_support_vector):
+                    if not self.left_or_right_of_plane(point, support_vectors_dictionary, primary_support_vector):
                         rotated_set.append(point)
+                        clf_for_rotation = right_clf
                     else:
                         none_rotated_set.append(point)
 
-            rotated_set = [self.rotate_point_2D(point, angle, primary_support_vector, intersection_point) for point in rotated_set]
+            rotated_set = [self.rotate_point_2D(point, angle, primary_support_vector, intersection_point, clf_for_rotation) for point in rotated_set]
 
             points = np.asarray(rotated_set + none_rotated_set)
 
@@ -712,7 +721,7 @@ class HPF:
             print("Margin change: {}".format(self.new_margin - self.old_margin))
             if len(self.rotation_data) > 0:
                 for rotation in self.rotation_data:
-                    intersection_point, primary_support_vector, left_or_right, clfs = rotation
+                    intersection_point, primary_support_vector, left_or_right, clfs, _ = rotation
                     print("intersection point: {}".format(intersection_point))
                     print("primary_support_vector {}".format(primary_support_vector))
                     print("Left or right: {}".format(left_or_right))
