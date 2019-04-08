@@ -45,6 +45,15 @@ def vec_equal(vec1, vec2):
 
 
 class HPF:
+    def plot_dir(self, h, p, col, new_figure = False):
+
+        hx1 = p[0] + h[0] * 100
+        hy1 = p[1] + h[1] * 100
+
+        hx2 = p[0] + h[0] * -100
+        hy2 = p[1] + h[1] * -100
+
+        plt.plot([hx1,hx2],[hy1, hy2], col)
 
     def plot_plane(self, clf, new_figure_ = False):
         if new_figure_:
@@ -191,19 +200,19 @@ class HPF:
 
         if len(grouped_support_vectors[max_key]) < 2: #when only one support vector in each class
 
-            w = grouped_support_vectors[0][0][:2] - grouped_support_vectors[1][0][:2]
-            h[0] = -w[1]
-            h[1] = w[0]
+            w = grouped_support_vectors[1][0][:2] - grouped_support_vectors[0][0][:2]
+            h[0] = w[1]
+            h[1] = -w[0]
 
 
         else:
-            h = grouped_support_vectors[max_key][0][:2] - grouped_support_vectors[max_key][1][:2]
+            h = grouped_support_vectors[max_key][1][:2] - grouped_support_vectors[max_key][0][:2]
 
 
         normh = np.linalg.norm(h)
 
         if normh < 0.000000001:
-            print("Error in get hyperplane direction asdf asdf")
+            print("Error in get hyperplane direction, support vectors too close?")
 
 
 
@@ -332,10 +341,12 @@ class HPF:
         Splits the data from the primary point in the direction of the normal
         """
         #w = self.clf.coef_[0]
+        
 
         h = None
         v = None
 
+        
         if support_vectors_dictionary is None:
             h = self.get_hyperplane_direction(self.support_vectors_dictionary)
             v = point[:2] - self.primary_support_vector[:2]#direction from one vector to the splitting point
@@ -352,6 +363,10 @@ class HPF:
         v = v / normv
 
         cosang = np.dot(h,v)#since both are normalized, according to dot products definition, returns the cosine of the angle between the directions.
+
+        self.plot_dir(v, self.primary_support_vector[:2], 'g')
+        self.plot_dir(h, self.primary_support_vector[:2], 'b')
+ #       plt.show()
 
         if cosang > 0:#Left / right
             return 1
@@ -550,8 +565,8 @@ class HPF:
 
     def fold(self):
         # folding sets
-        right_clf = svm.SVC(kernel='linear', C=1000)
-        left_clf = svm.SVC(kernel='linear', C=1000)
+        right_clf = svm.SVC(kernel='linear', C=1e10)
+        left_clf = svm.SVC(kernel='linear', C=1e10)
 
 
         # Splitting point
@@ -559,6 +574,13 @@ class HPF:
 
         # Subsets of datasets, left and right of primary support vector
         left_set, left_set_2d, right_set, right_set_2d = self.split_data()
+
+        self.plot_data_points(self.data)
+        left_clf.fit(left_set_2d[0], left_set_2d[1])
+        self.plot_plane(left_clf)
+        #self.plot_data_points(right_set_2d)
+        #self.plot_plane(left_clf)
+        plt.show()
 
         # New SVM, right
         try:
