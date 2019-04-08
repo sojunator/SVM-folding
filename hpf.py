@@ -39,7 +39,7 @@ def plot_datapoints(data):
     plt.show()
 
 def vec_equal(vec1, vec2):
-    
+
     return np.allclose(vec1, vec2)
 
 
@@ -341,12 +341,12 @@ class HPF:
         Splits the data from the primary point in the direction of the normal
         """
         #w = self.clf.coef_[0]
-        
+
 
         h = None
         v = None
 
-        
+
         if support_vectors_dictionary is None:
             h = self.get_hyperplane_direction(self.support_vectors_dictionary)
             v = point[:2] - self.primary_support_vector[:2]#direction from one vector to the splitting point
@@ -420,7 +420,6 @@ class HPF:
                     if not any(vec_equal(vector_2d[0], x) for x in left_set_2d[0]):
                         left_set_2d[0].append(np.array(vector_2d[0]))
                         left_set_2d[1].append(vector_2d[1])
-
 
 
 
@@ -614,7 +613,7 @@ class HPF:
     def classify(self, points, rotate=True):
         if not rotate:
             return self.old_clf.predict(points)
-
+        correct_dim = points
         for idx, rotation in enumerate(self.rotation_data):
 
             points = self.dim_red.classify_project_down(points, idx)
