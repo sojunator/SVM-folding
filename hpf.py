@@ -492,9 +492,9 @@ class HPF:
         cosang = np.dot(v, intersection_point - point[:2])
         sinang = np.linalg.norm(np.cross(v, intersection_point - point[:2]))
         angle2 = np.arctan2(sinang, cosang)
-        print(angle, angle2)
 
-        rotation_matrix = self.get_rotation(min(angle, angle2))
+
+        rotation_matrix = self.get_rotation(min(angle, angle))
 
         #point = np.matmul(point.T - intersection_point, rotation_matrix) + intersection_point
 
@@ -617,7 +617,9 @@ class HPF:
             none_rotated_set = []
 
             clf_for_rotation = None
+            correct_dim = []
             for point in points:
+
                 if left_or_right:
                     if self.left_or_right_of_plane(point, support_vectors_dictionary, primary_support_vector):
                         rotated_set.append(point)
@@ -634,10 +636,11 @@ class HPF:
             rotated_set = [self.rotate_point_2D(point, angle, primary_support_vector, intersection_point, clf_for_rotation) for point in rotated_set]
 
             points = np.asarray(rotated_set + none_rotated_set)
+            correct_dim = points
 
             points = self.dim_red.classify_project_up(points, idx)
 
-        return self.clf.predict(points)
+        return self.clf.predict(correct_dim)
 
 
 
