@@ -39,14 +39,9 @@ def plot_datapoints(data):
     plt.show()
 
 def vec_equal(vec1, vec2):
-    acc = 0.0
-    for elements in zip(vec1, vec2):
-        acc += elements[0] - elements[1]
+    
+    return np.allclose(vec1, vec2)
 
-    if acc * acc < 0.00000001:
-        return True
-
-    return False
 
 
 class HPF:
@@ -429,7 +424,7 @@ class HPF:
             if (vector[2] is not first_class):
                 return vector[1]
 
-        print("No primary vector found")
+        print("Error in spliting point: No primary vector found")
 
     def group_support_vectors(self, clf):
         """
@@ -502,6 +497,7 @@ class HPF:
         x,y = self.rot_func(point[:2], intersection_point, rotation_matrix)
         point[0] = x
         point[1] = y
+
         return point
 
 
@@ -583,11 +579,11 @@ class HPF:
         # Rotate and merge data sets back into one
         self.data[0], self.data[1], left_or_right, intersection_point = self.rotate_set(left_clf, left_set, right_clf, right_set, self.primary_support_vector)
 
-        self.plot_plane(right_clf)
+        self.plot_plane(right_clf, True)
         self.plot_data_points(left_set_2d)
         self.plot_data_points(right_set_2d)
         self.plot_plane(left_clf)
-        #plt.show()
+        plt.show()
 
         self.rotation_data.append((intersection_point, self.primary_support_vector, left_or_right, (right_clf, left_clf), self.support_vectors_dictionary))
 

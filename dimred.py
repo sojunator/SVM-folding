@@ -272,15 +272,22 @@ class DR:
        
         mat[:matrix_dim,:matrix_dim] = matrix[:matrix_dim,:matrix_dim]
         
-        self.matrices[self.folds_done] = np.matmul(mat, self.matrices[self.folds_done].T)
+
+        #trans_mat = self.matrices[self.folds_done].T
+        self.matrices[self.folds_done] = np.matmul(mat, self.matrices[self.folds_done])
     
         return
 
 
-    def transform_support_vectors(self, matrix, support_vectors_dictionary, dim):
+    def transform_support_vectors(self, matrix, support_vectors_dictionary):
+
+        mat = np.identity(len(self.matrices[0]))
+        matrix_dim = len(matrix[0])
+       
+        mat[:matrix_dim,:matrix_dim] = matrix[:matrix_dim,:matrix_dim]
 
         for key, lst in support_vectors_dictionary.items():
-            support_vectors_dictionary[key] = [np.matmul(matrix, vector[:dim]) for vector in lst]
+            support_vectors_dictionary[key] = [np.matmul(mat, vector) for vector in lst]
 
 
 
@@ -318,13 +325,12 @@ class DR:
             basis_matrix = self.get_orthonormal_basis_from_support_vectors(all_support_vectors)
 
             #rotate data and support vectors
-            #self.transform_data_and_support_vectors(basis_matrix, nr_of_coordinates)
             self.combine_matrices(basis_matrix) 
 
             self.transform_support_vectors(basis_matrix.T, support_vectors_dictionary, nr_of_coordinates)
 
             #post rotation the dimension is lowered to the number of support vectors - 1
-            nr_of_coordinates = nr_of_support_vectors - 1
+            nr_of_coordinates = nr_of_support_vectors - 1#OBS
 
 
         #Rotate/align support vectors until we reach 2D.
@@ -340,8 +346,7 @@ class DR:
             rotation_matrix = self.align(direction)
     
             #rotate all datapoints and support vectors
-            #self.transform_data_and_support_vectors(rotation_matrix, nr_of_coordinates)
-            self.transform_support_vectors(rotation_matrix, support_vectors_dictionary, nr_of_coordinates)
+            self.transform_support_vectors(rotation_matrix, support_vectors_dictionary)
 
             self.combine_matrices(rotation_matrix)
 
