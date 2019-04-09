@@ -13,30 +13,6 @@ import json
 from dimred import DR
 
 
-def plot_datapoints(data):
-    x1 = []
-    y1 = []
-    x2 = []
-    y2 = []
-
-    for index, label in enumerate(data[1]):
-        #print(index)
-        if label == 0:
-
-            x1.append(data[0][index][0])
-            y1.append(data[0][index][1])
-
-        elif label == 1:
-            x2.append(data[0][index][0])
-            y2.append(data[0][index][1])
-
-
-    plt.plot(x1, y1, 'ro')
-    plt.plot(x2, y2, 'go')
-
-    #plt.axis([-200, 200, -200, 200])
-    plt.axis([-15, 15, -15, 15])
-    plt.show()
 
 def vec_equal(vec1, vec2):
 
@@ -45,109 +21,7 @@ def vec_equal(vec1, vec2):
 
 
 class HPF:
-    def plot_dir(self, h, p, col, new_figure = False):
-
-        hx1 = p[0] + h[0] * 100
-        hy1 = p[1] + h[1] * 100
-
-        hx2 = p[0] + h[0] * -100
-        hy2 = p[1] + h[1] * -100
-
-        plt.plot([hx1,hx2],[hy1, hy2], col)
-
-    def plot_plane(self, clf, new_figure_ = False):
-        if new_figure_:
-            plt.figure()
-
-       # g = self.group_support_vectors(clf)
-        g = self.group_support_vectors(clf)
-        h = self.get_hyperplane_direction(g)
-
-        w = [0,0]
-        w[0] = -h[1]
-        w[1] = h[0]
-
-        p = (g[0][0][:2] + g[1][0][:2]) / 2
-
-        hx1 = p[0] + h[0] * 100
-        hy1 = p[1] + h[1] * 100
-
-        hx2 = p[0] + h[0] * -100
-        hy2 = p[1] + h[1] * -100
-
-        plt.plot([hx1,hx2],[hy1, hy2], 'b')
-
-        hx1 = p[0] + w[0] * 100
-        hy1 = p[1] + w[1] * 100
-
-        hx2 = p[0] + w[0] * -100
-        hy2 = p[1] + w[1] * -100
-
-        plt.plot([hx1,hx2],[hy1, hy2], 'r')
-
-
-
-    def plot_data_points(self, data, new_figure_ = False):
-
-        if new_figure_:
-            plt.figure()
-
-        x1 = []
-        y1 = []
-        x2 = []
-        y2 = []
-
-        for index, label in enumerate(data[1]):
-
-            if label == 0:
-
-                x1.append(data[0][index][0])
-                y1.append(data[0][index][1])
-
-            elif label == 1:
-                x2.append(data[0][index][0])
-                y2.append(data[0][index][1])
-
-        plt.plot(x1, y1, 'ro')
-        plt.plot(x2, y2, 'go')
-
-    def plot_data_and_plane(self):
-
-        x1 = []
-        y1 = []
-        x2 = []
-        y2 = []
-
-        for index, label in enumerate(self.data[1]):
-
-            if label == 0:
-
-                x1.append(self.data[0][index][2])
-                y1.append(self.data[0][index][1])
-
-            elif label == 1:
-                x2.append(self.data[0][index][2])
-                y2.append(self.data[0][index][1])
-
-        h = self.get_hyperplane_direction(self.support_vectors_dictionary)
-
-        p = (self.support_vectors_dictionary[0][0][:2] + self.support_vectors_dictionary[1][0][:2]) / 2
-
-        hx1 = p[0] + h[0] * 100
-        hy1 = p[1] + h[1] * 100
-
-        hx2 = p[0] + h[0] * -100
-        hy2 = p[1] + h[1] * -100
-
-        plt.figure()
-
-        plt.plot(x1, y1, 'ro')
-        plt.plot(x2, y2, 'go')
-        plt.plot([hx1,hx2],[hy1, hy2], 'b')
-
-    #    plt.axis([-200, 200, -200, 200])
-        plt.axis([-15, 15, -15, 15])
-
+   
 
     def vector_projection(self, v1, v2):
         """
@@ -165,58 +39,15 @@ class HPF:
 
         return (a, (-clf.intercept_[0]) / w[1])
 
-    def get_hyperplane_direction(self, grouped_support_vectors):
-        """
-        Input: Dictionary containing lists of support vectors of each class
-        Output: The hyperplanes direction.
-        Note, Input must have one support vector in each class.
-        """
+    def get_hyperplane_normal(self):
+        
+        w = self.clf.coef_[0]
+
+        n = w / np.linalg.norm(w)
+
+        return n
 
         
-        if len(grouped_support_vectors) < 2:
-            print("Error, Get Hyperplane Direction: To few classes?")
-
-        if len(grouped_support_vectors[0][0]) < 2:
-            print("Error, Get Hyperplane Direction: vector dimensions less than two")
-
-        #Remove duplicate 2d points
-        for lst_idx in grouped_support_vectors:
-            lst = grouped_support_vectors[lst_idx]
-
-            for n, v1 in enumerate(lst):
-
-
-                for v2 in lst[n+1:]:
-
-                    if  vec_equal(v1[:2], v2[:2]):
-                        #del lst[n]
-                        print("Debug, Get Hyperplane Direction: Deleted vector")
-
-
-        max_key = max(grouped_support_vectors, key= lambda x: len(grouped_support_vectors[x]))
-
-       # h = [0,0]
-       # normh = 1
-
-        #if len(grouped_support_vectors[max_key]) < 2: #when only one support vector in each class
-
-         #   w = grouped_support_vectors[1][0][:2] - grouped_support_vectors[0][0][:2]
-          #  h[0] = w[1]
-           # h[1] = -w[0]
-
-
-        #else:
-        h = grouped_support_vectors[max_key][1] - grouped_support_vectors[max_key][0]
-
-
-        normh = np.linalg.norm(h)
-
-        if normh < 0.000000001:
-            print("Error, Get Hyperplane Direction: support vectors too close?") #probably cannot happen
-
-        h = h / normh;#normalize
-
-        return h
 
     def get_intersection_point(self, left, right):
         """
@@ -309,7 +140,7 @@ class HPF:
         """
         Returns the first possible primary support vector
         """
-        h = self.get_hyperplane_direction(self.support_vectors_dictionary)
+        h = self.hyperplane
 
         # As normal for the line is W = (b, -a)
         # direction is then given by as a = (-(-a), b))
@@ -339,41 +170,21 @@ class HPF:
         """
         Splits the data from the primary point in the direction of the normal
         """
-        #w = self.clf.coef_[0]
+        plane = self.hyperplane
+        
+        # planes direction
+        direction = plane[0]
+        
+        # vector between point and pv
+        ppv = point - self.primary_support_vector
 
+        # normalize
+        direction = np.linalg.norm(direction)
 
-        h = None
-        v = None
+        # angle between ppv and normal. 
+        cosang = np.dot(ppv, direction)
 
-
-        if support_vectors_dictionary is None:
-            h = self.hyperplane[:2] #self.get_hyperplane_direction(self.support_vectors_dictionary)
-            v = point[:2] - self.primary_support_vector[:2]#direction from one vector to the splitting point
-
-        else:
-            h = self.get_hyperplane_direction(support_vectors_dictionary)
-            v = point[:2] - primary_support_vector[:2]#direction from one vector to the splitting point
-
-        normv = np.linalg.norm(v)
-        if normv < 0.000000001: #same point as primary support vector in 2d. Add into left set? or both? TODO:
-            print("same as primary")
-            return 0
-
-        v = v / normv
-
-        cosang = np.dot(h,v)#since both are normalized, according to dot products definition, returns the cosine of the angle between the directions.
-
-        #self.plot_dir(v, self.primary_support_vector[:2], 'g')
-        #self.plot_dir(h, self.primary_support_vector[:2], 'r')
-        #self.plot_data_points(self.data)
-        #plt.show()
-
-        if cosang > 0:#Left / right
-            return 1
-        else:
-            return 0
-
-
+        return cosang > 0.0
 
     def split_data(self):
         """
@@ -384,46 +195,25 @@ class HPF:
         right_set = [[],[]]
         left_set = [[],[]]
 
-        right_set_2d = [[],[]]
-        left_set_2d = [[],[]]
-
-        for vector in zip(self.data[0], self.data[1]):
-            vector_2d = (vector[0][:2], vector[1])
-
-            #Uses failchecks to NOT add any duplicates. One of the aligned vectors needs to be excluded from training
-            if vec_equal(vector[0], self.primary_support_vector):#all(vector[0] == self.primary_support_vector):#is primary support vector
-                right_set[0].append(np.array(vector[0]))
-                right_set[1].append(vector[1])
-
-                left_set[0].append(np.array(vector[0]))
-                left_set[1].append(vector[1])
-
-            if vec_equal(vector_2d[0], self.primary_support_vector[:2]):#is primary support vector
-                if not any(vec_equal(vector_2d[0], x) for x in right_set_2d[0]):
-                    right_set_2d[0].append(np.array(vector_2d[0]))
-                    right_set_2d[1].append(vector_2d[1])
-                if not any(vec_equal(vector_2d[0], x) for x in left_set_2d[0]):
-                    left_set_2d[0].append(np.array(vector_2d[0]))
-                    left_set_2d[1].append(vector_2d[1])
+        for point, label in zip(self.data[0], self.data[1]):
+            # Get which side the point resides on
+            left_or_right = self.left_or_right_of_plane(point)
+            
+            # Add primary support vector to both sets
+            if np.allclose(point, self.primary_support_vector):
+                right_set.append((point, label))
+                left_set.append((point, label))
+            # Vector is not primary, it should reside in one of the sets
             else:
+                if left_or_right is "left":
+                    left_set.append((point, label))
 
-                if self.left_or_right_of_plane(vector[0]):
-                    right_set[0].append(np.array(vector[0]))
-                    right_set[1].append(vector[1])
-
-                    if not any(vec_equal(vector_2d[0], x) for x in right_set_2d[0]):
-                        right_set_2d[0].append(np.array(vector_2d[0]))
-                        right_set_2d[1].append(vector_2d[1])
                 else:
-                    left_set[0].append(np.array(vector[0]))
-                    left_set[1].append(vector[1])
-                    if not any(vec_equal(vector_2d[0], x) for x in left_set_2d[0]):
-                        left_set_2d[0].append(np.array(vector_2d[0]))
-                        left_set_2d[1].append(vector_2d[1])
+                    right_set.append((point, label))
 
+        
 
-
-        return left_set, left_set_2d, right_set, right_set_2d
+        return left_set, right_set
 
     def get_splitting_point(self):
         """
@@ -571,13 +361,8 @@ class HPF:
         self.primary_support_vector = self.get_splitting_point()
 
         # Subsets of datasets, left and right of primary support vector
-        left_set, left_set_2d, right_set, right_set_2d = self.split_data()
+        left_set, right_set = self.split_data()
 
-        #self.plot_data_points(self.data)
-        
-        #self.plot_data_points(right_set_2d)
-        #self.plot_plane(left_clf)
-        #plt.show()
 
         # New SVM, right
         try:
@@ -589,19 +374,8 @@ class HPF:
 
 
 
-        self.plot_plane(right_clf, True)
-        self.plot_data_points(left_set_2d)
-        self.plot_data_points(right_set_2d)
-        self.plot_plane(left_clf)
-
-
         # Rotate and merge data sets back into one
         self.data[0], self.data[1], left_or_right, intersection_point = self.rotate_set(left_clf, left_set, right_clf, right_set, self.primary_support_vector)
-
-        self.plot_plane(right_clf, True)
-        self.plot_data_points(self.data)
-        self.plot_plane(left_clf)
-        plt.show()
 
         self.rotation_data.append((intersection_point, self.primary_support_vector, left_or_right, (right_clf, left_clf), self.support_vectors_dictionary))
 
@@ -656,65 +430,102 @@ class HPF:
 
         return self.clf.predict(correct_dim)
 
+    def plot_dir(self, dir, point, new_figure_ = False):
+        if new_figure_:
+            plt.figure()
 
+        h = dir       
 
+        w = [0,0]
+        w[0] = -h[1]
+        w[1] = h[0]
+
+        p = point
+
+        hx1 = p[0] + h[0] * 1000
+        hy1 = p[1] + h[1] * 1000
+
+        hx2 = p[0] + h[0] * -1000
+        hy2 = p[1] + h[1] * -1000
+
+        plt.plot([hx1,hx2],[hy1, hy2], 'g')
+
+        hx1 = p[0] + w[0] * 1000
+        hy1 = p[1] + w[1] * 1000
+
+        hx2 = p[0] + w[0] * -1000
+        hy2 = p[1] + w[1] * -1000
+
+        plt.plot([hx1,hx2],[hy1, hy2], 'b')
+
+    def plot_data(self, data, new_figure_ = False):
+
+        if new_figure_:
+            plt.figure()
+
+        x1 = []
+        y1 = []
+        x2 = []
+        y2 = []
+
+        for index, label in enumerate(data[1]):
+
+            if label == 0:
+
+                x1.append(data[0][index][0])
+                y1.append(data[0][index][1])
+
+            elif label == 1:
+                x2.append(data[0][index][0])
+                y2.append(data[0][index][1])
+
+        plt.plot(x1, y1, 'ro')
+        plt.plot(x2, y2, 'go')
 
     def fit(self, data_points, data_labels):
-        #self.data_points = data_points
-        #self.data_labels = data_labels
         self.data = [data_points, data_labels]
 
         self.old_data = data_points
 
-
+        # Builds clfs
         self.old_clf.fit(data_points, data_labels)
+        self.clf.fit(data_points, data_labels)
+
         self.old_margin = self.get_margin(self.old_clf)
         self.new_margin = -1
 
 
-      #  plot_datapoints(self.data, self.clf)
         #project onto 2D
         self.current_fold = 0
         val = 0
-        self.clf.fit(data_points, data_labels)
-        self.support_vectors_dictionary = self.group_support_vectors(self.clf) #group into classes = create support_vectors_dictionary
-        self.hyperplane = self.get_hyperplane_direction(self.support_vectors_dictionary)
-        
 
+        #group into classes = create support_vectors_dictionary
+        self.support_vectors_dictionary = self.group_support_vectors(self.clf) 
+        self.hyperplane_normal = self.get_hyperplane_normal()
+        
+        # floating point termination 
         previous_margin = self.old_margin
         margins = []
+
         while(len(self.clf.support_vectors_) > 2 and val is 0):
-            self.plot_data_and_plane()
-#            self.plot_data_points(self.data)
-            plt.show()
-            self.data[0], self.support_vectors_dictionary, self.hyperplane = self.dim_red.project_down(self.data[0], self.support_vectors_dictionary, self.hyperplane)
 
-           # self.plot_data_points(self.data)
-            #self.plot_plane(self.clf)
-            #plt.show()
 
-            #plot_datapoints(self.data)
+            self.data[0], _, self.hyperplane_normal = self.dim_red.project_down(self.data[0], self.support_vectors_dictionary, self.hyperplane_normal)
 
-           # plot_datapoints(self.data)
-            #fold until just two support vectors exist or max_nr_of_folds is reached
-            #self.plot_data_and_plane()
             val = self.fold()
 
             self.current_fold += 1
-    #        plot_datapoints(self.data)
+
 
             self.data[0] = self.dim_red.project_up(self.data[0])
 
 
 
-#            plot_datapoints(self.data)
             self.clf.fit(self.data[0], self.data[1])#fit for next iteration or exit contidion of just two support vectors
             self.support_vectors_dictionary = self.group_support_vectors(self.clf) #regroup
 
 
 
-            #self.plot_data_and_plane()
-            #plt.show()
             self.new_margin = self.get_margin(self.clf)
             margins.append(math.fabs(self.new_margin - previous_margin))
             previous_margin = self.new_margin
