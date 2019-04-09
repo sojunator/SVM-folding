@@ -71,54 +71,7 @@ class HPF:
 
     def get_intersection_between_SVMs(self, left_clf, right_clf):
 
-        left_grouped = self.group_support_vectors(left_clf)
-        right_grouped = self.group_support_vectors(right_clf)
-
-
-        test = (left_grouped[0][0][:2] + left_grouped[1][0][:2])
-
-        first_left_point_on_line = (left_grouped[0][0][:2] + left_grouped[1][0][:2]) / 2
-        first_right_point_on_line = (right_grouped[0][0][:2] + right_grouped[1][0][:2]) / 2
-
-        left_direction = self.get_hyperplane_direction(left_grouped)
-        right_direction = self.get_hyperplane_direction(right_grouped)
-
-        second_left_point_on_line = first_left_point_on_line + left_direction
-        second_right_point_on_line = first_right_point_on_line + right_direction
-
-        x1 = first_left_point_on_line[0]
-        x2 = second_left_point_on_line[0]
-        y1 = first_left_point_on_line[1]
-        y2 = second_left_point_on_line[1]
-
-        x3 = first_right_point_on_line[0]
-        x4 = second_right_point_on_line[0]
-        y3 = first_right_point_on_line[1]
-        y4 = second_right_point_on_line[1]
-
-
-        #x = ( (x1*y2-y1*x2)*(x3-x4) - (x1-x2) *(x3*y4-y3*x4) )/ ( (x1-x2)*(y3-y4) - (y1-y2)*(x3-x4) )
-        #y = ( (x1*y2-y1*x2)*(y3-y4) - (y1-y2) *(x3*y4-y3*x4) )/ ( (x1-x2)*(y3-y4) - (y1-y2)*(x3-x4) )
-
-        cosang = np.dot(right_direction, left_direction)
-
-        angle = math.acos(cosang)*180 /3.1415
-
-        print(angle)
-
-        #cosang = math.sqrt((1 + cosang) / 2)
-        angle2 = math.acos(cosang)*180 / 3.1415
-        print(angle2)
-
-        #return [x, y], np.abs(cosang)
-
-
-        #print(angle*180 /3.1415)
-
-        #left_slope = (second_left_point_on_line[1] - first_left_point_on_line[1]) / (second_left_point_on_line[0] - first_left_point_on_line[0])
-        #right_slope = (second_right_point_on_line[1] - first_right_point_on_line[1]) / (second_right_point_on_line[0] - first_right_point_on_line[0])
-
-
+       
         xy, angle = self.get_intersection_point(left_clf, right_clf)
 
         return [xy[0], xy[1]], -angle
@@ -140,14 +93,15 @@ class HPF:
         """
         Returns the first possible primary support vector
         """
-        h = self.hyperplane
+        n = self.hyperplane_normal
 
         # As normal for the line is W = (b, -a)
         # direction is then given by as a = (-(-a), b))
 
-        a = h[0]
-        b = h[1]
+        a = n[1]
+        b = -n[0]
 
+        #point on line
         cd = (self.support_vectors_dictionary[0][0][:2] + self.support_vectors_dictionary[1][0][:2]) / 2
 
 
@@ -166,20 +120,24 @@ class HPF:
         return tk
 
 
-    def left_or_right_of_plane(self, point, support_vectors_dictionary = None, primary_support_vector = None):
+    def left_or_right_of_plane(self, point):
         """
         Splits the data from the primary point in the direction of the normal
         """
-        plane = self.hyperplane
+        n = self.hyperplane_normal
         
         # planes direction
-        direction = plane[0]
+        direction = [0,0]
+        direction[0] = n[1]
+        direction[1] = -n[0]
+
         
         # vector between point and pv
         ppv = point - self.primary_support_vector
 
         # normalize
-        direction = np.linalg.norm(direction)
+        direction = direction / np.linalg.norm(direction)
+        ppv = ppv / np.linalg.norm(ppv)
 
         # angle between ppv and normal. 
         cosang = np.dot(ppv, direction)
@@ -196,20 +154,25 @@ class HPF:
         left_set = [[],[]]
 
         for point, label in zip(self.data[0], self.data[1]):
-            # Get which side the point resides on
-            left_or_right = self.left_or_right_of_plane(point)
             
             # Add primary support vector to both sets
             if np.allclose(point, self.primary_support_vector):
-                right_set.append((point, label))
-                left_set.append((point, label))
+                right_set[0].append(point)
+                right_set[1].append(label)
+                left_set[0].append(point)
+                left_set[1].append(label)
             # Vector is not primary, it should reside in one of the sets
             else:
-                if left_or_right is "left":
-                    left_set.append((point, label))
+                # Get which side the point resides on
+                in_left_set = self.left_or_right_of_plane(point)
+
+                if in_left_set:
+                    left_set[0].append(point)
+                    left_set[1].append(label)   
 
                 else:
-                    right_set.append((point, label))
+                    right_set[0].append(point)
+                    right_set[1].append(label)
 
         
 
@@ -366,8 +329,8 @@ class HPF:
 
         # New SVM, right
         try:
-            right_clf.fit(right_set_2d[0], right_set_2d[1])
-            left_clf.fit(left_set_2d[0], left_set_2d[1])
+            right_clf.fit(right_set[0], right_set[1])
+            left_clf.fit(left_set[0], left_set[1])
         except ValueError:
             print("WARNING, ONLY ONE CLASS PRESENT IN A SET, ABORTING")
             return -1
@@ -442,19 +405,21 @@ class HPF:
 
         p = point
 
-        hx1 = p[0] + h[0] * 1000
-        hy1 = p[1] + h[1] * 1000
+        plot_size = 10
 
-        hx2 = p[0] + h[0] * -1000
-        hy2 = p[1] + h[1] * -1000
+        hx1 = p[0] + h[0] * plot_size
+        hy1 = p[1] + h[1] * plot_size
+
+        hx2 = p[0] + h[0] * -plot_size
+        hy2 = p[1] + h[1] * -plot_size
 
         plt.plot([hx1,hx2],[hy1, hy2], 'g')
 
-        hx1 = p[0] + w[0] * 1000
-        hy1 = p[1] + w[1] * 1000
+        hx1 = p[0] + w[0] * plot_size
+        hy1 = p[1] + w[1] * plot_size
 
-        hx2 = p[0] + w[0] * -1000
-        hy2 = p[1] + w[1] * -1000
+        hx2 = p[0] + w[0] * -plot_size
+        hy2 = p[1] + w[1] * -plot_size
 
         plt.plot([hx1,hx2],[hy1, hy2], 'b')
 
@@ -498,7 +463,8 @@ class HPF:
         #project onto 2D
         self.current_fold = 0
         val = 0
-
+        self.plot_data(self.data)
+        #plt.show()
         #group into classes = create support_vectors_dictionary
         self.support_vectors_dictionary = self.group_support_vectors(self.clf) 
         self.hyperplane_normal = self.get_hyperplane_normal()
@@ -510,9 +476,27 @@ class HPF:
         while(len(self.clf.support_vectors_) > 2 and val is 0):
 
 
-            self.data[0], _, self.hyperplane_normal = self.dim_red.project_down(self.data[0], self.support_vectors_dictionary, self.hyperplane_normal)
+            self.data[0], self.support_vectors_dictionary, self.hyperplane_normal = self.dim_red.project_down(self.data[0], self.support_vectors_dictionary, self.hyperplane_normal)
+            self.plot_data(self.data)
+            plt.show()
+
+            self.data[0] = [np.array(point[:2]) for point in self.data[0]]
+
+            #self.clf.fit(self.data[0], self.data[1])
+            #self.support_vectors_dictionary = self.group_support_vectors(self.clf) 
+            #self.hyperplane_normal = self.get_hyperplane_normal()
+            
+            #pointonline = (self.support_vectors_dictionary[1][0] + self.support_vectors_dictionary[0][0]) / 2
+
+
+            #self.plot_dir(self.hyperplane_normal, pointonline)
+            #self.plot_data(self.data)
+            
 
             val = self.fold()
+
+            self.plot_data(self.data, True)
+            plt.show()
 
             self.current_fold += 1
 
@@ -520,8 +504,9 @@ class HPF:
             self.data[0] = self.dim_red.project_up(self.data[0])
 
 
-
-            self.clf.fit(self.data[0], self.data[1])#fit for next iteration or exit contidion of just two support vectors
+            
+            #fit for next iteration or exit contidion of just two support vectors
+            self.clf.fit(self.data[0], self.data[1])
             self.support_vectors_dictionary = self.group_support_vectors(self.clf) #regroup
 
 

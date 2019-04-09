@@ -139,7 +139,7 @@ class DR:
 
 
 
-    def get_direction_between_two_vectors_in_set_with_smallest_distance(self, support_vectors, dim):
+    def get_direction_between_two_vectors_with_smallest_distance(self, support_vectors, dim):
         """
         Finds the shortest distance between two vectors within the given set.
         """
@@ -147,20 +147,22 @@ class DR:
             print("Error, less than two support vectors in set")
             return
     
-        best_dir = support_vectors[0] - support_vectors[1]
+        best_dir = support_vectors[1] - support_vectors[0]
         best_dist = np.linalg.norm(best_dir)
-        index_v1 = 0
-        for index_v1 in range(0, len(support_vectors)):
+        best_idx = 0
+
+        for index_v1 in range(len(support_vectors)):
             vec1 = support_vectors[index_v1]
             for vec2 in support_vectors[index_v1 + 1:]:
 
-                dir = vec1 - vec2
+                dir = vec2 - vec1
                 dist = np.linalg.norm(dir)
                 if dist < best_dist:#found two vecs with shorter distance inbetween
                     best_dist = dist
                     best_dir = dir
+                    best_idx = index_v1
 
-        support_vectors = np.delete(support_vectors, index_v1, 0)#remove one of the support vectors
+        support_vectors = np.delete(support_vectors, index_v1, 0)#remove one of the support vectors that are about to be aligned
 
         return best_dir[:dim], support_vectors
 
@@ -340,7 +342,7 @@ class DR:
             max_key = max(support_vectors_dictionary, key= lambda x: len(support_vectors_dictionary[x]))
         
             #get the direction between the two support vectors, and removes one of them from the dictionary
-            direction, support_vectors_dictionary[max_key] = self.get_direction_between_two_vectors_in_set_with_smallest_distance(support_vectors_dictionary[max_key], nr_of_coordinates)
+            direction, support_vectors_dictionary[max_key] = self.get_direction_between_two_vectors_with_smallest_distance(support_vectors_dictionary[max_key], nr_of_coordinates)
         
             #calculate alignment matrix
             rotation_matrix = self.align(direction)
