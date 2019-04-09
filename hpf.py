@@ -122,11 +122,11 @@ class HPF:
 
             if label == 0:
 
-                x1.append(self.data[0][index][0])
+                x1.append(self.data[0][index][2])
                 y1.append(self.data[0][index][1])
 
             elif label == 1:
-                x2.append(self.data[0][index][0])
+                x2.append(self.data[0][index][2])
                 y2.append(self.data[0][index][1])
 
         h = self.get_hyperplane_direction(self.support_vectors_dictionary)
@@ -172,13 +172,14 @@ class HPF:
         Note, Input must have one support vector in each class.
         """
 
-        #Remove duplicate 2d points
+        
         if len(grouped_support_vectors) < 2:
-            print("To few classes?")
+            print("Error, Get Hyperplane Direction: To few classes?")
 
         if len(grouped_support_vectors[0][0]) < 2:
-            print("error, vector dimension to small")
+            print("Error, Get Hyperplane Direction: vector dimensions less than two")
 
+        #Remove duplicate 2d points
         for lst_idx in grouped_support_vectors:
             lst = grouped_support_vectors[lst_idx]
 
@@ -186,37 +187,35 @@ class HPF:
 
 
                 for v2 in lst[n+1:]:
-#                    s = (v1[0] - v2[0]) + (v1[1] - v2[1])
 
                     if  vec_equal(v1[:2], v2[:2]):
-                        del lst[n]
-                        print("Deleted vector")
+                        #del lst[n]
+                        print("Debug, Get Hyperplane Direction: Deleted vector")
 
 
         max_key = max(grouped_support_vectors, key= lambda x: len(grouped_support_vectors[x]))
 
-        h = [0,0]
-        normh = 1
+       # h = [0,0]
+       # normh = 1
 
-        if len(grouped_support_vectors[max_key]) < 2: #when only one support vector in each class
+        #if len(grouped_support_vectors[max_key]) < 2: #when only one support vector in each class
 
-            w = grouped_support_vectors[1][0][:2] - grouped_support_vectors[0][0][:2]
-            h[0] = w[1]
-            h[1] = -w[0]
+         #   w = grouped_support_vectors[1][0][:2] - grouped_support_vectors[0][0][:2]
+          #  h[0] = w[1]
+           # h[1] = -w[0]
 
 
-        else:
-            h = grouped_support_vectors[max_key][1][:2] - grouped_support_vectors[max_key][0][:2]
+        #else:
+        h = grouped_support_vectors[max_key][1] - grouped_support_vectors[max_key][0]
 
 
         normh = np.linalg.norm(h)
 
         if normh < 0.000000001:
-            print("Error in get hyperplane direction, support vectors too close?")
-
-
+            print("Error, Get Hyperplane Direction: support vectors too close?") #probably cannot happen
 
         h = h / normh;#normalize
+
         return h
 
     def get_intersection_point(self, left, right):
@@ -348,7 +347,7 @@ class HPF:
 
 
         if support_vectors_dictionary is None:
-            h = self.get_hyperplane_direction(self.support_vectors_dictionary)
+            h = self.hyperplane[:2] #self.get_hyperplane_direction(self.support_vectors_dictionary)
             v = point[:2] - self.primary_support_vector[:2]#direction from one vector to the splitting point
 
         else:
@@ -364,9 +363,10 @@ class HPF:
 
         cosang = np.dot(h,v)#since both are normalized, according to dot products definition, returns the cosine of the angle between the directions.
 
-        self.plot_dir(v, self.primary_support_vector[:2], 'g')
-        self.plot_dir(h, self.primary_support_vector[:2], 'b')
- #       plt.show()
+        #self.plot_dir(v, self.primary_support_vector[:2], 'g')
+        #self.plot_dir(h, self.primary_support_vector[:2], 'r')
+        #self.plot_data_points(self.data)
+        #plt.show()
 
         if cosang > 0:#Left / right
             return 1
@@ -507,7 +507,6 @@ class HPF:
 
         #point = np.matmul(point.T - intersection_point, rotation_matrix) + intersection_point
 
-        #Slica föri helvete inte point i tilldelning här
         x,y = self.rot_func(point[:2], intersection_point, rotation_matrix)
         point[0] = x
         point[1] = y
@@ -574,12 +573,11 @@ class HPF:
         # Subsets of datasets, left and right of primary support vector
         left_set, left_set_2d, right_set, right_set_2d = self.split_data()
 
-        self.plot_data_points(self.data)
-        left_clf.fit(left_set_2d[0], left_set_2d[1])
-        self.plot_plane(left_clf)
+        #self.plot_data_points(self.data)
+        
         #self.plot_data_points(right_set_2d)
         #self.plot_plane(left_clf)
-        plt.show()
+        #plt.show()
 
         # New SVM, right
         try:
@@ -601,8 +599,7 @@ class HPF:
         self.data[0], self.data[1], left_or_right, intersection_point = self.rotate_set(left_clf, left_set, right_clf, right_set, self.primary_support_vector)
 
         self.plot_plane(right_clf, True)
-        self.plot_data_points(left_set_2d)
-        self.plot_data_points(right_set_2d)
+        self.plot_data_points(self.data)
         self.plot_plane(left_clf)
         plt.show()
 
@@ -681,13 +678,20 @@ class HPF:
         val = 0
         self.clf.fit(data_points, data_labels)
         self.support_vectors_dictionary = self.group_support_vectors(self.clf) #group into classes = create support_vectors_dictionary
+        self.hyperplane = self.get_hyperplane_direction(self.support_vectors_dictionary)
+        
 
         previous_margin = self.old_margin
         margins = []
         while(len(self.clf.support_vectors_) > 2 and val is 0):
+            self.plot_data_and_plane()
+#            self.plot_data_points(self.data)
+            plt.show()
+            self.data[0], self.support_vectors_dictionary, self.hyperplane = self.dim_red.project_down(self.data[0], self.support_vectors_dictionary, self.hyperplane)
 
-
-            self.data[0], self.support_vectors_dictionary = self.dim_red.project_down(self.data[0], self.support_vectors_dictionary)
+           # self.plot_data_points(self.data)
+            #self.plot_plane(self.clf)
+            #plt.show()
 
             #plot_datapoints(self.data)
 

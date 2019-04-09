@@ -302,7 +302,7 @@ class DR:
         
 
     
-    def project_down(self, data_points, support_vectors_dictionary):
+    def project_down(self, data_points, support_vectors_dictionary, hyperplane):
 
         """
         Input: All data_points, support vectors grouped into the two classes
@@ -356,9 +356,9 @@ class DR:
 
 
         data_points = self.transform(self.matrices[self.folds_done], data_points)
-        
+        hyperplane = np.matmul(self.matrices[self.folds_done], hyperplane)
 
-        return data_points, support_vectors_dictionary
+        return data_points, support_vectors_dictionary, hyperplane
 
     def project_up(self, data_points):
 
