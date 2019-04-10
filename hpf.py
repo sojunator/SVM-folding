@@ -127,13 +127,13 @@ class HPF:
         n = self.hyperplane_normal
         
         # planes direction
-        direction = [0,0, 0, 0]
+        direction = [0,0]
         direction[0] = n[1]
         direction[1] = -n[0]
 
         
         # vector between point and pv
-        ppv = point - self.primary_support_vector
+        ppv = point[:2] - self.primary_support_vector[:2]
 
         # normalize
         direction = direction / np.linalg.norm(direction)
@@ -161,6 +161,7 @@ class HPF:
                 right_set[1].append(label)
                 left_set[0].append(point)
                 left_set[1].append(label)
+
             # Vector is not primary, it should reside in one of the sets
             else:
                 # Get which side the point resides on
