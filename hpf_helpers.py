@@ -74,7 +74,7 @@ def plot(hpf):
 
 
     plt.legend(loc='upper left')
-    plt.show()
+    #plt.show()
 
 def read_data_from_folder(folder_name):
     onlyfiles = [f for f in listdir(folder_name) if isfile(join(folder_name, f))]

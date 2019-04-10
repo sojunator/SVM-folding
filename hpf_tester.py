@@ -36,7 +36,7 @@ hpf.fit(X_train, Y_train)
 
 #plot(hpf)
 
-print("\nHPF GIVEN ANSWER: ", hpf.classify(X_test))
+#print("\nHPF GIVEN ANSWER: ", hpf.classify(X_test))
 
-print("\nNo rotation GIVEN ANSWER: ", hpf.classify(X_test, False))
+#print("\nNo rotation GIVEN ANSWER: ", hpf.classify(X_test, False))
 print("\nEXPECTED  ANSWER: ", Y_test)

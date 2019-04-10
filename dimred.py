@@ -329,7 +329,7 @@ class DR:
             #rotate data and support vectors
             self.combine_matrices(basis_matrix) 
 
-            self.transform_support_vectors(basis_matrix.T, support_vectors_dictionary)
+            self.transform_support_vectors(basis_matrix, support_vectors_dictionary)
 
             #post rotation the dimension is lowered to the number of support vectors - 1
             nr_of_coordinates = nr_of_support_vectors - 1#OBS

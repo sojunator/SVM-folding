@@ -127,7 +127,7 @@ class HPF:
         n = self.hyperplane_normal
         
         # planes direction
-        direction = [0,0]
+        direction = [0,0, 0, 0]
         direction[0] = n[1]
         direction[1] = -n[0]
 
@@ -329,10 +329,18 @@ class HPF:
 
         # New SVM, right
         try:
-            right_clf.fit(right_set[0], right_set[1])
-            left_clf.fit(left_set[0], left_set[1])
+            #Reduce problem down to 2d
+            right_2d = [np.array(point[:2]) for point in right_set[0]]
+            left_2d = [np.array(point[:2]) for point in left_set[0]]
+
+
+            right_clf.fit(right_2d, right_set[1])
+            left_clf.fit(left_2d, left_set[1])
+
         except ValueError:
             print("WARNING, ONLY ONE CLASS PRESENT IN A SET, ABORTING")
+            #self.plot_data(self.data, True)
+            #plt.show()
             return -1
 
 
@@ -463,7 +471,7 @@ class HPF:
         #project onto 2D
         self.current_fold = 0
         val = 0
-        self.plot_data(self.data)
+        #self.plot_data(self.data)
         #plt.show()
         #group into classes = create support_vectors_dictionary
         self.support_vectors_dictionary = self.group_support_vectors(self.clf) 
@@ -477,29 +485,18 @@ class HPF:
 
 
             self.data[0], self.support_vectors_dictionary, self.hyperplane_normal = self.dim_red.project_down(self.data[0], self.support_vectors_dictionary, self.hyperplane_normal)
-            self.plot_data(self.data)
-            plt.show()
-
-            self.data[0] = [np.array(point[:2]) for point in self.data[0]]
-
-            #self.clf.fit(self.data[0], self.data[1])
-            #self.support_vectors_dictionary = self.group_support_vectors(self.clf) 
-            #self.hyperplane_normal = self.get_hyperplane_normal()
-            
-            #pointonline = (self.support_vectors_dictionary[1][0] + self.support_vectors_dictionary[0][0]) / 2
-
-
-            #self.plot_dir(self.hyperplane_normal, pointonline)
             #self.plot_data(self.data)
-            
+            #plt.show()
 
+
+         
             val = self.fold()
 
-            self.plot_data(self.data, True)
-            plt.show()
+            #self.plot_data(self.data, True)
+            
+            #plt.show()
 
             self.current_fold += 1
-
 
             self.data[0] = self.dim_red.project_up(self.data[0])
 
@@ -508,14 +505,14 @@ class HPF:
             #fit for next iteration or exit contidion of just two support vectors
             self.clf.fit(self.data[0], self.data[1])
             self.support_vectors_dictionary = self.group_support_vectors(self.clf) #regroup
-
+            self.hyperplane_normal = self.get_hyperplane_normal()
 
 
             self.new_margin = self.get_margin(self.clf)
             margins.append(math.fabs(self.new_margin - previous_margin))
             previous_margin = self.new_margin
 
-            if len(margins) == 10:
+            if len(margins) == 3:
                 avg = sum(margins) / len(margins)
                 print(avg)
                 if avg < 0.001:
