@@ -21,25 +21,16 @@ def vec_equal(vec1, vec2):
 
 
 class HPF:
-
-
     def vector_projection(self, v1, v2):
         """
         v1 projected on v2
         """
         return np.dot(v1, v2) / np.dot(v2,v2) * v2
 
-    def get_hyperplane(self, clf):
-        """
-        Returns hyperplane for classifer
-        """
-
-        w = clf.coef_[0]
-        a = -w[0] / w[1]
-
-        return (a, (-clf.intercept_[0]) / w[1])
-
     def get_hyperplane_normal(self):
+        """
+        Returns the normalized normal for the current clf
+        """
         w = self.clf.coef_[0]
 
         n = w / np.linalg.norm(w)
@@ -50,6 +41,8 @@ class HPF:
 
     def get_intersection_point(self, left, right):
         """
+        http://www.ambrsoft.com/MathCalc/Line/TwoLinesIntersection/TwoLinesIntersection.htm
+
         Takes two sklearn svc classifiers that are trained on subsets of the same
         dataset
 
@@ -76,8 +69,9 @@ class HPF:
 
 
     def get_intersection_between_SVMs(self, left_clf, right_clf):
-
-
+        """
+        Returns point and angle of intersection between two clfs
+        """
         xy, angle = self.get_intersection_point(left_clf, right_clf)
 
         return [xy[0], xy[1]], -angle
@@ -190,9 +184,6 @@ class HPF:
 
                     added_points.append(point)
 
-                else:
-                    left_set[0].append(point)
-                    left_set[1].append(label)
 
         return left_set, right_set
 
@@ -331,8 +322,6 @@ class HPF:
         X = left_set[0] + right_set[0]
         y = left_set[1] + right_set[1]
 
-
-        #X = np.vstack(X)
 
         return (X, y, left_or_right, intersection_point)
 
@@ -494,8 +483,8 @@ class HPF:
         #project onto 2D
         self.current_fold = 0
         val = 0
-        #self.plot_data(self.data)
-        #plt.show()
+        self.plot_data(self.data)
+        plt.show()
         #group into classes = create support_vectors_dictionary
         self.support_vectors_dictionary = self.group_support_vectors(self.clf)
         self.hyperplane_normal = self.get_hyperplane_normal()
@@ -536,15 +525,11 @@ class HPF:
 
             if len(margins) == 3:
                 avg = sum(margins) / len(margins)
-                print(avg)
                 if avg < 0.001:
                     val = -1
                     print("termination due to floating point")
                 margins.clear()
 
-
-        print(self.new_margin)
-        print(self.old_margin)
 
         print("nr of support {}".format(len(self.clf.support_vectors_)))
 
