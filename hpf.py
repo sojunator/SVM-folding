@@ -190,6 +190,10 @@ class HPF:
 
                     added_points.append(point)
 
+                else:
+                    left_set[0].append(point)
+                    left_set[1].append(label)
+
         return left_set, right_set
 
     def get_splitting_point(self):
@@ -221,7 +225,12 @@ class HPF:
             if key not in grouped_support_vectors:
                 grouped_support_vectors[key] = [sv]
             else:
-                grouped_support_vectors[key].append(sv)
+                checks = [np.allclose(sv, point ) for point in grouped_support_vectors[key]]
+
+                if True not in checks:
+                    grouped_support_vectors[key].append(sv)
+                else:
+                    print("is duplicated, you should break here")
 
         return grouped_support_vectors
 
