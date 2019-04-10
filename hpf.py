@@ -21,7 +21,43 @@ def vec_equal(vec1, vec2):
 
 
 class HPF:
+    def plot_self(self):
+        p = (self.support_vectors_dictionary[0][0][:2] + self.support_vectors_dictionary[1][0][:2]) / 2
+        n = self.hyperplane_normal
+        h = [0,0]
+        h[1] = n[0]
+        h[0] = -n[1]
 
+        hx1 = p[0] + h[0] * 100
+        hy1 = p[1] + h[1] * 100
+
+        hx2 = p[0] + h[0] * -100
+        hy2 = p[1] + h[1] * -100
+
+        plt.plot([hx1,hx2],[hy1, hy2], 'b')
+
+        x1 = []
+        y1 = []
+        x2 = []
+        y2 = []
+
+        for index, label in enumerate(self.data[1]):
+            #print(index)
+            if label == 0:
+
+                x1.append(self.data[0][index][0])
+                y1.append(self.data[0][index][1])
+
+            elif label == 1:
+                x2.append(self.data[0][index][0])
+                y2.append(self.data[0][index][1])
+
+
+        plt.plot(x1, y1, 'ro')
+        plt.plot(x2, y2, 'go')
+
+        #plt.axis([-10, 10, -10, 10])
+        plt.show()
 
     def vector_projection(self, v1, v2):
         """
@@ -506,17 +542,13 @@ class HPF:
 
         while(len(self.clf.support_vectors_) > 2 and val is 0):
 
+            self.plot_self()
+
             self.data[0], self.support_vectors_dictionary, self.hyperplane_normal = self.dim_red.project_down(self.data[0], self.support_vectors_dictionary, self.hyperplane_normal)
-            #self.plot_data(self.data)
-            #plt.show()
-
-
+            
+            self.plot_self()
 
             val = self.fold()
-
-            #self.plot_data(self.data, True)
-
-            #plt.show()
 
             self.current_fold += 1
 

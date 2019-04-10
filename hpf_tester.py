@@ -23,10 +23,10 @@ Y_test = np.array([1])
 
 
 
-X_train, Y_train = data_set["bmi.csv"]
+
 
 X_train, Y_train = data_set["hpf_test3D.csv"]
-
+X_train, Y_train = data_set["bmi.csv"]
 
 #X_train, Y_train = make_blobs(n_samples=40,n_features=3,centers=2,random_state=6)
 
