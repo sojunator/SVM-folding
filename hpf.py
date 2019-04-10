@@ -40,7 +40,6 @@ class HPF:
         return (a, (-clf.intercept_[0]) / w[1])
 
     def get_hyperplane_normal(self):
-
         w = self.clf.coef_[0]
 
         n = w / np.linalg.norm(w)
@@ -59,12 +58,19 @@ class HPF:
         """
 
         # get hyperplanes
-        left_hyperplane, right_hyperplane = self.get_hyperplane(left), self.get_hyperplane(right)
-        x = (left_hyperplane[1] - right_hyperplane[1]) / (right_hyperplane[0] - left_hyperplane[0])
+        w_1 = left.coef_[0]
+        w_2 = right.coef_[0]
 
-        y = right_hyperplane[0] * x + right_hyperplane[1]
+        c1 = left.intercept_[0]
+        c2 = right.intercept_[0]
 
-        angle = np.arctan(right_hyperplane[0]) - np.arctan(left_hyperplane[0])
+        x = (w_1[1] * c2 - w_2[1] * c1) / (w_1[0] * w_2[1] - w_2[0] * w_1[1])
+        y = (w_2[0] * c1 - w_1[0] * c2) / (w_1[0] * w_2[1] - w_2[0] * w_1[1])
+
+        angle =  w_1[0] * w_2[0] + w_1[1] * w_2[1]
+        angle = angle / np.sqrt((w_1[0] * w_1[0] + w_1[1] * w_1[1]) * (w_2[0] * w_2[0] + w_2[1] * w_2[1]))
+        angle = np.arccos(angle)
+
 
         return ((x, y), angle)
 
@@ -490,7 +496,6 @@ class HPF:
         margins = []
 
         while(len(self.clf.support_vectors_) > 2 and val is 0):
-
 
             self.data[0], self.support_vectors_dictionary, self.hyperplane_normal = self.dim_red.project_down(self.data[0], self.support_vectors_dictionary, self.hyperplane_normal)
             #self.plot_data(self.data)
