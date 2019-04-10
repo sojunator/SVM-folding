@@ -6,21 +6,26 @@ import matplotlib.pyplot as plt
 import numpy as np
 import math
 import json
+import warnings
 
 from hpf_helpers import plot, read_data_from_folder
 from hpf import HPF
 
-data_set = read_data_from_folder("datasets")
+#Exception when divide when zero
+np.seterr(all='warn')
+warnings.filterwarnings('error')
 
+data_set = read_data_from_folder("datasets")
 
 X_test = np.array([[-5,2,-3,0]])
 Y_test = np.array([1])
 
 
-X_train, Y_train = data_set["bmi.csv"]
 
 
 X_train, Y_train = data_set["hpf_test3D.csv"]
+
+X_train, Y_train = data_set["bmi.csv"]
 #X_train, Y_train = make_blobs(n_samples=40,n_features=3,centers=2,random_state=6)
 
 #X_train, X_test, Y_train, Y_test = train_test_split(X_train, Y_train, test_size=0.50, random_state=42)

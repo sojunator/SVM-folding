@@ -165,10 +165,11 @@ class HPF:
                 left_set[0].append(point)
                 left_set[1].append(label)
 
+                added_points.append(point)
             # Vector is not primary, it should reside in one of the sets
             else:
                 # Get which side the point resides on
-                checks = [np.allclose(added_point, point) for added_point in added_points]
+                checks = [np.allclose(added_point[:2], point[:2]) for added_point in added_points]
 
                 if True not in checks:
                     in_left_set = self.left_or_right_of_plane(point)
