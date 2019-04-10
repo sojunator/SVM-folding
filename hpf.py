@@ -21,7 +21,7 @@ def vec_equal(vec1, vec2):
 
 
 class HPF:
-   
+
 
     def vector_projection(self, v1, v2):
         """
@@ -40,14 +40,14 @@ class HPF:
         return (a, (-clf.intercept_[0]) / w[1])
 
     def get_hyperplane_normal(self):
-        
+
         w = self.clf.coef_[0]
 
         n = w / np.linalg.norm(w)
 
         return n
 
-        
+
 
     def get_intersection_point(self, left, right):
         """
@@ -71,7 +71,7 @@ class HPF:
 
     def get_intersection_between_SVMs(self, left_clf, right_clf):
 
-       
+
         xy, angle = self.get_intersection_point(left_clf, right_clf)
 
         return [xy[0], xy[1]], -angle
@@ -125,22 +125,24 @@ class HPF:
         Splits the data from the primary point in the direction of the normal
         """
         n = self.hyperplane_normal
-        
-        # planes direction
-        direction = [0,0]
-        direction[0] = n[1]
-        direction[1] = -n[0]
 
-        
+        # planes direction
+        h = [0,0]
+        h[0] = n[1]
+        h[1] = -n[0]
+
+
         # vector between point and pv
         ppv = point[:2] - self.primary_support_vector[:2]
 
         # normalize
-        direction = direction / np.linalg.norm(direction)
-        ppv = ppv / np.linalg.norm(ppv)
+        h = h / np.linalg.norm(h)
+        norm_ppv = np.linalg.norm(ppv)
 
-        # angle between ppv and normal. 
-        cosang = np.dot(ppv, direction)
+        ppv = ppv / norm_ppv
+
+        # angle between ppv and normal.
+        cosang = np.dot(ppv, h)
 
         return cosang > 0.0
 
@@ -152,9 +154,10 @@ class HPF:
 
         right_set = [[],[]]
         left_set = [[],[]]
+        added_points = []
+
 
         for point, label in zip(self.data[0], self.data[1]):
-            
             # Add primary support vector to both sets
             if np.allclose(point, self.primary_support_vector):
                 right_set[0].append(point)
@@ -165,17 +168,20 @@ class HPF:
             # Vector is not primary, it should reside in one of the sets
             else:
                 # Get which side the point resides on
-                in_left_set = self.left_or_right_of_plane(point)
+                checks = [np.allclose(added_point, point) for added_point in added_points]
 
-                if in_left_set:
-                    left_set[0].append(point)
-                    left_set[1].append(label)   
+                if True not in checks:
+                    in_left_set = self.left_or_right_of_plane(point)
 
-                else:
-                    right_set[0].append(point)
-                    right_set[1].append(label)
+                    if in_left_set:
+                        left_set[0].append(point)
+                        left_set[1].append(label)
 
-        
+                    else:
+                        right_set[0].append(point)
+                        right_set[1].append(label)
+
+                    added_points.append(point)
 
         return left_set, right_set
 
@@ -406,7 +412,7 @@ class HPF:
         if new_figure_:
             plt.figure()
 
-        h = dir       
+        h = dir
 
         w = [0,0]
         w[0] = -h[1]
@@ -475,10 +481,10 @@ class HPF:
         #self.plot_data(self.data)
         #plt.show()
         #group into classes = create support_vectors_dictionary
-        self.support_vectors_dictionary = self.group_support_vectors(self.clf) 
+        self.support_vectors_dictionary = self.group_support_vectors(self.clf)
         self.hyperplane_normal = self.get_hyperplane_normal()
-        
-        # floating point termination 
+
+        # floating point termination
         previous_margin = self.old_margin
         margins = []
 
@@ -490,11 +496,11 @@ class HPF:
             #plt.show()
 
 
-         
+
             val = self.fold()
 
             #self.plot_data(self.data, True)
-            
+
             #plt.show()
 
             self.current_fold += 1
@@ -502,7 +508,7 @@ class HPF:
             self.data[0] = self.dim_red.project_up(self.data[0])
 
 
-            
+
             #fit for next iteration or exit contidion of just two support vectors
             self.clf.fit(self.data[0], self.data[1])
             self.support_vectors_dictionary = self.group_support_vectors(self.clf) #regroup
