@@ -21,6 +21,46 @@ def vec_equal(vec1, vec2):
 
 
 class HPF:
+    def plot_self(self, new_figure = False):
+        p = (self.support_vectors_dictionary[0][0][:2] + self.support_vectors_dictionary[1][0][:2]) / 2
+        n = self.hyperplane_normal
+        h = [0,0]
+        h[1] = n[0]
+        h[0] = -n[1]
+
+        hx1 = p[0] + h[0] * 100
+        hy1 = p[1] + h[1] * 100
+
+        hx2 = p[0] + h[0] * -100
+        hy2 = p[1] + h[1] * -100
+
+        plt.plot([hx1,hx2],[hy1, hy2], 'b')
+
+        x1 = []
+        y1 = []
+        x2 = []
+        y2 = []
+
+        for index, label in enumerate(self.data[1]):
+            #print(index)
+            if label == 0:
+
+                x1.append(self.data[0][index][0])
+                y1.append(self.data[0][index][1])
+
+            elif label == 1:
+                x2.append(self.data[0][index][0])
+                y2.append(self.data[0][index][1])
+
+
+        plt.plot(x1, y1, 'ro')
+        plt.plot(x2, y2, 'go')
+
+        #plt.axis([-10, 10, -10, 10])
+        plt.show()
+
+
+
     def vector_projection(self, v1, v2):
         """
         v1 projected on v2
@@ -39,7 +79,7 @@ class HPF:
 
 
 
-    def get_intersection_point(self, left, right):
+    def get_intersection_between_SVMs(self, left, right):
         """
         http://www.ambrsoft.com/MathCalc/Line/TwoLinesIntersection/TwoLinesIntersection.htm
 
@@ -68,16 +108,7 @@ class HPF:
         return ((x, y), angle)
 
 
-    def get_intersection_between_SVMs(self, left_clf, right_clf):
-        """
-        Returns point and angle of intersection between two clfs
-        """
-        xy, angle = self.get_intersection_point(left_clf, right_clf)
-
-        return [xy[0], xy[1]], -angle
-
-
-
+   
 
     def get_margin(self, clf):
         """
@@ -228,32 +259,51 @@ class HPF:
     def get_rotation(self, alpha):
         """
         Forms the rotation matrix:
-        (cos, sin)
-        (-sin, cos)
+        (cos, -sin)
+        (sin, cos)
         """
         theta = alpha
         c, s = np.cos(theta), np.sin(theta)
         return np.array(((c,-s), (s, c)))
 
-    def get_rotation_a(self, cos_angle):
+    def get_counter_rotation(self, alpha):
         """
-        Forms the rotation matrix:
+        Forms the counter clockwise rotation matrix:
         (cos, sin)
         (-sin, cos)
         """
-        sin_angle = math.sin(math.acos(cos_angle))
-
-        if cos_angle > 0:
-            sin_angle = -sin_angle
-
+        theta = alpha
+        c, s = np.cos(theta), np.sin(theta)
+        return np.array(((c,s), (-s, c)))
 
 
-        test = math.asin(sin_angle)
-        test2 = math.acos(cos_angle)
+    def get_rubber_band_angle(self, angle):
 
+        return None
 
-        return np.array(((cos_angle,-sin_angle), (sin_angle, cos_angle)))
+    def rotate_left(self, point, angle, intersection_point):
 
+        
+        rotation_matrix = self.get_rotation(angle)
+
+        x,y = self.rot_func(point[:2], intersection_point, rotation_matrix)
+
+        point[0] = x
+        point[1] = y
+
+        return point
+
+    def rotate_right(self, point, angle, intersection_point):
+
+        
+        rotation_matrix = self.get_counter_rotation(angle)
+
+        x,y = self.rot_func(point[:2], intersection_point, rotation_matrix)
+
+        point[0] = x
+        point[1] = y
+
+        return point
 
 
     def rotate_point_2D(self, point, angle, primary_support, intersection_point, clf):
@@ -297,26 +347,20 @@ class HPF:
 
 
         # intersection data
-        intersection_point, cos_angle = self.get_intersection_between_SVMs(left_clf, right_clf)#self.get_intersection_point(left_clf, right_clf)
+        intersection_point, angle = self.get_intersection_between_SVMs(left_clf, right_clf)#self.get_intersection_point(left_clf, right_clf)
         # if 1, left was rotated, 0 is right set.
         left_or_right = -1
 
 
-
         if (right_margin >= left_margin):
-            right_set[0] = [self.rotate_point_2D(point, -cos_angle, primary_support_vector,
-                            intersection_point, left_clf)
-                                for point in right_set[0]]
+            right_set[0] = [self.rotate_right(point, angle, intersection_point) for point in right_set[0]]
             left_or_right = 0
 
         elif (left_margin > right_margin):
-            left_set[0] = [self.rotate_point_2D(point, cos_angle, primary_support_vector,
-                            intersection_point, right_clf)
-                                for point in left_set[0]]
+            left_set[0] = [self.rotate_left(point, angle, intersection_point) for point in left_set[0]]
             left_or_right = 1
 
-
-
+        
 
 
         X = left_set[0] + right_set[0]

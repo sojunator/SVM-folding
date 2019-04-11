@@ -21,14 +21,6 @@ X_test = np.array([[-5,2,-3,0]])
 Y_test = np.array([1])
 
 
-
-
-
-
-<<<<<<< HEAD
-=======
-X_train, Y_train = data_set["hpf_test3D.csv"]
->>>>>>> 36969076b9760ca598a762798f9bdad13b041337
 X_train, Y_train = data_set["bmi.csv"]
 
 X_train, Y_train = data_set["hpf_test3D.csv"]
