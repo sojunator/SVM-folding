@@ -18,10 +18,33 @@ def vec_equal(vec1, vec2):
 
     return np.allclose(vec1, vec2)
 
+def plot_clf(clf, data):
 
+
+    x1 = []
+    y1 = []
+    x2 = []
+    y2 = []
+
+    for index, label in enumerate(data[1]):
+        #print(index)
+        if label == 0:
+
+            x1.append(data[0][index][0])
+            y1.append(data[0][index][1])
+
+        elif label == 1:
+            x2.append(data[0][index][0])
+            y2.append(data[0][index][1])
+
+
+    plt.plot(x1, y1, 'ro')
+    plt.plot(x2, y2, 'go')
 
 class HPF:
     def plot_self(self, new_figure = False):
+        if new_figure:
+            plt.figure()
         p = (self.support_vectors_dictionary[0][0][:2] + self.support_vectors_dictionary[1][0][:2]) / 2
         n = self.hyperplane_normal
         h = [0,0]
@@ -57,7 +80,7 @@ class HPF:
         plt.plot(x2, y2, 'go')
 
         #plt.axis([-10, 10, -10, 10])
-        plt.show()
+        
 
 
 
@@ -170,6 +193,10 @@ class HPF:
         h = h / np.linalg.norm(h)
         norm_ppv = np.linalg.norm(ppv)
 
+        if norm_ppv < 0.00001: #is overlapping the primary support vector
+            print("is primary")
+            return False
+
         ppv = ppv / norm_ppv
 
         # angle between ppv and normal.
@@ -182,11 +209,9 @@ class HPF:
         returns a list  containing left and right split.
         """
         # Construct a new array, to remove reference
-
+        print(len(self.data[1]))
         right_set = [[],[]]
         left_set = [[],[]]
-        added_points = []
-
 
         for point, label in zip(self.data[0], self.data[1]):
             # Add primary support vector to both sets
@@ -196,25 +221,18 @@ class HPF:
                 left_set[0].append(point)
                 left_set[1].append(label)
 
-                added_points.append(point)
             # Vector is not primary, it should reside in one of the sets
             else:
                 # Get which side the point resides on
-                checks = [np.allclose(added_point[:2], point[:2]) for added_point in added_points]
+                if self.left_or_right_of_plane(point):
+                    left_set[0].append(point)
+                    left_set[1].append(label)
 
-                if True not in checks:
-                    in_left_set = self.left_or_right_of_plane(point)
+                else:
+                    right_set[0].append(point)
+                    right_set[1].append(label)
 
-                    if in_left_set:
-                        left_set[0].append(point)
-                        left_set[1].append(label)
-
-                    else:
-                        right_set[0].append(point)
-                        right_set[1].append(label)
-
-                    added_points.append(point)
-
+        print(len(right_set[1]) + len(left_set[1]))
 
         return left_set, right_set
 
@@ -262,7 +280,7 @@ class HPF:
         (sin, cos)
         """
         c = alpha
-        s = np.sqrt(1- alpha * alpha)
+        s = np.sqrt(1 - alpha * alpha)
         #theta = alpha
         #c, s = np.cos(theta), np.sin(theta)
         return np.array(((c,-s), (s, c)))
@@ -274,7 +292,7 @@ class HPF:
         (-sin, cos)
         """
         c = alpha
-        s = np.sqrt(1- alpha * alpha)
+        s = np.sqrt(1 - alpha * alpha)
         #theta = alpha
         #c, s = np.cos(theta), np.sin(theta)
         return np.array(((c,s), (-s, c)))
@@ -352,14 +370,26 @@ class HPF:
         # intersection data
         intersection_point, angle = self.get_intersection_between_SVMs(left_clf, right_clf)#self.get_intersection_point(left_clf, right_clf)
         # if 1, left was rotated, 0 is right set.
+
+        #rotate left or right
+        d = intersection_point - self.primary_support_vector[:2]
+        d = d / np.linalg.norm(d)
+
+        n = self.hyperplane_normal[:2]
+        n = n / np.linalg.norm(n)
+
+        c = np.dot(d, n)
+
         left_or_right = -1
 
-        if (self.left_or_right_of_plane(intersection_point)):
+        if c > 0.0:
             left_set[0] = [self.rotate_left(point, angle, intersection_point) for point in left_set[0]]
             left_or_right = 1
+            print("left rot")
         else:
             left_set[0] = [self.rotate_right(point, angle, intersection_point) for point in left_set[0]]
             left_or_right = 0
+            print("right rot")
 
         
         X = left_set[0] + right_set[0]
@@ -394,8 +424,7 @@ class HPF:
 
         except ValueError:
             print("WARNING, ONLY ONE CLASS PRESENT IN A SET, ABORTING")
-            #self.plot_data(self.data, True)
-            #plt.show()
+
             return -1
 
 
@@ -526,8 +555,6 @@ class HPF:
         #project onto 2D
         self.current_fold = 0
         val = 0
-        self.plot_data(self.data)
-        plt.show()
         #group into classes = create support_vectors_dictionary
         self.support_vectors_dictionary = self.group_support_vectors(self.clf)
         self.hyperplane_normal = self.get_hyperplane_normal()
@@ -538,13 +565,16 @@ class HPF:
 
         while(len(self.clf.support_vectors_) > 2 and val is 0):
 
-            self.plot_self()
 
             self.data[0], self.support_vectors_dictionary, self.hyperplane_normal = self.dim_red.project_down(self.data[0], self.support_vectors_dictionary, self.hyperplane_normal)
 
-            self.plot_self()
+            self.plot_self(True)
 
             val = self.fold()
+
+            self.plot_self(True)
+
+            plt.show()
 
             self.current_fold += 1
 
