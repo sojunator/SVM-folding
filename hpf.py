@@ -195,7 +195,7 @@ class HPF:
 
         if norm_ppv < 0.00001: #is overlapping the primary support vector
             print("is primary")
-            return False
+            return True
 
         ppv = ppv / norm_ppv
 
@@ -212,14 +212,16 @@ class HPF:
         print(len(self.data[1]))
         right_set = [[],[]]
         left_set = [[],[]]
+        not_added = True
 
         for point, label in zip(self.data[0], self.data[1]):
             # Add primary support vector to both sets
-            if np.allclose(point, self.primary_support_vector):
+            if np.allclose(point, self.primary_support_vector) and not_added:
                 right_set[0].append(point)
                 right_set[1].append(label)
                 left_set[0].append(point)
                 left_set[1].append(label)
+                not_added = False
 
             # Vector is not primary, it should reside in one of the sets
             else:
@@ -423,6 +425,7 @@ class HPF:
             left_clf.fit(left_2d, left_set[1])
 
         except ValueError:
+            
             print("WARNING, ONLY ONE CLASS PRESENT IN A SET, ABORTING")
 
             return -1
@@ -568,13 +571,16 @@ class HPF:
 
             self.data[0], self.support_vectors_dictionary, self.hyperplane_normal = self.dim_red.project_down(self.data[0], self.support_vectors_dictionary, self.hyperplane_normal)
 
-            self.plot_self(True)
+            #self.plot_self(True)
 
             val = self.fold()
 
-            self.plot_self(True)
+            #self.plot_self(True)
 
-            plt.show()
+            #plt.show()
+            if self.current_fold > 150:
+                self.plot_self()
+                plt.show()
 
             self.current_fold += 1
 
