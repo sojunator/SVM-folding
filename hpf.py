@@ -102,7 +102,7 @@ class HPF:
 
         angle =  w_1[0] * w_2[0] + w_1[1] * w_2[1]
         angle = angle / np.sqrt((w_1[0] * w_1[0] + w_1[1] * w_1[1]) * (w_2[0] * w_2[0] + w_2[1] * w_2[1]))
-        angle = np.arccos(angle)
+        #angle = np.arccos(angle)
 
 
         return ((x, y), angle)
@@ -251,8 +251,7 @@ class HPF:
 
                 if True not in checks:
                     grouped_support_vectors[key].append(sv)
-                else:
-                    print("is duplicated, you should break here")
+                
 
         return grouped_support_vectors
 
@@ -262,8 +261,10 @@ class HPF:
         (cos, -sin)
         (sin, cos)
         """
-        theta = alpha
-        c, s = np.cos(theta), np.sin(theta)
+        c = alpha
+        s = np.sqrt(1- alpha * alpha)
+        #theta = alpha
+        #c, s = np.cos(theta), np.sin(theta)
         return np.array(((c,-s), (s, c)))
 
     def get_counter_rotation(self, alpha):
@@ -272,8 +273,10 @@ class HPF:
         (cos, sin)
         (-sin, cos)
         """
-        theta = alpha
-        c, s = np.cos(theta), np.sin(theta)
+        c = alpha
+        s = np.sqrt(1- alpha * alpha)
+        #theta = alpha
+        #c, s = np.cos(theta), np.sin(theta)
         return np.array(((c,s), (-s, c)))
 
 
@@ -284,7 +287,7 @@ class HPF:
     def rotate_left(self, point, angle, intersection_point):
 
         
-        rotation_matrix = self.get_rotation(angle)
+        rotation_matrix = self.get_counter_rotation(angle)
 
         x,y = self.rot_func(point[:2], intersection_point, rotation_matrix)
 
@@ -296,7 +299,7 @@ class HPF:
     def rotate_right(self, point, angle, intersection_point):
 
         
-        rotation_matrix = self.get_counter_rotation(angle)
+        rotation_matrix = self.get_rotation(angle)
 
         x,y = self.rot_func(point[:2], intersection_point, rotation_matrix)
 
@@ -351,18 +354,14 @@ class HPF:
         # if 1, left was rotated, 0 is right set.
         left_or_right = -1
 
-
-        if (right_margin >= left_margin):
-            right_set[0] = [self.rotate_right(point, angle, intersection_point) for point in right_set[0]]
-            left_or_right = 0
-
-        elif (left_margin > right_margin):
+        if (self.left_or_right_of_plane(intersection_point)):
             left_set[0] = [self.rotate_left(point, angle, intersection_point) for point in left_set[0]]
             left_or_right = 1
+        else:
+            left_set[0] = [self.rotate_right(point, angle, intersection_point) for point in left_set[0]]
+            left_or_right = 0
 
         
-
-
         X = left_set[0] + right_set[0]
         y = left_set[1] + right_set[1]
 
