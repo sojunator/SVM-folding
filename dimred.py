@@ -337,7 +337,6 @@ class DR:
             self.combine_matrices(basis_matrix)
 
             data_points = np.array([p - all_support_vectors[0] for p in data_points])
-
             support_vectors_dictionary[0] = np.array([p - all_support_vectors[0] for p in support_vectors_dictionary[0]])
             support_vectors_dictionary[1] = np.array([p - all_support_vectors[0] for p in support_vectors_dictionary[1]])
 
