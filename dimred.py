@@ -130,8 +130,16 @@ class DR:
         #find linearly independent vectors and add them to the matrix
         matrix = self.find_linear_independent_vectors(direction_vectors, matrix)
 
+
         #create orthonormated vectors with grahm schmidt
         matrix = self.grahm_schmidt_orthonorm(matrix)
+
+        #translation_matrix = np.identity(dim) 
+
+        #for idx, vec in enumerate(translation_matrix):
+         #   vec[dim - 1] = -new_origin[idx]
+
+        #matrix = np.matmul(matrix, translation_matrix.T)
 
         return matrix
 
@@ -321,11 +329,17 @@ class DR:
         #if three or more support vectors. And less support vectors than the current dimension. Reduce using the orthonormal basis from support vectors
         if nr_of_support_vectors >= 3 and nr_of_support_vectors <= nr_of_coordinates:
 
+            print("DIMRED")
             all_support_vectors = self.get_ungrouped_support_vectors(support_vectors_dictionary)
             basis_matrix = self.get_orthonormal_basis_from_support_vectors(all_support_vectors)
 
             #rotate data and support vectors
             self.combine_matrices(basis_matrix)
+
+            data_points = np.array([p - all_support_vectors[0] for p in data_points])
+
+            support_vectors_dictionary[0] = np.array([p - all_support_vectors[0] for p in support_vectors_dictionary[0]])
+            support_vectors_dictionary[1] = np.array([p - all_support_vectors[0] for p in support_vectors_dictionary[1]])
 
             self.transform_support_vectors(basis_matrix, support_vectors_dictionary)
 
