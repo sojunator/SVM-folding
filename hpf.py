@@ -208,7 +208,7 @@ class HPF:
 
         return cosang > 0.0
 
-    def split_data(self, data = None, primary_support_vector = None):
+    def split_data(self, data = None, labels = None, primary_support_vector = None):
         """
         returns a list  containing left and right split.
         """
@@ -216,13 +216,14 @@ class HPF:
         if (data is None and primary_support_vector is None):
             data = np.array(self.data[0])
             primary_support_vector = self.primary_support_vector
+            labels = self.data[1]
 
 
         right_set = [[],[]]
         left_set = [[],[]]
         not_added = True
 
-        for point, label in zip(data, self.data[1]):
+        for point, label in zip(data, labels):
             # Add primary support vector to both sets
             if np.allclose(point, primary_support_vector) and not_added:
                 right_set[0].append(point)
@@ -433,7 +434,10 @@ class HPF:
         except ValueError:
 
             print("WARNING, ONLY ONE CLASS PRESENT IN A SET, ABORTING")
-
+            print(self.support_vectors_dictionary)
+            print(self.primary_support_vector)
+            self.plot_self()
+            plt.show()
             return -1
 
 
@@ -453,7 +457,6 @@ class HPF:
         # As we don't want if-statement checking for last iteration
         correct_dim = []
         for idx, rotation in enumerate(self.rotation_data):
-
             points = self.dim_red.classify_project_down(points, idx)
 
             #unpackage the mess
@@ -462,8 +465,9 @@ class HPF:
             left_clf = rotation[3][1]
 
 
-            left_set, right_set = self.split_data(points, primary_support_vector)
-
+            left_set, right_set = self.split_data(points, [None] * len(points), primary_support_vector)
+            print("left set len: {}".format(len(left_set[0])))
+            print("right set len: {}".format(len(right_set[0])))
             points, y, __, ___ = self.rotate_set(left_clf, left_set, right_clf, right_set, primary_support_vector)
 
             # On return will contain last down projection
