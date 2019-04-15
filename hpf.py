@@ -80,7 +80,7 @@ class HPF:
         plt.plot(x2, y2, 'go')
 
         #plt.axis([-10, 10, -10, 10])
-        
+
 
 
 
@@ -131,7 +131,7 @@ class HPF:
         return ((x, y), angle)
 
 
-   
+
 
     def get_margin(self, clf):
         """
@@ -174,10 +174,15 @@ class HPF:
         return tk
 
 
-    def left_or_right_of_plane(self, point):
+    def left_or_right_of_plane(self, point, primary_support_vector = None):
         """
         Splits the data from the primary point in the direction of the normal
         """
+
+        # Classify needs to overwrite sv
+        if primary_support_vector is None:
+            primary_support_vector = self.primary_support_vector[:2]
+
         n = self.hyperplane_normal
 
         # planes direction
@@ -187,14 +192,13 @@ class HPF:
 
 
         # vector between point and pv
-        ppv = point[:2] - self.primary_support_vector[:2]
+        ppv = point[:2] - primary_support_vector
 
         # normalize
         h = h / np.linalg.norm(h)
         norm_ppv = np.linalg.norm(ppv)
 
         if norm_ppv < 0.00001: #is overlapping the primary support vector
-            print("is primary")
             return True
 
         ppv = ppv / norm_ppv
@@ -204,19 +208,23 @@ class HPF:
 
         return cosang > 0.0
 
-    def split_data(self):
+    def split_data(self, data = None, primary_support_vector = None):
         """
         returns a list  containing left and right split.
         """
         # Construct a new array, to remove reference
-        print(len(self.data[1]))
+        if (data is None and primary_support_vector is None):
+            data = np.array(self.data[0])
+            primary_support_vector = self.primary_support_vector
+
+
         right_set = [[],[]]
         left_set = [[],[]]
         not_added = True
 
-        for point, label in zip(self.data[0], self.data[1]):
+        for point, label in zip(data, self.data[1]):
             # Add primary support vector to both sets
-            if np.allclose(point, self.primary_support_vector) and not_added:
+            if np.allclose(point, primary_support_vector) and not_added:
                 right_set[0].append(point)
                 right_set[1].append(label)
                 left_set[0].append(point)
@@ -233,8 +241,6 @@ class HPF:
                 else:
                     right_set[0].append(point)
                     right_set[1].append(label)
-
-        print(len(right_set[1]) + len(left_set[1]))
 
         return left_set, right_set
 
@@ -271,7 +277,7 @@ class HPF:
 
                 if True not in checks:
                     grouped_support_vectors[key].append(sv)
-                
+
 
         return grouped_support_vectors
 
@@ -306,7 +312,7 @@ class HPF:
 
     def rotate_left(self, point, angle, intersection_point):
 
-        
+
         rotation_matrix = self.get_counter_rotation(angle)
 
         x,y = self.rot_func(point[:2], intersection_point, rotation_matrix)
@@ -318,7 +324,7 @@ class HPF:
 
     def rotate_right(self, point, angle, intersection_point):
 
-        
+
         rotation_matrix = self.get_rotation(angle)
 
         x,y = self.rot_func(point[:2], intersection_point, rotation_matrix)
@@ -387,13 +393,13 @@ class HPF:
         if c > 0.0:
             left_set[0] = [self.rotate_left(point, angle, intersection_point) for point in left_set[0]]
             left_or_right = 1
-            print("left rot")
+
         else:
             left_set[0] = [self.rotate_right(point, angle, intersection_point) for point in left_set[0]]
             left_or_right = 0
-            print("right rot")
 
-        
+
+
         X = left_set[0] + right_set[0]
         y = left_set[1] + right_set[1]
 
@@ -425,7 +431,7 @@ class HPF:
             left_clf.fit(left_2d, left_set[1])
 
         except ValueError:
-            
+
             print("WARNING, ONLY ONE CLASS PRESENT IN A SET, ABORTING")
 
             return -1
@@ -442,49 +448,29 @@ class HPF:
     def classify(self, points, rotate=True):
         if not rotate:
             return self.old_clf.predict(points)
-        correct_dim = points
+
+        # Correct dim is used to save last down projection
+        # As we don't want if-statement checking for last iteration
+        correct_dim = []
         for idx, rotation in enumerate(self.rotation_data):
 
             points = self.dim_red.classify_project_down(points, idx)
 
             #unpackage the mess
-            intersection_point = rotation[0]
             primary_support_vector = rotation[1]
-            left_or_right = rotation[2]
             right_clf = rotation[3][0]
             left_clf = rotation[3][1]
-            support_vectors_dictionary = rotation[4]
 
 
-            _, angle = self.get_intersection_point(left_clf, right_clf)
-            rotation_matrix = self.get_rotation(angle)
+            left_set, right_set = self.split_data(points, primary_support_vector)
 
-            rotated_set = []
-            none_rotated_set = []
+            points, y, __, ___ = self.rotate_set(left_clf, left_set, right_clf, right_set, primary_support_vector)
 
-            clf_for_rotation = None
-            correct_dim = []
-            for point in points:
-
-                if left_or_right:
-                    if self.left_or_right_of_plane(point, support_vectors_dictionary, primary_support_vector):
-                        rotated_set.append(point)
-                        clf_for_rotation = left_clf
-                    else:
-                        none_rotated_set.append(point)
-                else:
-                    if not self.left_or_right_of_plane(point, support_vectors_dictionary, primary_support_vector):
-                        rotated_set.append(point)
-                        clf_for_rotation = right_clf
-                    else:
-                        none_rotated_set.append(point)
-
-            rotated_set = [self.rotate_point_2D(point, angle, primary_support_vector, intersection_point, clf_for_rotation) for point in rotated_set]
-
-            points = np.asarray(rotated_set + none_rotated_set)
-            correct_dim = points
+            # On return will contain last down projection
+            correct_dim = np.array(points)
 
             points = self.dim_red.classify_project_up(points, idx)
+
 
         return self.clf.predict(correct_dim)
 
@@ -567,8 +553,6 @@ class HPF:
         margins = []
 
         while(len(self.clf.support_vectors_) > 2 and val is 0):
-
-
             self.data[0], self.support_vectors_dictionary, self.hyperplane_normal = self.dim_red.project_down(self.data[0], self.support_vectors_dictionary, self.hyperplane_normal)
 
             #self.plot_self(True)

@@ -13,7 +13,7 @@ class DR:
 
     def grahm_schmidt_orthonorm(self, linearly_independent_matrix):
 
-            
+
 
             vec = linearly_independent_matrix[0]
             vec = vec / np.linalg.norm(vec)#first entry is just the itself normalized
@@ -82,7 +82,7 @@ class DR:
 
     #    for vector in vectors:
      #       matrix = np.array([vector])
-        
+
 
     def find_linear_independent_vectors(self, vectors, matrix):
         """
@@ -101,15 +101,15 @@ class DR:
 
                 matrix = new_matrix#find_linear_independent_vectors(vectors[i:], new_matrix, new_rank)
 
-                if len(matrix) == dim: 
+                if len(matrix) == dim:
                     if np.linalg.det(matrix) != 0: #matrix is a basis
                         return matrix
                     else:
                         print("SOMETHING WENT WRONG, Error: not a basis")
-                    
+
 
                 rank = new_rank
-            
+
         return matrix
 
     def get_orthonormal_basis_from_support_vectors(self, support_vectors):
@@ -123,13 +123,13 @@ class DR:
 
         #Start with finding two linearly independent vectors of any class using cauchy schwarz inequality
         matrix = self.find_two_linearly_independent_vectors(direction_vectors)
-    
+
         #add the base vectors to complement for the vectors that arn't linearly independent
         direction_vectors = np.vstack([direction_vectors, np.identity(dim)])
 
         #find linearly independent vectors and add them to the matrix
         matrix = self.find_linear_independent_vectors(direction_vectors, matrix)
-    
+
         #create orthonormated vectors with grahm schmidt
         matrix = self.grahm_schmidt_orthonorm(matrix)
 
@@ -146,7 +146,7 @@ class DR:
         if (len(support_vectors) <2):
             print("Error, less than two support vectors in set")
             return
-    
+
         best_dir = support_vectors[1] - support_vectors[0]
         best_dist = np.linalg.norm(best_dir)
         best_idx = 0
@@ -168,7 +168,7 @@ class DR:
 
     def align(self, direction):
         #direction = np.array([0,6,6])
-        
+
         dim = len(direction)
         matrix = np.identity(dim)
 
@@ -178,9 +178,9 @@ class DR:
         if w1 != 0:#first row
             matrix[0][0] = direction[1] / w1
             matrix[0][1] = -direction[0] / w1#first subdiagonal
-            
+
         for i in range(1, dim - 1):#middle rows
-            
+
             v2 = direction[:i+2]
             w2 = np.linalg.norm(v2)
 
@@ -211,12 +211,12 @@ class DR:
         dim = len(direction)
         rotation_matrix = np.zeros((dim,dim))
 
-        #Wk = sqrt(v1^2 + v2^2 ... + vk^2) 
+        #Wk = sqrt(v1^2 + v2^2 ... + vk^2)
         squared_elements_accumulator = direction[0] * direction[0] + direction[1] * direction[1]
-    
+
         Wk = direction[0]#for k = 1
         Wkp1 = np.sqrt(squared_elements_accumulator)
-    
+
         #first row
         if Wkp1 != 0:
             rotation_matrix[0][0] = direction[1] / Wkp1#first element
@@ -228,7 +228,7 @@ class DR:
 
         #middle rows
         for row in range(1, dim - 1):
-        
+
             subdiagonal_element = direction[row + 1]#row + 1 is the k'th element in the vector
             squared_elements_accumulator += subdiagonal_element * subdiagonal_element#accumulate next step, square next element
 
@@ -242,7 +242,7 @@ class DR:
 
             rotation_matrix[row][row + 1] = -U #subdiagonal entry in matrix
 
-            #denominator per row 
+            #denominator per row
             denominator = Wk * Wkp1
 
             if denominator == 0:
@@ -271,13 +271,13 @@ class DR:
 
         mat = np.identity(len(self.matrices[0]))
         matrix_dim = len(matrix[0])
-       
+
         mat[:matrix_dim,:matrix_dim] = matrix[:matrix_dim,:matrix_dim]
-        
+
 
         #trans_mat = self.matrices[self.folds_done].T
         self.matrices[self.folds_done] = np.matmul(mat, self.matrices[self.folds_done])
-    
+
         return
 
 
@@ -285,7 +285,7 @@ class DR:
 
         mat = np.identity(len(self.matrices[0]))
         matrix_dim = len(matrix[0])
-       
+
         mat[:matrix_dim,:matrix_dim] = matrix[:matrix_dim,:matrix_dim]
 
         for key, lst in support_vectors_dictionary.items():
@@ -300,10 +300,10 @@ class DR:
 
         return np.array([np.matmul(matrix, p) for p in data])
 
-           
-        
 
-    
+
+
+
     def project_down(self, data_points, support_vectors_dictionary, hyperplane):
 
         """
@@ -312,14 +312,12 @@ class DR:
 
         Projects data into two dimensions
         """
-       
+
         nr_of_coordinates = len(support_vectors_dictionary[0][0])
         self.matrices[self.folds_done] = np.identity(nr_of_coordinates)#start with the identity
         nr_of_support_vectors = len(support_vectors_dictionary[0]) + len(support_vectors_dictionary[1])
 
-        if nr_of_support_vectors > nr_of_coordinates + 1:
-            print("Are you sure the data is linearly seperable?")
-            
+
         #if three or more support vectors. And less support vectors than the current dimension. Reduce using the orthonormal basis from support vectors
         if nr_of_support_vectors >= 3 and nr_of_support_vectors <= nr_of_coordinates:
 
@@ -327,7 +325,7 @@ class DR:
             basis_matrix = self.get_orthonormal_basis_from_support_vectors(all_support_vectors)
 
             #rotate data and support vectors
-            self.combine_matrices(basis_matrix) 
+            self.combine_matrices(basis_matrix)
 
             self.transform_support_vectors(basis_matrix, support_vectors_dictionary)
 
@@ -337,16 +335,16 @@ class DR:
 
         #Rotate/align support vectors until we reach 2D.
         while nr_of_coordinates > 2:
-            
+
             #choose the class with most support vectors
             max_key = max(support_vectors_dictionary, key= lambda x: len(support_vectors_dictionary[x]))
-        
+
             #get the direction between the two support vectors, and removes one of them from the dictionary
             direction, support_vectors_dictionary[max_key] = self.get_direction_between_two_vectors_with_smallest_distance(support_vectors_dictionary[max_key], nr_of_coordinates)
-        
+
             #calculate alignment matrix
             rotation_matrix = self.align(direction)
-    
+
             #rotate all datapoints and support vectors
             self.transform_support_vectors(rotation_matrix, support_vectors_dictionary)
 
@@ -354,7 +352,7 @@ class DR:
 
             #support vectors are aligned.
             #exclude last coordinate for further iterations.
-            nr_of_coordinates -= 1 
+            nr_of_coordinates -= 1
 
 
         data_points = self.transform(self.matrices[self.folds_done], data_points)
