@@ -162,7 +162,7 @@ class DR:
                     best_dir = dir
                     best_idx = index_v1
 
-        support_vectors = np.delete(support_vectors, index_v1, 0)#remove one of the support vectors that are about to be aligned
+        support_vectors = np.delete(support_vectors, best_idx, 0)#remove one of the support vectors that are about to be aligned
 
         return best_dir[:dim], support_vectors
 

@@ -432,12 +432,8 @@ class HPF:
             left_clf.fit(left_2d, left_set[1])
 
         except ValueError:
-
             print("WARNING, ONLY ONE CLASS PRESENT IN A SET, ABORTING")
-            print(self.support_vectors_dictionary)
-            print(self.primary_support_vector)
-            self.plot_self()
-            plt.show()
+
             return -1
 
 
