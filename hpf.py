@@ -9,6 +9,7 @@ import matplotlib.pyplot as plt
 import numpy as np
 import math
 import json
+import pdb
 
 from dimred import DR
 
@@ -361,7 +362,7 @@ class HPF:
         return point
 
 
-    def rotate_set(self, left_clf, left_set, right_clf, right_set, primary_support_vector):
+    def rotate_set(self, left_clf, left_set, right_clf, right_set, primary_support_vector = None, hyperplane_normal = None):
         """
         Performs rotation on the set with biggest margin
         Currently rotates around the intersection point
@@ -370,6 +371,9 @@ class HPF:
 
         returns a merged and rotated set, touple (X, y)
         """
+        if primary_support_vector is None and hyperplane_normal is None:
+            hyperplane_normal = self.hyperplane_normal
+            primary_support_vector = self.primary_support_vector
 
         # Get margins
         right_margin = self.get_margin(right_clf)
@@ -381,10 +385,10 @@ class HPF:
         # if 1, left was rotated, 0 is right set.
 
         #rotate left or right
-        d = intersection_point - self.primary_support_vector[:2]
+        d = intersection_point - primary_support_vector[:2]
         d = d / np.linalg.norm(d)
 
-        n = self.hyperplane_normal[:2]
+        n = hyperplane_normal[:2]
         n = n / np.linalg.norm(n)
 
         c = np.dot(d, n)
@@ -433,19 +437,19 @@ class HPF:
 
         except ValueError:
             print("WARNING, ONLY ONE CLASS PRESENT IN A SET, ABORTING")
-
             return -1
 
 
 
         # Rotate and merge data sets back into one
-        self.data[0], self.data[1], left_or_right, intersection_point = self.rotate_set(left_clf, left_set, right_clf, right_set, self.primary_support_vector)
-
-        self.rotation_data.append((intersection_point, self.primary_support_vector, left_or_right, (right_clf, left_clf), self.support_vectors_dictionary))
+        self.data[0], self.data[1], left_or_right, intersection_point = self.rotate_set(left_clf, left_set, right_clf, right_set)
+        self.rotation_data.append((intersection_point, self.primary_support_vector, left_or_right, (right_clf, left_clf), self.support_vectors_dictionary, np.array(self.hyperplane_normal)))
 
         return 0
 
     def classify(self, points, rotate=True):
+        if (len(points) is 0):
+            return []
         if not rotate:
             return self.old_clf.predict(points)
 
@@ -453,25 +457,26 @@ class HPF:
         # As we don't want if-statement checking for last iteration
         correct_dim = []
         for idx, rotation in enumerate(self.rotation_data):
+
             points = self.dim_red.classify_project_down(points, idx)
 
             #unpackage the mess
             primary_support_vector = rotation[1]
             right_clf = rotation[3][0]
             left_clf = rotation[3][1]
-
+            hyperplane_normal = rotation[5]
 
             left_set, right_set = self.split_data(points, [None] * len(points), primary_support_vector)
-            print("left set len: {}".format(len(left_set[0])))
-            print("right set len: {}".format(len(right_set[0])))
-            points, y, __, ___ = self.rotate_set(left_clf, left_set, right_clf, right_set, primary_support_vector)
+
+
+            points, y, __, ___ = self.rotate_set(left_clf, left_set, right_clf, right_set, primary_support_vector, hyperplane_normal)
 
             # On return will contain last down projection
             correct_dim = np.array(points)
 
             points = self.dim_red.classify_project_up(points, idx)
 
-
+        print(points)
         return self.clf.predict(correct_dim)
 
     def plot_dir(self, dir, point, new_figure_ = False):
@@ -553,6 +558,7 @@ class HPF:
         margins = []
 
         while(len(self.clf.support_vectors_) > 2 and val is 0):
+
             self.data[0], self.support_vectors_dictionary, self.hyperplane_normal = self.dim_red.project_down(self.data[0], self.support_vectors_dictionary, self.hyperplane_normal)
 
             #self.plot_self(True)
