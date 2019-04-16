@@ -374,7 +374,7 @@ class DR:
 
 
         data_points = self.transform(self.matrices[self.folds_done], data_points)
-        hyperplane = np.matmul(self.matrices[self.folds_done], np.append(hyperplane, 1))[:-1]
+        hyperplane = np.matmul(self.matrices[self.folds_done], np.append(hyperplane, 0))[:-1]
 
         return data_points, support_vectors_dictionary, hyperplane
 
