@@ -134,13 +134,6 @@ class DR:
         #create orthonormated vectors with grahm schmidt
         matrix = self.grahm_schmidt_orthonorm(matrix)
 
-        #translation_matrix = np.identity(dim) 
-
-        #for idx, vec in enumerate(translation_matrix):
-         #   vec[dim - 1] = -new_origin[idx]
-
-        #matrix = np.matmul(matrix, translation_matrix.T)
-
         return matrix
 
 
@@ -297,16 +290,13 @@ class DR:
         mat[:matrix_dim,:matrix_dim] = matrix[:matrix_dim,:matrix_dim]
 
         for key, lst in support_vectors_dictionary.items():
-            support_vectors_dictionary[key] = [np.matmul(mat, vector) for vector in lst]
+            support_vectors_dictionary[key] = [np.matmul(mat, np.append(vector, 1))[:-1] for vector in lst]
 
-
-
-            #best_dir[:dim]
 
 
     def transform(self, matrix, data):
 
-        return np.array([np.matmul(matrix, p) for p in data])
+        return np.array([np.matmul(matrix, np.append(p,1))[:-1] for p in data])
 
 
 
@@ -322,7 +312,7 @@ class DR:
         """
 
         nr_of_coordinates = len(support_vectors_dictionary[0][0])
-        self.matrices[self.folds_done] = np.identity(nr_of_coordinates)#start with the identity
+        self.matrices[self.folds_done] = np.identity(nr_of_coordinates + 1)#start with the identity, + 1 is to handle translation
         nr_of_support_vectors = len(support_vectors_dictionary[0]) + len(support_vectors_dictionary[1])
 
 
@@ -333,14 +323,25 @@ class DR:
             all_support_vectors = self.get_ungrouped_support_vectors(support_vectors_dictionary)
             basis_matrix = self.get_orthonormal_basis_from_support_vectors(all_support_vectors)
 
-            #rotate data and support vectors
+
+            #add translation to matrix
+            zero_vec = np.zeros(nr_of_coordinates)
+            basis_matrix = np.row_stack((basis_matrix, zero_vec))
+
+            col_vec = all_support_vectors[0].tolist()
+            col_vec.append(1)
+
+            basis_matrix = np.column_stack((basis_matrix, col_vec))
+
+            #combine matrix
             self.combine_matrices(basis_matrix)
 
-            data_points = np.array([p - all_support_vectors[0] for p in data_points])
-            support_vectors_dictionary[0] = np.array([p - all_support_vectors[0] for p in support_vectors_dictionary[0]])
-            support_vectors_dictionary[1] = np.array([p - all_support_vectors[0] for p in support_vectors_dictionary[1]])
+            #manually transform the support vectors
+            #support_vectors_dictionary[0] = np.array([p - all_support_vectors[0] for p in support_vectors_dictionary[0]])
+            #support_vectors_dictionary[1] = np.array([p - all_support_vectors[0] for p in support_vectors_dictionary[1]])
 
             self.transform_support_vectors(basis_matrix, support_vectors_dictionary)
+
 
             #post rotation the dimension is lowered to the number of support vectors - 1
             nr_of_coordinates = nr_of_support_vectors - 1#OBS
@@ -369,7 +370,7 @@ class DR:
 
 
         data_points = self.transform(self.matrices[self.folds_done], data_points)
-        hyperplane = np.matmul(self.matrices[self.folds_done], hyperplane)
+        hyperplane = np.matmul(self.matrices[self.folds_done], np.append(hyperplane, 1))[:-1]
 
         return data_points, support_vectors_dictionary, hyperplane
 
