@@ -130,6 +130,7 @@ class DR:
         #find linearly independent vectors and add them to the matrix
         matrix = self.find_linear_independent_vectors(direction_vectors, matrix)
 
+
         #create orthonormated vectors with grahm schmidt
         matrix = self.grahm_schmidt_orthonorm(matrix)
 
@@ -289,16 +290,13 @@ class DR:
         mat[:matrix_dim,:matrix_dim] = matrix[:matrix_dim,:matrix_dim]
 
         for key, lst in support_vectors_dictionary.items():
-            support_vectors_dictionary[key] = [np.matmul(mat, vector) for vector in lst]
+            support_vectors_dictionary[key] = [np.matmul(mat, np.append(vector, 1))[:-1] for vector in lst]
 
-
-
-            #best_dir[:dim]
 
 
     def transform(self, matrix, data):
 
-        return np.array([np.matmul(matrix, p) for p in data])
+        return np.array([np.matmul(matrix, np.append(p,1))[:-1] for p in data])
 
 
 
@@ -314,20 +312,40 @@ class DR:
         """
 
         nr_of_coordinates = len(support_vectors_dictionary[0][0])
-        self.matrices[self.folds_done] = np.identity(nr_of_coordinates)#start with the identity
+        self.matrices[self.folds_done] = np.identity(nr_of_coordinates + 1)#start with the identity, + 1 is to handle translation
         nr_of_support_vectors = len(support_vectors_dictionary[0]) + len(support_vectors_dictionary[1])
 
 
         #if three or more support vectors. And less support vectors than the current dimension. Reduce using the orthonormal basis from support vectors
         if nr_of_support_vectors >= 3 and nr_of_support_vectors <= nr_of_coordinates:
 
+            print("DIMRED")
             all_support_vectors = self.get_ungrouped_support_vectors(support_vectors_dictionary)
             basis_matrix = self.get_orthonormal_basis_from_support_vectors(all_support_vectors)
 
-            #rotate data and support vectors
+            #self.combine_matrices(basis_matrix)
+
+            #add translation to matrix
+            translate_matrix = np.identity(nr_of_coordinates + 1)
+
+            for idx, e in enumerate(all_support_vectors[0]):
+                translate_matrix[idx][nr_of_coordinates] = -e 
+
+            #col_vec = [-p for p in all_support_vectors[0]]
+            #col_vec.append(1.0)
+
+            #identity = np.column_stack((identity, col_vec))
+
+            #combine matrix
+            self.combine_matrices(translate_matrix)
             self.combine_matrices(basis_matrix)
 
-            self.transform_support_vectors(basis_matrix, support_vectors_dictionary)
+            #manually transform the support vectors
+            #support_vectors_dictionary[0] = np.array([p - all_support_vectors[0] for p in support_vectors_dictionary[0]])
+            #support_vectors_dictionary[1] = np.array([p - all_support_vectors[0] for p in support_vectors_dictionary[1]])
+
+            self.transform_support_vectors(self.matrices[self.folds_done], support_vectors_dictionary)
+
 
             #post rotation the dimension is lowered to the number of support vectors - 1
             nr_of_coordinates = nr_of_support_vectors - 1#OBS
@@ -356,7 +374,7 @@ class DR:
 
 
         data_points = self.transform(self.matrices[self.folds_done], data_points)
-        hyperplane = np.matmul(self.matrices[self.folds_done], hyperplane)
+        hyperplane = np.matmul(self.matrices[self.folds_done], np.append(hyperplane, 0))[:-1]
 
         return data_points, support_vectors_dictionary, hyperplane
 
