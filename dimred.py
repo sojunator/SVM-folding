@@ -319,7 +319,6 @@ class DR:
         #if three or more support vectors. And less support vectors than the current dimension. Reduce using the orthonormal basis from support vectors
         if nr_of_support_vectors >= 3 and nr_of_support_vectors <= nr_of_coordinates:
 
-            print("DIMRED")
             all_support_vectors = self.get_ungrouped_support_vectors(support_vectors_dictionary)
             basis_matrix = self.get_orthonormal_basis_from_support_vectors(all_support_vectors)
 

@@ -461,6 +461,8 @@ class HPF:
 
             points = self.dim_red.classify_project_down(points, idx)
 
+            
+
             #unpackage the mess
             primary_support_vector = rotation[1]
             right_clf = rotation[3][0]
@@ -472,13 +474,12 @@ class HPF:
 
             points, y, __, ___ = self.rotate_set(left_clf, left_set, right_clf, right_set, primary_support_vector, hyperplane_normal)
 
-            # On return will contain last down projection
-            correct_dim = np.array(points)
-
             points = self.dim_red.classify_project_up(points, idx)
 
-        print(points)
-        return self.clf.predict(correct_dim)
+            print("CLASSIFY PROJED UP : ", idx, "\n", points, "\n")
+
+        
+        return self.clf.predict(points)
 
     def plot_dir(self, dir, point, new_figure_ = False):
         if new_figure_:
@@ -557,11 +558,12 @@ class HPF:
         # floating point termination
         previous_margin = self.old_margin
         margins = []
-        print(self.data[0][-5:])
+        #print(self.data[0][-5:])
         while(len(self.clf.support_vectors_) > 2 and val is 0):
 
             self.data[0], self.support_vectors_dictionary, self.hyperplane_normal = self.dim_red.project_down(self.data[0], self.support_vectors_dictionary, self.hyperplane_normal)
 
+            #print("DIM: ", self.current_fold, "\n", self.data[0], "\n")
 
             val = self.fold()
 
@@ -570,12 +572,12 @@ class HPF:
             self.data[0] = self.dim_red.project_up(self.data[0])
 
 
-
             #fit for next iteration or exit contidion of just two support vectors
             self.clf.fit(self.data[0], self.data[1])
             self.support_vectors_dictionary = self.group_support_vectors(self.clf) #regroup
             self.hyperplane_normal = self.get_hyperplane_normal()
 
+            print("PROJECTED UP DIM: ", self.current_fold, "\n", self.data[0], "LABEL :", self.data[1], "\n")
 
             self.new_margin = self.get_margin(self.clf)
             margins.append(math.fabs(self.new_margin - previous_margin))
