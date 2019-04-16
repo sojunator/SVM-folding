@@ -554,17 +554,17 @@ class HPF:
         margins = []
 
         while(len(self.clf.support_vectors_) > 2 and val is 0):
-            #self.plot_self(True)
+            self.plot_self(True)
             self.data[0], self.support_vectors_dictionary, self.hyperplane_normal = self.dim_red.project_down(self.data[0], self.support_vectors_dictionary, self.hyperplane_normal)
 
-            #self.plot_self(True)
-            #plt.show()
+            self.plot_self(True)
+            plt.show()
 
             val = self.fold()
 
-            #self.plot_self(True)
+            self.plot_self(True)
 
-            #plt.show()
+            plt.show()
             if self.current_fold > 150:
                 self.plot_self()
                 plt.show()

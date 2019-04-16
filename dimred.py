@@ -323,24 +323,28 @@ class DR:
             all_support_vectors = self.get_ungrouped_support_vectors(support_vectors_dictionary)
             basis_matrix = self.get_orthonormal_basis_from_support_vectors(all_support_vectors)
 
+            #self.combine_matrices(basis_matrix)
 
             #add translation to matrix
-            zero_vec = np.zeros(nr_of_coordinates)
-            basis_matrix = np.row_stack((basis_matrix, zero_vec))
+            translate_matrix = np.identity(nr_of_coordinates + 1)
 
-            col_vec = all_support_vectors[0].tolist()
-            col_vec.append(1)
+            for idx, e in enumerate(all_support_vectors[0]):
+                translate_matrix[idx][nr_of_coordinates] = -e 
 
-            basis_matrix = np.column_stack((basis_matrix, col_vec))
+            #col_vec = [-p for p in all_support_vectors[0]]
+            #col_vec.append(1.0)
+
+            #identity = np.column_stack((identity, col_vec))
 
             #combine matrix
+            self.combine_matrices(translate_matrix)
             self.combine_matrices(basis_matrix)
 
             #manually transform the support vectors
             #support_vectors_dictionary[0] = np.array([p - all_support_vectors[0] for p in support_vectors_dictionary[0]])
             #support_vectors_dictionary[1] = np.array([p - all_support_vectors[0] for p in support_vectors_dictionary[1]])
 
-            self.transform_support_vectors(basis_matrix, support_vectors_dictionary)
+            self.transform_support_vectors(self.matrices[self.folds_done], support_vectors_dictionary)
 
 
             #post rotation the dimension is lowered to the number of support vectors - 1
