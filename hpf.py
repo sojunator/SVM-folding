@@ -175,16 +175,17 @@ class HPF:
         return tk
 
 
-    def left_or_right_of_plane(self, point, primary_support_vector = None):
+    def left_or_right_of_plane(self, point, primary_support_vector = None, hyperplane_normal = None):
         """
         Splits the data from the primary point in the direction of the normal
         """
 
         # Classify needs to overwrite sv
-        if primary_support_vector is None:
+        if primary_support_vector is None and hyperplane_normal is None:
             primary_support_vector = self.primary_support_vector[:2]
+            hyperplane_normal = self.hyperplane_normal
 
-        n = self.hyperplane_normal
+        n = hyperplane_normal
 
         # planes direction
         h = [0,0]
@@ -209,7 +210,7 @@ class HPF:
 
         return cosang > 0.0
 
-    def split_data(self, data = None, labels = None, primary_support_vector = None):
+    def split_data(self, data = None, labels = None, primary_support_vector = None, hyperplane_normal = None):
         """
         returns a list  containing left and right split.
         """
@@ -218,7 +219,7 @@ class HPF:
             data = np.array(self.data[0])
             primary_support_vector = self.primary_support_vector
             labels = self.data[1]
-
+            hyperplane_normal = self.hyperplane_normal
 
         right_set = [[],[]]
         left_set = [[],[]]
@@ -236,7 +237,7 @@ class HPF:
             # Vector is not primary, it should reside in one of the sets
             else:
                 # Get which side the point resides on
-                if self.left_or_right_of_plane(point):
+                if self.left_or_right_of_plane(point, primary_support_vector[:2], hyperplane_normal):
                     left_set[0].append(point)
                     left_set[1].append(label)
 
@@ -466,7 +467,7 @@ class HPF:
             left_clf = rotation[3][1]
             hyperplane_normal = rotation[5]
 
-            left_set, right_set = self.split_data(points, [None] * len(points), primary_support_vector)
+            left_set, right_set = self.split_data(points, [None] * len(points), primary_support_vector, hyperplane_normal)
 
 
             points, y, __, ___ = self.rotate_set(left_clf, left_set, right_clf, right_set, primary_support_vector, hyperplane_normal)
@@ -556,22 +557,13 @@ class HPF:
         # floating point termination
         previous_margin = self.old_margin
         margins = []
-
+        print(self.data[0][-5:])
         while(len(self.clf.support_vectors_) > 2 and val is 0):
 
             self.data[0], self.support_vectors_dictionary, self.hyperplane_normal = self.dim_red.project_down(self.data[0], self.support_vectors_dictionary, self.hyperplane_normal)
 
-            self.plot_self(True)
-            plt.show()
 
             val = self.fold()
-
-            self.plot_self(True)
-
-            plt.show()
-            if self.current_fold > 150:
-                self.plot_self()
-                plt.show()
 
             self.current_fold += 1
 
