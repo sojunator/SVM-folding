@@ -309,12 +309,26 @@ class HPF:
         return np.array(((c,s), (-s, c)))
 
 
-    def get_rubber_band_angle(self, angle):
+    def get_rubber_band_angle(self, point, angle, intersection_point, normal):
 
-        return None
+        
 
-    def rotate_left(self, point, angle, intersection_point):
+        v = point[:2] - intersection_point
+        v = v / np.linalg.norm(v)
 
+        r_angle = np.dot(v, normal)
+
+        if r_angle > angle:
+            print(angle, "    ", np.arccos(angle) * 180 / 3.1415)
+            print(r_angle, "    ", np.arccos(r_angle)* 180 / 3.1415)
+            print("RUBBERBAND")
+
+        return angle# np.fmax(r_angle, angle)
+            
+
+    def rotate_left(self, point, angle, intersection_point, left_normal):
+
+        angle = self.get_rubber_band_angle(point, angle, intersection_point, left_normal)
 
         rotation_matrix = self.get_counter_rotation(angle)
 
@@ -325,8 +339,9 @@ class HPF:
 
         return point
 
-    def rotate_right(self, point, angle, intersection_point):
+    def rotate_right(self, point, angle, intersection_point, left_normal):
 
+        angle = self.get_rubber_band_angle(point, angle, intersection_point, left_normal)
 
         rotation_matrix = self.get_rotation(angle)
 
@@ -344,12 +359,12 @@ class HPF:
 
         Does currently not apply rubberband folding, rotates points around intersection
         """
-        norm = np.linalg.norm(clf.coef_[0])
-        v = intersection_point + norm
+        n = clf.coef_[0] 
+        n = n / np.linalg.norm(n)
+        v = intersection_point + n
 
         cosang = np.dot(v, intersection_point - point[:2])
-        sinang = np.linalg.norm(np.cross(v, intersection_point - point[:2]))
-        angle2 = np.arctan2(sinang, cosang)
+        angle2 = np.arccos(cosang)
 
 
         rotation_matrix = self.get_rotation(min(angle, angle))
@@ -363,7 +378,7 @@ class HPF:
         return point
 
 
-    def rotate_set(self, left_clf, left_set, right_clf, right_set, primary_support_vector = None, hyperplane_normal = None):
+    def rotate_set(self, left_clf, right_clf, primary_support_vector = None, hyperplane_normal = None):
         """
         Performs rotation on the set with biggest margin
         Currently rotates around the intersection point
@@ -385,7 +400,7 @@ class HPF:
         intersection_point, angle = self.get_intersection_between_SVMs(left_clf, right_clf)#self.get_intersection_point(left_clf, right_clf)
         # if 1, left was rotated, 0 is right set.
 
-        #rotate left or right
+        #rotate clockwise or counter clockwise
         d = intersection_point - primary_support_vector[:2]
         d = d / np.linalg.norm(d)
 
@@ -394,23 +409,38 @@ class HPF:
 
         c = np.dot(d, n)
 
+        right_normal = right_clf.coef_[0] / np.linalg.norm(right_clf.coef_[0])
+
         left_or_right = -1
 
+        #Split data based on the normal
+        rotate_set = []
+        non_rotate_set = []
+
+        c = -(np.dot(right_normal, intersection_point))
+
+        for point in zip(self.data[0], self.data[1]):
+            if np.dot(point[0][:2], right_normal) + c > 0.0:
+                rotate_set.append(np.array(point))
+            else:
+                non_rotate_set.append(np.array(point))
+
         if c > 0.0:
-            left_set[0] = [self.rotate_left(point, angle, intersection_point) for point in left_set[0]]
+            rotate_set = [(self.rotate_left(point[0], angle, intersection_point, right_normal), point[1]) for point in rotate_set]
             left_or_right = 1
 
         else:
-            left_set[0] = [self.rotate_right(point, angle, intersection_point) for point in left_set[0]]
+            rotate_set = [(self.rotate_right(point[0], angle, intersection_point, right_normal), point[1]) for point in rotate_set]
             left_or_right = 0
 
 
+        tup = rotate_set + non_rotate_set
 
-        X = left_set[0] + right_set[0]
-        y = left_set[1] + right_set[1]
+        self.data[0] = [p[0] for p in tup]
+        self.data[1] = [p[1] for p in tup]
 
 
-        return (X, y, left_or_right, intersection_point)
+        return left_or_right, intersection_point
 
 
     def fold(self):
@@ -441,9 +471,8 @@ class HPF:
             return -1
 
 
-
         # Rotate and merge data sets back into one
-        self.data[0], self.data[1], left_or_right, intersection_point = self.rotate_set(left_clf, left_set, right_clf, right_set)
+        left_or_right, intersection_point = self.rotate_set(left_clf, right_clf)
         self.rotation_data.append((intersection_point, self.primary_support_vector, left_or_right, (right_clf, left_clf), self.support_vectors_dictionary, np.array(self.hyperplane_normal)))
 
         return 0
@@ -475,8 +504,6 @@ class HPF:
             points, y, __, ___ = self.rotate_set(left_clf, left_set, right_clf, right_set, primary_support_vector, hyperplane_normal)
 
             points = self.dim_red.classify_project_up(points, idx)
-
-            print("CLASSIFY PROJED UP : ", idx, "\n", points, "\n")
 
         
         return self.clf.predict(points)
@@ -576,8 +603,6 @@ class HPF:
             self.clf.fit(self.data[0], self.data[1])
             self.support_vectors_dictionary = self.group_support_vectors(self.clf) #regroup
             self.hyperplane_normal = self.get_hyperplane_normal()
-
-            print("PROJECTED UP DIM: ", self.current_fold, "\n", self.data[0], "LABEL :", self.data[1], "\n")
 
             self.new_margin = self.get_margin(self.clf)
             margins.append(math.fabs(self.new_margin - previous_margin))
