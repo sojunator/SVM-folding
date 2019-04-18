@@ -43,44 +43,78 @@ def plot_clf(clf, data):
     plt.plot(x2, y2, 'go')
 
 class HPF:
-    def plot_self(self, new_figure = False):
-        if new_figure:
+
+    def plot_dir(self, dir, point, new_figure_ = False, plot_normal_to_dir = False, col = 'b'):
+        if new_figure_:
             plt.figure()
-        p = (self.support_vectors_dictionary[0][0][:2] + self.support_vectors_dictionary[1][0][:2]) / 2
-        n = self.hyperplane_normal
-        h = [0,0]
-        h[1] = n[0]
-        h[0] = -n[1]
 
-        hx1 = p[0] + h[0] * 5
-        hy1 = p[1] + h[1] * 5
+        h = dir
 
-        hx2 = p[0] + h[0] * -5
-        hy2 = p[1] + h[1] * -5
+        w = [0,0]
+        w[0] = -h[1]
+        w[1] = h[0]
 
-        plt.plot([hx1,hx2],[hy1, hy2], 'b')
+        p = point
+
+        plot_size = 10
+
+        hx1 = p[0] + h[0] * plot_size
+        hy1 = p[1] + h[1] * plot_size
+
+        hx2 = p[0] + h[0] * -plot_size
+        hy2 = p[1] + h[1] * -plot_size
+
+        plt.plot([hx1,hx2],[hy1, hy2], col)
+
+        if plot_normal_to_dir:
+            hx1 = p[0] + w[0] * plot_size
+            hy1 = p[1] + w[1] * plot_size
+
+            hx2 = p[0] + w[0] * -plot_size
+            hy2 = p[1] + w[1] * -plot_size
+
+            plt.plot([hx1,hx2],[hy1, hy2], 'r')
+
+    def plot_data(self, data, new_figure_ = False):
+
+        if new_figure_:
+            plt.figure()
 
         x1 = []
         y1 = []
         x2 = []
         y2 = []
 
-        for index, label in enumerate(self.data[1]):
-            #print(index)
+        for index, label in enumerate(data[1]):
+
             if label == 0:
 
-                x1.append(self.data[0][index][0])
-                y1.append(self.data[0][index][1])
+                x1.append(data[0][index][0])
+                y1.append(data[0][index][1])
 
             elif label == 1:
-                x2.append(self.data[0][index][0])
-                y2.append(self.data[0][index][1])
-
+                x2.append(data[0][index][0])
+                y2.append(data[0][index][1])
 
         plt.plot(x1, y1, 'ro')
         plt.plot(x2, y2, 'go')
 
-        #plt.axis([-10, 10, -10, 10])
+
+    def plot_self(self, new_figure = False):
+        if new_figure:
+            plt.figure()
+
+        
+        p = (self.support_vectors_dictionary[0][0][:2] + self.support_vectors_dictionary[1][0][:2]) / 2
+        
+        n = self.hyperplane_normal
+        h = [0,0]
+        h[1] = n[0]
+        h[0] = -n[1]
+
+        self.plot_dir(h, p)
+
+        self.plot_data(self.data)
 
 
 
@@ -411,21 +445,30 @@ class HPF:
 
         right_normal = right_clf.coef_[0] / np.linalg.norm(right_clf.coef_[0])
 
+        left_normal = left_clf.coef_[0] / np.linalg.norm(left_clf.coef_[0])
+        left_normal = [left_normal[1], -left_normal[0]]
+        
+        self.plot_dir(right_normal, intersection_point, False, False)
+        self.plot_dir(left_normal, intersection_point, False, False, 'g')
+        self.plot_data(self.data)
+
         left_or_right = -1
 
         #Split data based on the normal
         rotate_set = []
         non_rotate_set = []
 
-        c = -(np.dot(right_normal, intersection_point))
+        right_normal = [right_normal[1], -right_normal[0]]
+
+        cp = -(np.dot(right_normal, intersection_point))
 
         for point in zip(self.data[0], self.data[1]):
-            if np.dot(point[0][:2], right_normal) + c > 0.0:
+            if np.dot(point[0][:2], right_normal) + cp < 0.0:
                 rotate_set.append(np.array(point))
             else:
                 non_rotate_set.append(np.array(point))
 
-        if c > 0.0:
+        if c < 0.0:
             rotate_set = [(self.rotate_left(point[0], angle, intersection_point, right_normal), point[1]) for point in rotate_set]
             left_or_right = 1
 
@@ -439,7 +482,11 @@ class HPF:
         self.data[0] = [p[0] for p in tup]
         self.data[1] = [p[1] for p in tup]
 
+        #self.plot_dir(right_normal, intersection_point, False, True)
+        self.plot_dir(left_normal, intersection_point, True, True)
+        self.plot_data(self.data)
 
+        plt.show()
         return left_or_right, intersection_point
 
 
@@ -448,7 +495,7 @@ class HPF:
         right_clf = svm.SVC(kernel='linear', C=1e10)
         left_clf = svm.SVC(kernel='linear', C=1e10)
 
-
+       
         # Splitting point
         self.primary_support_vector = self.get_splitting_point()
 
@@ -501,67 +548,14 @@ class HPF:
             left_set, right_set = self.split_data(points, [None] * len(points), primary_support_vector, hyperplane_normal)
 
 
-            points, y, __, ___ = self.rotate_set(left_clf, left_set, right_clf, right_set, primary_support_vector, hyperplane_normal)
+            points, y, __, ___ = self.rotate_set(left_clf, right_clf, data, primary_support_vector, hyperplane_normal)
 
             points = self.dim_red.classify_project_up(points, idx)
 
         
         return self.clf.predict(points)
 
-    def plot_dir(self, dir, point, new_figure_ = False):
-        if new_figure_:
-            plt.figure()
-
-        h = dir
-
-        w = [0,0]
-        w[0] = -h[1]
-        w[1] = h[0]
-
-        p = point
-
-        plot_size = 10
-
-        hx1 = p[0] + h[0] * plot_size
-        hy1 = p[1] + h[1] * plot_size
-
-        hx2 = p[0] + h[0] * -plot_size
-        hy2 = p[1] + h[1] * -plot_size
-
-        plt.plot([hx1,hx2],[hy1, hy2], 'g')
-
-        hx1 = p[0] + w[0] * plot_size
-        hy1 = p[1] + w[1] * plot_size
-
-        hx2 = p[0] + w[0] * -plot_size
-        hy2 = p[1] + w[1] * -plot_size
-
-        plt.plot([hx1,hx2],[hy1, hy2], 'b')
-
-    def plot_data(self, data, new_figure_ = False):
-
-        if new_figure_:
-            plt.figure()
-
-        x1 = []
-        y1 = []
-        x2 = []
-        y2 = []
-
-        for index, label in enumerate(data[1]):
-
-            if label == 0:
-
-                x1.append(data[0][index][0])
-                y1.append(data[0][index][1])
-
-            elif label == 1:
-                x2.append(data[0][index][0])
-                y2.append(data[0][index][1])
-
-        plt.plot(x1, y1, 'ro')
-        plt.plot(x2, y2, 'go')
-
+    
     def fit(self, data_points, data_labels):
         self.data = [data_points, data_labels]
 
@@ -589,8 +583,6 @@ class HPF:
         while(len(self.clf.support_vectors_) > 2 and val is 0):
 
             self.data[0], self.support_vectors_dictionary, self.hyperplane_normal = self.dim_red.project_down(self.data[0], self.support_vectors_dictionary, self.hyperplane_normal)
-
-            #print("DIM: ", self.current_fold, "\n", self.data[0], "\n")
 
             val = self.fold()
 
