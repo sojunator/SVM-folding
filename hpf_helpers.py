@@ -4,7 +4,7 @@ import matplotlib.pyplot as plt
 from os import listdir
 from os.path import isfile, join
 import pandas as pd
-
+from sklearn import svm
 
 
 def plot_hpf(hpf, ax, XX, YY, colour='k'):
@@ -94,3 +94,30 @@ def read_data_from_folder(folder_name):
 
 
     return datasets
+
+
+def clean_data(training_data, c=50):
+    """
+    training data with labels
+    return linearly separable data
+    """
+
+    clf = svm.SVC(kernel='linear', C=c)
+
+    clf.fit(training_data[0], training_data[1])
+
+    new_labels = clf.predict(training_data[0])
+
+
+    indexes = []
+    for idx, label in enumerate(new_labels):
+        if not (label == training_data[1][idx]).all():
+            indexes.append(idx)
+            print("oneklingen ar inte {} detsamma som {}".format(label, training_data[1][idx]))
+
+
+    for index in indexes:
+        training_data[0] = np.delete(training_data[0], index)
+        training_data[1] = np.delete(training_data[1], index)
+    
+    return training_data
