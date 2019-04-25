@@ -30,7 +30,7 @@ X_train, Y_train = data_set["bmi.csv"]
 #X_train, Y_train = make_blobs(n_samples=40,n_features=2,centers=2,random_state=6)
 
 
-X_train, X_test, Y_train, Y_test = train_test_split(X_train, Y_train, test_size=0.75, random_state=42)
+X_train, X_test, Y_train, Y_test = train_test_split(X_train, Y_train, test_size=0.2, random_state=42)
 
 hpf = HPF(max_nr_of_folds=100, verbose=False)
 

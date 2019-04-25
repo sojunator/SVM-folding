@@ -347,7 +347,7 @@ class HPF:
 
         
 
-        v = point[:2] - intersection_point
+        v = intersection_point - point[:2]
         v = v / np.linalg.norm(v)
 
         r_angle = np.dot(v, normal)
