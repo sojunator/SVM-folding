@@ -357,7 +357,7 @@ class HPF:
             print(r_angle, "    ", np.arccos(r_angle)* 180 / 3.1415)
             print("RUBBERBAND")
 
-        return angle# np.fmax(r_angle, angle)
+        return np.fmax(r_angle, angle)
             
 
     def rotate_left(self, point, angle, intersection_point, left_normal):
@@ -387,29 +387,6 @@ class HPF:
         return point
 
 
-    def rotate_point_2D(self, point, angle, primary_support, intersection_point, clf):
-        """
-        Returns the point, with it's xy-coordinates rotated accordingly to rubberband folding
-
-        Does currently not apply rubberband folding, rotates points around intersection
-        """
-        n = clf.coef_[0] 
-        n = n / np.linalg.norm(n)
-        v = intersection_point + n
-
-        cosang = np.dot(v, intersection_point - point[:2])
-        angle2 = np.arccos(cosang)
-
-
-        rotation_matrix = self.get_rotation(min(angle, angle))
-
-        #point = np.matmul(point.T - intersection_point, rotation_matrix) + intersection_point
-
-        x,y = self.rot_func(point[:2], intersection_point, rotation_matrix)
-        point[0] = x
-        point[1] = y
-
-        return point
 
     
     def get_distance_from_line_to_point(self, w, point, point_on_line):
@@ -480,7 +457,7 @@ class HPF:
 
 
 
-    def rotate_set(self, left_clf, right_clf, primary_support_vector = None, hyperplane_normal = None):
+    def rotate_set(self, left_clf, right_clf, primary_support_vector = None, hyperplane_normal = None, points = None):
         """
         Performs rotation on the set with biggest margin
         Currently rotates around the intersection point
@@ -489,9 +466,11 @@ class HPF:
 
         returns a merged and rotated set, touple (X, y)
         """
-        if primary_support_vector is None and hyperplane_normal is None:
+        if primary_support_vector is None and hyperplane_normal is None and points is None:
             hyperplane_normal = self.hyperplane_normal
             primary_support_vector = self.primary_support_vector
+            points = self.data
+
 
         # Get margins
         right_margin = self.get_margin(right_clf)
@@ -513,12 +492,17 @@ class HPF:
 
         right_normal = right_clf.coef_[0] / np.linalg.norm(right_clf.coef_[0])
 
+
+
         left_normal = left_clf.coef_[0] / np.linalg.norm(left_clf.coef_[0])
+
+        #self.plot_dir(left_normal, intersection_point, False, False)
+
         left_normal = [left_normal[1], -left_normal[0]]
         
-        self.plot_dir(right_normal, intersection_point, False, False)
-        self.plot_dir(left_normal, intersection_point, False, False, 'g')
-        self.plot_data(self.data)
+        
+       # self.plot_dir(left_normal, intersection_point, False, False, 'g')
+       # self.plot_data(self.data)
 
         left_or_right = -1
 
@@ -530,7 +514,7 @@ class HPF:
 
         cp = -(np.dot(right_normal, intersection_point))
 
-        for point in zip(self.data[0], self.data[1]):
+        for point in zip(points[0], points[1]):
             if np.dot(point[0][:2], right_normal) + cp < 0.0:
                 rotate_set.append(np.array(point))
             else:
@@ -551,10 +535,10 @@ class HPF:
         self.data[1] = [p[1] for p in tup]
 
         #self.plot_dir(right_normal, intersection_point, False, True)
-        self.plot_dir(left_normal, intersection_point, True, True)
-        self.plot_data(self.data)
+       # self.plot_dir(left_normal, intersection_point, True, True)
+       # self.plot_data(self.data)
 
-        plt.show()
+        #plt.show()
         return left_or_right, intersection_point
 
 
@@ -613,10 +597,10 @@ class HPF:
             left_clf = rotation[3][1]
             hyperplane_normal = rotation[5]
 
-            left_set, right_set = self.split_data(points, [None] * len(points), primary_support_vector, hyperplane_normal)
+            #left_set, right_set = self.split_data(points, [None] * len(points), primary_support_vector, hyperplane_normal)
 
 
-            points, y, __, ___ = self.rotate_set(left_clf, right_clf, data, primary_support_vector, hyperplane_normal)
+            self.rotate_set(left_clf, right_clf, primary_support_vector, hyperplane_normal, (points, [None] * len(points)))
 
             points = self.dim_red.classify_project_up(points, idx)
 
