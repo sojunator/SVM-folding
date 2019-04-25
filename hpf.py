@@ -411,6 +411,74 @@ class HPF:
 
         return point
 
+    
+    def get_distance_from_line_to_point(self, w, point, point_on_line):
+        v = point - point_on_line
+        proj = vector_projection(v, w)
+        distance = np.linalg.norm(v - proj)
+
+        return distance  
+
+    def clean_set(self):
+        """
+        Returns a cleaned dataset, turns soft into hard.
+
+        Function does not calculate margin as get_margin does, something could be
+        wrong with the assumption that len w is the margin. Instead it calculates
+        the margin by calculating the distance from the decision_function to
+        a support vector.
+        """
+
+        w = self.clf.coef_[0]
+        w = np.array(w[1], w[0]) # place the vector in the direction of the line
+
+        # Orginal support vectors
+        point_on_line = (self.support_vectors_dictionary[0][0] + self.support_vectors_dictionary[1][0]) / 2
+
+        margin = get_distance_from_line_to_point(w, self.support_vectors_dictionary[0][0], point_on_line)
+
+        for point in self.data_points:
+            distance = get_distance_from_line_to_point(w, point, point_on_line)
+
+            if (distance < margin):
+                index = np.where(self.data_points==point)
+
+                self.data_points = np.delete(self.data_points, index, 0)
+
+
+
+    def clean_set(self):
+        """
+        Returns a cleaned dataset, turns soft into hard.
+
+        Function does not calculate margin as get_margin does, something could be
+        wrong with the assumption that len w is the margin. Instead it calculates
+        the margin by calculating the distance from the decision_function to
+        a support vector.
+        """
+
+        w = self.clf.coef_[0]
+        w = np.array(w[1], w[0]) # place the vector in the direction of the line
+
+        # Orginal support vectors
+        support_dict = group_support_vectors(clf.support_vectors_, clf)
+
+        point_on_line = (support_dict[0][0] + support_dict[1][0]) / 2
+
+        margin = get_distance_from_line_to_point(w, support_dict[0][0], point_on_line)
+
+        for point in self.data_points:
+            distance = get_distance_from_line_to_point(w, point, point_on_line)
+
+            if (distance < margin):
+                index = np.where(self.data_points==point)
+
+                self.data_points = np.delete(self.data_points, index, 0)
+
+                self.data_labels = np.delete(self.data_labels, index)
+
+
+
 
     def rotate_set(self, left_clf, right_clf, primary_support_vector = None, hyperplane_normal = None):
         """
