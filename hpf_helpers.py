@@ -1,6 +1,7 @@
 from hpf import HPF
 import numpy as np
 import matplotlib.pyplot as plt
+from mpl_toolkits.mplot3d import Axes3D
 from os import listdir
 from os.path import isfile, join
 import pandas as pd
@@ -95,6 +96,65 @@ def read_data_from_folder(folder_name):
 
     return datasets
 
+def plot_3d(data):
+    fig = plt.figure()
+    ax = fig.add_subplot(111, projection='3d')
+
+    n = 100
+
+    x1 = []
+    y1 = []
+    z1 = []
+    x2 = []
+    y2 = []
+    z2 = []
+
+    for index, label in enumerate(data[1]):
+        #print(index)
+        if label == 0:
+
+            x1.append(data[0][index][0])
+            y1.append(data[0][index][1])
+            z1.append(data[0][index][2])
+
+        elif label == 1:
+            x2.append(data[0][index][0])
+            y2.append(data[0][index][1])
+            z2.append(data[0][index][2])
+
+    ax.scatter(x1, y1, z1, c='r', marker='o')
+    ax.scatter(x2, y2, z2, c='b', marker='^')
+
+
+    ax.set_xlabel('X Label')
+    ax.set_ylabel('Y Label')
+    ax.set_zlabel('Z Label')
+
+    
+
+def plot_clf(clf, data):
+
+
+    x1 = []
+    y1 = []
+    x2 = []
+    y2 = []
+
+    for index, label in enumerate(data[1]):
+        #print(index)
+        if label == 0:
+
+            x1.append(data[0][index][0])
+            y1.append(data[0][index][1])
+
+        elif label == 1:
+            x2.append(data[0][index][0])
+            y2.append(data[0][index][1])
+
+
+    plt.plot(x1, y1, 'ro')
+    plt.plot(x2, y2, 'go')
+    plt.show()
 
 def clean_data(training_data, c=50):
     """
@@ -113,11 +173,14 @@ def clean_data(training_data, c=50):
     for idx, label in enumerate(new_labels):
         if not (label == training_data[1][idx]).all():
             indexes.append(idx)
-            print("oneklingen ar inte {} detsamma som {}".format(label, training_data[1][idx]))
 
 
-    for index in indexes:
-        training_data[0] = np.delete(training_data[0], index)
-        training_data[1] = np.delete(training_data[1], index)
+    plot_3d(training_data)
+    
+    training_data[0] = np.delete(training_data[0], indexes, 0)
+    training_data[1] = np.delete(training_data[1], indexes, 0)
+
+    plot_3d(training_data)
+    plt.show()
     
     return training_data
