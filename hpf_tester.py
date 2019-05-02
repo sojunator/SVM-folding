@@ -61,7 +61,13 @@ def evaluate(model_ans, real_ans, write_to_file = False, print_ans = True):
         print("False positives:", false_positives)
         print("False negatives:", false_negatives)
 
-    return true_positives, true_negatives, false_positives, false_negatives 
+    #true_positives, true_negatives, false_positives, false_negatives 
+    
+    accuracy = (true_positives + true_negatives) / len(real_ans)
+    sensitivity = true_positives / (true_positives + false_negatives)
+    specificity = true_negatives / (true_negatives + false_positives)
+
+    return accuracy, sensitivity, specificity
 
 
 #Exception when divide when zero
@@ -84,11 +90,20 @@ hpf = HPF(max_nr_of_folds=100, verbose=False)
 
 
 #test algorithms using k-fold, k = 10
-sk_kf = KFold(n_splits=10, shuffle=True)
+
+K = 10
+
+sk_kf = KFold(n_splits=K, shuffle=True)
 
 print("NR of splits : ", sk_kf.get_n_splits())
 
+avg_accuracy_hpf = 0
+avg_sensitivety_hpf = 0
+avg_specificity_hpf = 0
 
+avg_accuracy_svm = 0
+avg_sensitivety_svm = 0
+avg_specificity_svm = 0
 
 for train_index, test_index in sk_kf.split(data_points): # runs k-tests
     #print("TRAIN:", train_index, "TEST:", test_index)
@@ -104,5 +119,20 @@ for train_index, test_index in sk_kf.split(data_points): # runs k-tests
     svm_ans = hpf.classify(X_test, False) # state of the art svm
 
     #compare with expected labels
-    evaluate(improved_hpf_ans, Y_test) 
-    evaluate(svm_ans, Y_test)
+    acc, sen, spe = evaluate(improved_hpf_ans, Y_test) 
+    avg_accuracy_hpf += acc
+    avg_sensitivety_hpf += sen
+    avg_specificity_hpf += spe
+    
+    acc, sen, spe = evaluate(svm_ans, Y_test)
+    avg_accuracy_svm += acc
+    avg_sensitivety_svm += sen
+    avg_specificity_svm += spe
+
+print("Accuracy HPF :", avg_accuracy_hpf / K)
+print("Sensitivety HPF :", avg_sensitivety_hpf / K)
+print("Specificity HPF :", avg_specificity_hpf / K)
+
+print("Accuracy SVM :", avg_accuracy_svm / K)
+print("Sensitivety SVM :", avg_sensitivety_svm / K)
+print("Specificity SVM :", avg_specificity_svm / K)

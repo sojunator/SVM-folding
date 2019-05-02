@@ -353,16 +353,17 @@ class HPF:
         r_angle = np.dot(v, normal)
         
         if np.arccos(r_angle)* 180 / 3.1415 > 90:
-            print("ASDFKAHSDGFKAHSGDFKJAHSGDFKJHAGSDKJFHAGSDKJFXHAGSDKJFASDLKJF")
+            print("ERROR GET RUBBER BAND ANGLE")
 
-        return np.fmax(r_angle, angle)
-        
+        if self.use_rubber_band:
+            return np.fmax(r_angle, angle)
+        else:
+            return angle
             
 
-    def rotate_left(self, point, angle, intersection_point, left_normal, use_rubber_band):
+    def rotate_left(self, point, angle, intersection_point, left_normal):
 
-        if use_rubber_band:
-            angle = self.get_rubber_band_angle(point, angle, intersection_point, left_normal)
+        angle = self.get_rubber_band_angle(point, angle, intersection_point, left_normal)
 
         rotation_matrix = self.get_counter_rotation(angle)
 
@@ -373,10 +374,9 @@ class HPF:
 
         return point
 
-    def rotate_right(self, point, angle, intersection_point, left_normal, use_rubber_band):
+    def rotate_right(self, point, angle, intersection_point, left_normal):
 
-        if use_rubber_band:
-            angle = self.get_rubber_band_angle(point, angle, intersection_point, left_normal)
+        angle = self.get_rubber_band_angle(point, angle, intersection_point, left_normal)
 
         rotation_matrix = self.get_rotation(angle)
 
@@ -389,7 +389,7 @@ class HPF:
 
 
 
-    def rotate_set(self, left_clf, right_clf, primary_support_vector = None, hyperplane_normal = None, points = None, use_rubber_band = True):
+    def rotate_set(self, left_clf, right_clf, primary_support_vector = None, hyperplane_normal = None, points = None):
         """
         Performs rotation on the set with biggest margin
         Currently rotates around the intersection point
@@ -419,17 +419,28 @@ class HPF:
         rotate_set = []
         non_rotate_set = []
 
-        
-        right_plane = right_clf.coef_[0] / np.linalg.norm(right_clf.coef_[0])#plane
-        right_normal = [right_plane[1], -right_plane[0]]
+        if self.use_old_hpf:
 
-        cp = -(np.dot(right_normal, intersection_point))
+            cp = -(np.dot(hyperplane_normal, primary_support_vector))
 
-        for point in zip(points[0], points[1]):
-            if np.dot(point[0][:2], right_normal) + cp < 0.0:
-                rotate_set.append(np.array(point))
-            else:
-                non_rotate_set.append(np.array(point))
+            for point in zip(points[0], points[1]):
+                if np.dot(point[0][:2], right_normal) + cp < 0.0:
+                    rotate_set.append(np.array(point))
+                else:
+                    non_rotate_set.append(np.array(point))
+        else:
+            right_plane = right_clf.coef_[0] / np.linalg.norm(right_clf.coef_[0])#plane
+            right_normal = [right_plane[1], -right_plane[0]]
+
+            cp = -(np.dot(right_normal, intersection_point))
+
+            for point in zip(points[0], points[1]):
+                if np.dot(point[0][:2], right_normal) + cp < 0.0:
+                    rotate_set.append(np.array(point))
+                else:
+                    non_rotate_set.append(np.array(point))
+
+
 
 
         #rotate clockwise or counter clockwise
@@ -442,11 +453,11 @@ class HPF:
         c_or_cc = np.dot(d, n)#if the cosine of the angle is less than 0, rotate left.
 
         if c_or_cc < 0.0:
-            rotate_set = [(self.rotate_left(point[0], angle, intersection_point, right_normal, use_rubber_band), point[1]) for point in rotate_set]
+            rotate_set = [(self.rotate_left(point[0], angle, intersection_point, right_normal), point[1]) for point in rotate_set]
             left_or_right = 1
 
         else:
-            rotate_set = [(self.rotate_right(point[0], angle, intersection_point, right_normal, use_rubber_band), point[1]) for point in rotate_set]
+            rotate_set = [(self.rotate_right(point[0], angle, intersection_point, right_normal), point[1]) for point in rotate_set]
             left_or_right = 0
 
 
@@ -522,7 +533,7 @@ class HPF:
             #left_set, right_set = self.split_data(points, [None] * len(points), primary_support_vector, hyperplane_normal)
 
 
-            self.rotate_set(left_clf, right_clf, primary_support_vector, hyperplane_normal, (points, [None] * len(points)), True)
+            self.rotate_set(left_clf, right_clf, primary_support_vector, hyperplane_normal, (points, [None] * len(points)))
 
             points = self.dim_red.classify_project_up(points, idx)
 
@@ -530,9 +541,11 @@ class HPF:
         return self.clf.predict(points)
 
     
-    def fit(self, data_points, data_labels):
+    def fit(self, data_points, data_labels, old_hpf = False):
         self.data = [data_points, data_labels]
-        self.fitting = True
+        self.use_rubber_band = True
+        self.use_old_hpf = old_hpf
+
         self.old_data = data_points
 
         # Builds clfs
