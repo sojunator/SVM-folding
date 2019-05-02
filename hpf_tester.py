@@ -37,6 +37,33 @@ def plot_clf(data):
     plt.plot(x2, y2, 'go')
     plt.show()
 
+def evaluate(model_ans, real_ans, write_to_file = False, print_ans = True):
+    true_positives = 0
+    true_negatives = 0
+    false_positives = 0
+    false_negatives = 0
+
+    for compare in zip(model_ans, real_ans):
+        if compare[0] == compare[1]: #true
+            if compare[0] == 1:#positive
+                true_positives += 1
+            elif compare[0] == 0:#negative
+                true_negatives += 1
+        elif (compare[0] != compare[1]):#false
+            if compare[0] == 1:#positive
+                false_positives += 1
+            elif compare[0] == 0:#negative
+                false_negatives += 1
+
+    if print_ans:
+        print("True positives:", true_positives)
+        print("True negatives:", true_negatives)
+        print("False positives:", false_positives)
+        print("False negatives:", false_negatives)
+
+    return true_positives, true_negatives, false_positives, false_negatives 
+
+
 #Exception when divide when zero
 np.seterr(all='warn')
 warnings.filterwarnings('error')
@@ -67,8 +94,11 @@ hpf = HPF(max_nr_of_folds=100, verbose=False)
 
 hpf.fit(X_train, Y_train)
 
-
-print("\nHPF GIVEN ANSWER: ", hpf.classify(X_test))
+hpf_ans = hpf.classify(X_test)
+svm_ans = hpf.classify(X_test, False)
 
 #print("\nNo rotation GIVEN ANSWER: ", hpf.classify(X_test, False))
-print("\nEXPECTED  ANSWER: ", Y_test)
+
+
+evaluate(hpf_ans, Y_train)
+evaluate(svm_ans, Y_train)
