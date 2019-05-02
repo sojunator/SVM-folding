@@ -13,7 +13,7 @@ import pdb
 
 from dimred import DR
 
-C_param = 8000
+C_param = 1e10
 
 def vec_equal(vec1, vec2):
 
@@ -361,9 +361,9 @@ class HPF:
             return angle
             
 
-    def rotate_left(self, point, angle, intersection_point, left_normal):
+    def rotate_left(self, point, angle, intersection_point, right_normal):
 
-        angle = self.get_rubber_band_angle(point, angle, intersection_point, left_normal)
+        angle = self.get_rubber_band_angle(point, angle, intersection_point, right_normal)
 
         rotation_matrix = self.get_counter_rotation(angle)
 
@@ -374,9 +374,9 @@ class HPF:
 
         return point
 
-    def rotate_right(self, point, angle, intersection_point, left_normal):
+    def rotate_right(self, point, angle, intersection_point, right_normal):
 
-        angle = self.get_rubber_band_angle(point, angle, intersection_point, left_normal)
+        angle = self.get_rubber_band_angle(point, angle, intersection_point, right_normal)
 
         rotation_matrix = self.get_rotation(angle)
 
@@ -399,8 +399,8 @@ class HPF:
         returns a merged and rotated set, touple (X, y)
         """
         if primary_support_vector is None and hyperplane_normal is None and points is None:
-            hyperplane_normal = self.hyperplane_normal
-            primary_support_vector = self.primary_support_vector
+            hyperplane_normal = self.hyperplane_normal[:2]
+            primary_support_vector = self.primary_support_vector[:2]
             points = self.data
 
 
@@ -627,13 +627,15 @@ class HPF:
 
 
 
+        return self.new_margin, self.old_margin
 
-        stopper = 0
 
-
-    def __init__(self,rot_func = lambda p, i, r : np.matmul(p.T - i, r) + i, max_nr_of_folds = 1, verbose = False):
+    def __init__(self,rot_func = lambda p, i, r : np.matmul(p.T - i, r) + i, max_nr_of_folds = 1, verbose = False, use_old_hpf = False, use_rubber_band = True):
         self.verbose = verbose
         self.max_nr_of_folds = max_nr_of_folds
+        self.use_rubber_band = use_rubber_band
+        self.use_old_hpf = use_old_hpf
+
         self.clf = svm.SVC(kernel='linear', C=C_param, cache_size = 7000)
         self.old_clf = svm.SVC(kernel='linear', C=C_param, cache_size = 7000)
         self.rotation_data = []
