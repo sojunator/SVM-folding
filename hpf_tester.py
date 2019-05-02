@@ -9,11 +9,11 @@ import json
 import warnings
 import pdb
 import os
-from hpf_helpers import plot, read_data_from_folder, clean_data
+from hpf_helpers import plot, read_data_from_folder, clean_data, plot_3d
 from hpf import HPF
 
 
-def plot_clf(clf, data):
+def plot_clf(data):
 
 
     x1 = []
@@ -46,13 +46,13 @@ data_set = read_data_from_folder("datasets")
 X_test = np.array([[-3,-4,0,0,0,0,0]])
 Y_test = np.array([1])
 
+X_train, Y_train = data_set["bmi.csv"]
+
 
 
 #X_train, Y_train = data_set["hpf_test3D.csv"]
 X_train, Y_train = data_set["dimred.csv"]
-X_train, Y_train = data_set["bmi.csv"]
-
-X_train, Y_train = data_set["haberman.csv"]
+X_train, Y_train = data_set["liver.csv"]
 
 #X_train, Y_train = make_blobs(n_samples=40,n_features=2,centers=2,random_state=6)
 
@@ -61,7 +61,7 @@ X_train, X_test, Y_train, Y_test = train_test_split(X_train, Y_train, test_size=
 
 
 print(len(Y_train))
-X_train, Y_train = clean_data([X_train, Y_train], 0.0009)
+X_train, Y_train = clean_data([X_train, Y_train], 100)
 print(len(Y_train))
 hpf = HPF(max_nr_of_folds=100, verbose=False)
 

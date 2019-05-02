@@ -166,6 +166,7 @@ def clean_data(training_data, c=50):
 
     clf.fit(training_data[0], training_data[1])
 
+    print("fit done")
     new_labels = clf.predict(training_data[0])
 
 
@@ -175,12 +176,12 @@ def clean_data(training_data, c=50):
             indexes.append(idx)
 
 
-    plot_3d(training_data)
+    #plot_3d(training_data)
     
     training_data[0] = np.delete(training_data[0], indexes, 0)
     training_data[1] = np.delete(training_data[1], indexes, 0)
 
-    plot_3d(training_data)
-    plt.show()
+    #plot_3d(training_data)
+    #plt.show()
     
     return training_data
