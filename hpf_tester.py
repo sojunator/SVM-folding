@@ -11,7 +11,7 @@ import pdb
 import os
 from hpf_helpers import plot, read_data_from_folder, clean_data, plot_3d
 from hpf import HPF
-
+from old_hpf import old_HPF
 
 def plot_clf(data):
 
@@ -87,7 +87,7 @@ data_points, data_labels = data_set["liver.csv"]
 
 
 hpf = HPF(max_nr_of_folds=100, verbose=False) 
-lasse_hpf = HPF(max_nr_of_folds=100, verbose=False, use_rubber_band=False, use_old_hpf=True) #classifier that use old hpfimplementation without rubberband folding
+old_hpf = old_HPF() #classifier that use old hpfimplementation without rubberband folding
 
 
 #test algorithms using k-fold
@@ -95,9 +95,9 @@ K = 5
 sk_kf = KFold(n_splits=K, shuffle=True)
 
 #declare metrics
-avg_accuracy_lasse_hpf = 0
-avg_sensitivety_lasse_hpf = 0
-avg_specificity_lasse_hpf = 0
+avg_accuracy_old_hpf = 0
+avg_sensitivety_old_hpf = 0
+avg_specificity_old_hpf = 0
 
 avg_accuracy_hpf = 0
 avg_sensitivety_hpf = 0
@@ -109,8 +109,8 @@ avg_specificity_svm = 0
 
 new_margin = 0
 old_margin = 0
-lasse_new_margin = 0
-lasse_old_margin = 0
+old_new_margin = 0
+old_old_margin = 0
 index = 0
 for train_index, test_index in sk_kf.split(data_points): # runs k-tests
     
@@ -122,19 +122,19 @@ for train_index, test_index in sk_kf.split(data_points): # runs k-tests
     X_train, Y_train = clean_data([X_train, Y_train], 50) #Clean the training data, but not the test data
 
     print("running HPF")
-    new_margin, old_margin = hpf.fit(X_train, Y_train) #train
-    print("running lasse")
-    lasse_new_margin, lasse_old_margin = lasse_hpf.fit(X_train, Y_train) #train
+    old_margin, new_margin = hpf.fit(X_train, Y_train) #train
+    print("running old")
+    old_old_margin, old_new_margin = old_hpf.fit(X_train, Y_train) #train
 
-    lasse_hpf_ans = lasse_hpf.classify(X_test) #old hpf
+    old_hpf_ans = old_hpf.classify(X_test) #old hpf
     improved_hpf_ans = hpf.classify(X_test) #new hpf
     svm_ans = hpf.classify(X_test, False) # state of the art svm
 
     #compare with expected labels
-    acc, sen, spe = evaluate(lasse_hpf_ans, Y_test) 
-    avg_accuracy_lasse_hpf += acc
-    avg_sensitivety_lasse_hpf += sen
-    avg_specificity_lasse_hpf += spe
+    acc, sen, spe = evaluate(old_hpf_ans, Y_test) 
+    avg_accuracy_old_hpf += acc
+    avg_sensitivety_old_hpf += sen
+    avg_specificity_old_hpf += spe
 
     acc, sen, spe = evaluate(improved_hpf_ans, Y_test) 
     avg_accuracy_hpf += acc
@@ -147,17 +147,17 @@ for train_index, test_index in sk_kf.split(data_points): # runs k-tests
     avg_specificity_svm += spe
 
 
-print("\n\nOld Lasse Margin: ", lasse_old_margin)
-print("New Lasse Margin: ", lasse_new_margin)
-print("Lasse Margin Change: ", lasse_new_margin - lasse_old_margin)
+print("\n\nOld old Margin: ", old_old_margin)
+print("New old Margin: ", old_new_margin)
+print("old Margin Change: ", old_new_margin - old_old_margin)
 
 print("\nOld Margin: ", old_margin)
 print("New Margin: ", new_margin)
 print("Margin Change: ", new_margin - old_margin)
 
-print("\n\nAccuracy Lasse :", avg_accuracy_lasse_hpf / K)
-print("Sensitivety Lasse :", avg_sensitivety_lasse_hpf / K)
-print("Specificity :", avg_specificity_lasse_hpf / K)
+print("\n\nAccuracy old :", avg_accuracy_old_hpf / K)
+print("Sensitivety old :", avg_sensitivety_old_hpf / K)
+print("Specificity :", avg_specificity_old_hpf / K)
 
 print("\n\nAccuracy HPF :", avg_accuracy_hpf / K)
 print("Sensitivety HPF :", avg_sensitivety_hpf / K)

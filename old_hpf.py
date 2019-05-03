@@ -42,7 +42,7 @@ def plot_clf(clf, data):
     plt.plot(x1, y1, 'ro')
     plt.plot(x2, y2, 'go')
 
-class HPF:
+class old_HPF:
     def plot_self(self, new_figure = False):
         if new_figure:
             plt.figure()
@@ -476,7 +476,7 @@ class HPF:
 
             points = self.dim_red.classify_project_up(points, idx)
 
-            print("CLASSIFY PROJED UP : ", idx, "\n", points, "\n")
+           # print("CLASSIFY PROJED UP : ", idx, "\n", points, "\n")
 
         
         return self.clf.predict(points)
@@ -563,6 +563,7 @@ class HPF:
 
             self.data[0], self.support_vectors_dictionary, self.hyperplane_normal = self.dim_red.project_down(self.data[0], self.support_vectors_dictionary, self.hyperplane_normal)
 
+            #print("DIM: ", self.current_fold, "\n", self.data[0], "\n")
 
             val = self.fold()
 
@@ -576,7 +577,7 @@ class HPF:
             self.support_vectors_dictionary = self.group_support_vectors(self.clf) #regroup
             self.hyperplane_normal = self.get_hyperplane_normal()
 
-            print("PROJECTED UP DIM: ", self.current_fold, "\n", self.data[0], "LABEL :", self.data[1], "\n")
+            #print("PROJECTED UP DIM: ", self.current_fold, "\n", self.data[0], "LABEL :", self.data[1], "\n")
 
             self.new_margin = self.get_margin(self.clf)
             margins.append(math.fabs(self.new_margin - previous_margin))
@@ -590,7 +591,7 @@ class HPF:
                 margins.clear()
 
 
-        print("nr of support {}".format(len(self.clf.support_vectors_)))
+        #print("nr of support {}".format(len(self.clf.support_vectors_)))
 
 
         #self.clf.fit(self.data_points, self.data_labels)
@@ -620,7 +621,7 @@ class HPF:
 
 
 
-        stopper = 0
+        return self.old_margin, self.new_margin
 
 
     def __init__(self,rot_func = lambda p, i, r : np.matmul(p.T - i, r) + i, max_nr_of_folds = 1, verbose = False):

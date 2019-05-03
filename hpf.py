@@ -13,7 +13,7 @@ import pdb
 
 from dimred import DR
 
-C_param = 1e5
+C_param = 8000
 
 def vec_equal(vec1, vec2):
 
@@ -345,9 +345,7 @@ class HPF:
 
     def get_rubber_band_angle(self, point, angle, intersection_point, normal):
 
-        if not self.use_rubber_band:
-            print("not using rubber band angle")
-            return angle
+        
 
         v = intersection_point - point[:2]
         v = v / np.linalg.norm(v)
@@ -355,15 +353,16 @@ class HPF:
         r_angle = np.dot(v, normal)
         
         if np.arccos(r_angle)* 180 / 3.1415 > 90:
-            print("ERROR GET RUBBER BAND ANGLE")
+            print("ASDFKAHSDGFKAHSGDFKJAHSGDFKJHAGSDKJFHAGSDKJFXHAGSDKJFASDLKJF")
 
         return np.fmax(r_angle, angle)
         
             
 
-    def rotate_left(self, point, angle, intersection_point, right_normal):
+    def rotate_left(self, point, angle, intersection_point, left_normal, use_rubber_band):
 
-        angle = self.get_rubber_band_angle(point, angle, intersection_point, right_normal)
+        if use_rubber_band:
+            angle = self.get_rubber_band_angle(point, angle, intersection_point, left_normal)
 
         rotation_matrix = self.get_counter_rotation(angle)
 
@@ -374,9 +373,10 @@ class HPF:
 
         return point
 
-    def rotate_right(self, point, angle, intersection_point, right_normal):
+    def rotate_right(self, point, angle, intersection_point, left_normal, use_rubber_band):
 
-        angle = self.get_rubber_band_angle(point, angle, intersection_point, right_normal)
+        if use_rubber_band:
+            angle = self.get_rubber_band_angle(point, angle, intersection_point, left_normal)
 
         rotation_matrix = self.get_rotation(angle)
 
@@ -389,7 +389,7 @@ class HPF:
 
 
 
-    def rotate_set(self, left_clf, right_clf, left_set, right_set, primary_support_vector = None, hyperplane_normal = None, points = None):
+    def rotate_set(self, left_clf, right_clf, primary_support_vector = None, hyperplane_normal = None, points = None, use_rubber_band = True):
         """
         Performs rotation on the set with biggest margin
         Currently rotates around the intersection point
@@ -399,8 +399,8 @@ class HPF:
         returns a merged and rotated set, touple (X, y)
         """
         if primary_support_vector is None and hyperplane_normal is None and points is None:
-            hyperplane_normal = self.hyperplane_normal[:2]
-            primary_support_vector = self.primary_support_vector[:2]
+            hyperplane_normal = self.hyperplane_normal
+            primary_support_vector = self.primary_support_vector
             points = self.data
 
 
@@ -418,30 +418,18 @@ class HPF:
         #Split data based on the normal
         rotate_set = []
         non_rotate_set = []
-        right_normal = [0,0]
 
-        if self.use_old_hpf:
-            rotate_set = np.array(left_set[0], left_set[1])
-            non_rotate_set = np.array(right_set[0], right_set[1])
-           # plane = [-hyperplane_normal[1], hyperplane_normal[0]]
-           # for point in zip(points[0], points[1]):
-           #     if np.dot(point[0][:2], plane) < 0.0:
-           #         rotate_set.append(np.array(point))
-           #     else:
-           #         non_rotate_set.append(np.array(point))
-        else:
-            right_plane = right_clf.coef_[0] / np.linalg.norm(right_clf.coef_[0])#plane
-            right_normal = [right_plane[1], -right_plane[0]]
+        
+        right_plane = right_clf.coef_[0] / np.linalg.norm(right_clf.coef_[0])#plane
+        right_normal = [right_plane[1], -right_plane[0]]
 
-            cp = -(np.dot(right_normal, intersection_point))
+        cp = -(np.dot(right_normal, intersection_point))
 
-            for point in zip(points[0], points[1]):
-                if np.dot(point[0][:2], right_normal) + cp < 0.0:
-                    rotate_set.append(np.array(point))
-                else:
-                    non_rotate_set.append(np.array(point))
-
-
+        for point in zip(points[0], points[1]):
+            if np.dot(point[0][:2], right_normal) + cp < 0.0:
+                rotate_set.append(np.array(point))
+            else:
+                non_rotate_set.append(np.array(point))
 
 
         #rotate clockwise or counter clockwise
@@ -454,11 +442,11 @@ class HPF:
         c_or_cc = np.dot(d, n)#if the cosine of the angle is less than 0, rotate left.
 
         if c_or_cc < 0.0:
-            rotate_set = [(self.rotate_left(point[0], angle, intersection_point, right_normal), point[1]) for point in rotate_set]
+            rotate_set = [(self.rotate_left(point[0], angle, intersection_point, right_normal, use_rubber_band), point[1]) for point in rotate_set]
             left_or_right = 1
 
         else:
-            rotate_set = [(self.rotate_right(point[0], angle, intersection_point, right_normal), point[1]) for point in rotate_set]
+            rotate_set = [(self.rotate_right(point[0], angle, intersection_point, right_normal, use_rubber_band), point[1]) for point in rotate_set]
             left_or_right = 0
 
 
@@ -505,7 +493,7 @@ class HPF:
 
 
         # Rotate and merge data sets back into one
-        left_or_right, intersection_point = self.rotate_set(left_clf, right_clf, left_set, right_set)
+        left_or_right, intersection_point = self.rotate_set(left_clf, right_clf)
         self.rotation_data.append((intersection_point, self.primary_support_vector, left_or_right, (right_clf, left_clf), self.support_vectors_dictionary, np.array(self.hyperplane_normal)))
 
         return 0
@@ -513,9 +501,8 @@ class HPF:
     def classify(self, points, rotate=True):
         if (len(points) is 0):
             return []
-
         if not rotate:
-            return self.old_clf.predict(points) #use standard svm 
+            return self.old_clf.predict(points)
 
         # Correct dim is used to save last down projection
         # As we don't want if-statement checking for last iteration
@@ -535,7 +522,7 @@ class HPF:
             #left_set, right_set = self.split_data(points, [None] * len(points), primary_support_vector, hyperplane_normal)
 
 
-            self.rotate_set(left_clf, right_clf, primary_support_vector, hyperplane_normal, (points, [None] * len(points)))
+            self.rotate_set(left_clf, right_clf, primary_support_vector, hyperplane_normal, (points, [None] * len(points)), True)
 
             points = self.dim_red.classify_project_up(points, idx)
 
@@ -545,7 +532,7 @@ class HPF:
     
     def fit(self, data_points, data_labels):
         self.data = [data_points, data_labels]
-        
+        self.fitting = True
         self.old_data = data_points
 
         # Builds clfs
@@ -572,17 +559,17 @@ class HPF:
             print(self.current_fold)
 
             self.data[0], self.support_vectors_dictionary, self.hyperplane_normal = self.dim_red.project_down(self.data[0], self.support_vectors_dictionary, self.hyperplane_normal)
-            
+            print("dimred")
             val = self.fold()
-            
+            print("folded")
             self.current_fold += 1
 
             self.data[0] = self.dim_red.project_up(self.data[0])
-            
+            print("dimredup")
 
             #fit for next iteration or exit contidion of just two support vectors
             self.clf.fit(self.data[0], self.data[1])
-            
+            print("fit")
             self.support_vectors_dictionary = self.group_support_vectors(self.clf) #regroup
             self.hyperplane_normal = self.get_hyperplane_normal()
 
@@ -627,15 +614,13 @@ class HPF:
 
 
 
-        return self.new_margin, self.old_margin
+
+        return self.old_margin, self.new_margin
 
 
-    def __init__(self,rot_func = lambda p, i, r : np.matmul(p.T - i, r) + i, max_nr_of_folds = 1, verbose = False, use_old_hpf = False, use_rubber_band = True):
+    def __init__(self,rot_func = lambda p, i, r : np.matmul(p.T - i, r) + i, max_nr_of_folds = 1, verbose = False):
         self.verbose = verbose
         self.max_nr_of_folds = max_nr_of_folds
-        self.use_rubber_band = use_rubber_band
-        self.use_old_hpf = use_old_hpf
-
         self.clf = svm.SVC(kernel='linear', C=C_param, cache_size = 7000)
         self.old_clf = svm.SVC(kernel='linear', C=C_param, cache_size = 7000)
         self.rotation_data = []
