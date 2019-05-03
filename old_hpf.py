@@ -461,7 +461,7 @@ class old_HPF:
 
             points = self.dim_red.classify_project_down(points, idx)
 
-            
+
 
             #unpackage the mess
             primary_support_vector = rotation[1]
@@ -478,7 +478,7 @@ class old_HPF:
 
            # print("CLASSIFY PROJED UP : ", idx, "\n", points, "\n")
 
-        
+
         return self.clf.predict(points)
 
     def plot_dir(self, dir, point, new_figure_ = False):
@@ -559,7 +559,7 @@ class old_HPF:
         previous_margin = self.old_margin
         margins = []
         #print(self.data[0][-5:])
-        while(len(self.clf.support_vectors_) > 2 and val is 0):
+        while(len(self.clf.support_vectors_) > 2 and val is 0 and self.current_fold < self.max_nr_of_folds):
 
             self.data[0], self.support_vectors_dictionary, self.hyperplane_normal = self.dim_red.project_down(self.data[0], self.support_vectors_dictionary, self.hyperplane_normal)
 

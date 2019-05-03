@@ -104,9 +104,9 @@ class HPF:
         if new_figure:
             plt.figure()
 
-        
+
         p = (self.support_vectors_dictionary[0][0][:2] + self.support_vectors_dictionary[1][0][:2]) / 2
-        
+
         n = self.hyperplane_normal
         h = [0,0]
         h[1] = n[0]
@@ -345,19 +345,19 @@ class HPF:
 
     def get_rubber_band_angle(self, point, angle, intersection_point, normal):
 
-        
+
 
         v = intersection_point - point[:2]
         v = v / np.linalg.norm(v)
 
         r_angle = np.dot(v, normal)
-        
+
         if np.arccos(r_angle)* 180 / 3.1415 > 90:
             print("ASDFKAHSDGFKAHSGDFKJAHSGDFKJHAGSDKJFHAGSDKJFXHAGSDKJFASDLKJF")
 
         return np.fmax(r_angle, angle)
-        
-            
+
+
 
     def rotate_left(self, point, angle, intersection_point, left_normal, use_rubber_band):
 
@@ -411,7 +411,7 @@ class HPF:
 
         # intersection data
         intersection_point, angle = self.get_intersection_between_SVMs(left_clf, right_clf)#self.get_intersection_point(left_clf, right_clf)
-        
+
 
         left_or_right = -1
 
@@ -419,7 +419,7 @@ class HPF:
         rotate_set = []
         non_rotate_set = []
 
-        
+
         right_plane = right_clf.coef_[0] / np.linalg.norm(right_clf.coef_[0])#plane
         right_normal = [right_plane[1], -right_plane[0]]
 
@@ -469,7 +469,7 @@ class HPF:
         right_clf = svm.SVC(kernel='linear', C=C_param, cache_size = 7000)
         left_clf = svm.SVC(kernel='linear', C=C_param, cache_size = 7000)
 
-       
+
         # Splitting point
         self.primary_support_vector = self.get_splitting_point()
 
@@ -511,7 +511,7 @@ class HPF:
 
             points = self.dim_red.classify_project_down(points, idx)
 
-            
+
 
             #unpackage the mess
             primary_support_vector = rotation[1]
@@ -526,10 +526,10 @@ class HPF:
 
             points = self.dim_red.classify_project_up(points, idx)
 
-        
+
         return self.clf.predict(points)
 
-    
+
     def fit(self, data_points, data_labels):
         self.data = [data_points, data_labels]
         self.fitting = True
@@ -554,22 +554,22 @@ class HPF:
         previous_margin = self.old_margin
         margins = []
         #print(self.data[0][-5:])
-        while(len(self.clf.support_vectors_) > 2 and val is 0):
+        while(len(self.clf.support_vectors_) > 2 and val is 0 and self.current_fold < self.max_nr_of_folds):
 
             #print(self.current_fold)
 
             self.data[0], self.support_vectors_dictionary, self.hyperplane_normal = self.dim_red.project_down(self.data[0], self.support_vectors_dictionary, self.hyperplane_normal)
-            
+
             val = self.fold()
-           
+
             self.current_fold += 1
 
             self.data[0] = self.dim_red.project_up(self.data[0])
-            
+            print(self.current_fold)
 
             #fit for next iteration or exit contidion of just two support vectors
             self.clf.fit(self.data[0], self.data[1])
-            
+
             self.support_vectors_dictionary = self.group_support_vectors(self.clf) #regroup
             self.hyperplane_normal = self.get_hyperplane_normal()
 
