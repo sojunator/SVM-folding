@@ -556,20 +556,20 @@ class HPF:
         #print(self.data[0][-5:])
         while(len(self.clf.support_vectors_) > 2 and val is 0):
 
-            print(self.current_fold)
+            #print(self.current_fold)
 
             self.data[0], self.support_vectors_dictionary, self.hyperplane_normal = self.dim_red.project_down(self.data[0], self.support_vectors_dictionary, self.hyperplane_normal)
-            print("dimred")
+            
             val = self.fold()
-            print("folded")
+           
             self.current_fold += 1
 
             self.data[0] = self.dim_red.project_up(self.data[0])
-            print("dimredup")
+            
 
             #fit for next iteration or exit contidion of just two support vectors
             self.clf.fit(self.data[0], self.data[1])
-            print("fit")
+            
             self.support_vectors_dictionary = self.group_support_vectors(self.clf) #regroup
             self.hyperplane_normal = self.get_hyperplane_normal()
 
