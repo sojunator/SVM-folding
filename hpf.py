@@ -615,7 +615,7 @@ class HPF:
 
 
 
-        stopper = 0
+        return self.old_margin, self.new_margin
 
 
     def __init__(self,rot_func = lambda p, i, r : np.matmul(p.T - i, r) + i, max_nr_of_folds = 1, verbose = False):
