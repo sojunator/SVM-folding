@@ -13,7 +13,7 @@ import pdb
 
 from dimred import DR
 
-C_param = 1e5
+
 
 def vec_equal(vec1, vec2):
 
@@ -43,78 +43,44 @@ def plot_clf(clf, data):
     plt.plot(x2, y2, 'go')
 
 class HPF:
-
-    def plot_dir(self, dir, point, new_figure_ = False, plot_normal_to_dir = False, col = 'b'):
-        if new_figure_:
+    def plot_self(self, new_figure = False):
+        if new_figure:
             plt.figure()
+        p = (self.support_vectors_dictionary[0][0][:2] + self.support_vectors_dictionary[1][0][:2]) / 2
+        n = self.hyperplane_normal
+        h = [0,0]
+        h[1] = n[0]
+        h[0] = -n[1]
 
-        h = dir
+        hx1 = p[0] + h[0] * 5
+        hy1 = p[1] + h[1] * 5
 
-        w = [0,0]
-        w[0] = -h[1]
-        w[1] = h[0]
+        hx2 = p[0] + h[0] * -5
+        hy2 = p[1] + h[1] * -5
 
-        p = point
-
-        plot_size = 10
-
-        hx1 = p[0] + h[0] * plot_size
-        hy1 = p[1] + h[1] * plot_size
-
-        hx2 = p[0] + h[0] * -plot_size
-        hy2 = p[1] + h[1] * -plot_size
-
-        plt.plot([hx1,hx2],[hy1, hy2], col)
-
-        if plot_normal_to_dir:
-            hx1 = p[0] + w[0] * plot_size
-            hy1 = p[1] + w[1] * plot_size
-
-            hx2 = p[0] + w[0] * -plot_size
-            hy2 = p[1] + w[1] * -plot_size
-
-            plt.plot([hx1,hx2],[hy1, hy2], 'r')
-
-    def plot_data(self, data, new_figure_ = False):
-
-        if new_figure_:
-            plt.figure()
+        plt.plot([hx1,hx2],[hy1, hy2], 'b')
 
         x1 = []
         y1 = []
         x2 = []
         y2 = []
 
-        for index, label in enumerate(data[1]):
-
+        for index, label in enumerate(self.data[1]):
+            #print(index)
             if label == 0:
 
-                x1.append(data[0][index][0])
-                y1.append(data[0][index][1])
+                x1.append(self.data[0][index][0])
+                y1.append(self.data[0][index][1])
 
             elif label == 1:
-                x2.append(data[0][index][0])
-                y2.append(data[0][index][1])
+                x2.append(self.data[0][index][0])
+                y2.append(self.data[0][index][1])
+
 
         plt.plot(x1, y1, 'ro')
         plt.plot(x2, y2, 'go')
 
-
-    def plot_self(self, new_figure = False):
-        if new_figure:
-            plt.figure()
-
-        
-        p = (self.support_vectors_dictionary[0][0][:2] + self.support_vectors_dictionary[1][0][:2]) / 2
-        
-        n = self.hyperplane_normal
-        h = [0,0]
-        h[1] = n[0]
-        h[0] = -n[1]
-
-        self.plot_dir(h, p)
-
-        self.plot_data(self.data)
+        #plt.axis([-10, 10, -10, 10])
 
 
 
@@ -343,27 +309,12 @@ class HPF:
         return np.array(((c,s), (-s, c)))
 
 
-    def get_rubber_band_angle(self, point, angle, intersection_point, normal):
+    def get_rubber_band_angle(self, angle):
 
-        if not self.use_rubber_band:
-            print("not using rubber band angle")
-            return angle
+        return None
 
-        v = intersection_point - point[:2]
-        v = v / np.linalg.norm(v)
+    def rotate_left(self, point, angle, intersection_point):
 
-        r_angle = np.dot(v, normal)
-        
-        if np.arccos(r_angle)* 180 / 3.1415 > 90:
-            print("ERROR GET RUBBER BAND ANGLE")
-
-        return np.fmax(r_angle, angle)
-        
-            
-
-    def rotate_left(self, point, angle, intersection_point, right_normal):
-
-        angle = self.get_rubber_band_angle(point, angle, intersection_point, right_normal)
 
         rotation_matrix = self.get_counter_rotation(angle)
 
@@ -374,9 +325,8 @@ class HPF:
 
         return point
 
-    def rotate_right(self, point, angle, intersection_point, right_normal):
+    def rotate_right(self, point, angle, intersection_point):
 
-        angle = self.get_rubber_band_angle(point, angle, intersection_point, right_normal)
 
         rotation_matrix = self.get_rotation(angle)
 
@@ -388,8 +338,32 @@ class HPF:
         return point
 
 
+    def rotate_point_2D(self, point, angle, primary_support, intersection_point, clf):
+        """
+        Returns the point, with it's xy-coordinates rotated accordingly to rubberband folding
 
-    def rotate_set(self, left_clf, right_clf, left_set, right_set, primary_support_vector = None, hyperplane_normal = None, points = None):
+        Does currently not apply rubberband folding, rotates points around intersection
+        """
+        norm = np.linalg.norm(clf.coef_[0])
+        v = intersection_point + norm
+
+        cosang = np.dot(v, intersection_point - point[:2])
+        sinang = np.linalg.norm(np.cross(v, intersection_point - point[:2]))
+        angle2 = np.arctan2(sinang, cosang)
+
+
+        rotation_matrix = self.get_rotation(min(angle, angle))
+
+        #point = np.matmul(point.T - intersection_point, rotation_matrix) + intersection_point
+
+        x,y = self.rot_func(point[:2], intersection_point, rotation_matrix)
+        point[0] = x
+        point[1] = y
+
+        return point
+
+
+    def rotate_set(self, left_clf, left_set, right_clf, right_set, primary_support_vector = None, hyperplane_normal = None):
         """
         Performs rotation on the set with biggest margin
         Currently rotates around the intersection point
@@ -398,11 +372,9 @@ class HPF:
 
         returns a merged and rotated set, touple (X, y)
         """
-        if primary_support_vector is None and hyperplane_normal is None and points is None:
-            hyperplane_normal = self.hyperplane_normal[:2]
-            primary_support_vector = self.primary_support_vector[:2]
-            points = self.data
-
+        if primary_support_vector is None and hyperplane_normal is None:
+            hyperplane_normal = self.hyperplane_normal
+            primary_support_vector = self.primary_support_vector
 
         # Get margins
         right_margin = self.get_margin(right_clf)
@@ -411,77 +383,42 @@ class HPF:
 
         # intersection data
         intersection_point, angle = self.get_intersection_between_SVMs(left_clf, right_clf)#self.get_intersection_point(left_clf, right_clf)
-        
+        # if 1, left was rotated, 0 is right set.
 
-        left_or_right = -1
-
-        #Split data based on the normal
-        rotate_set = []
-        non_rotate_set = []
-        right_normal = [0,0]
-
-        if self.use_old_hpf:
-            rotate_set = np.array(left_set[0], left_set[1])
-            non_rotate_set = np.array(right_set[0], right_set[1])
-           # plane = [-hyperplane_normal[1], hyperplane_normal[0]]
-           # for point in zip(points[0], points[1]):
-           #     if np.dot(point[0][:2], plane) < 0.0:
-           #         rotate_set.append(np.array(point))
-           #     else:
-           #         non_rotate_set.append(np.array(point))
-        else:
-            right_plane = right_clf.coef_[0] / np.linalg.norm(right_clf.coef_[0])#plane
-            right_normal = [right_plane[1], -right_plane[0]]
-
-            cp = -(np.dot(right_normal, intersection_point))
-
-            for point in zip(points[0], points[1]):
-                if np.dot(point[0][:2], right_normal) + cp < 0.0:
-                    rotate_set.append(np.array(point))
-                else:
-                    non_rotate_set.append(np.array(point))
-
-
-
-
-        #rotate clockwise or counter clockwise
+        #rotate left or right
         d = intersection_point - primary_support_vector[:2]
         d = d / np.linalg.norm(d)
 
         n = hyperplane_normal[:2]
         n = n / np.linalg.norm(n)
 
-        c_or_cc = np.dot(d, n)#if the cosine of the angle is less than 0, rotate left.
+        c = np.dot(d, n)
 
-        if c_or_cc < 0.0:
-            rotate_set = [(self.rotate_left(point[0], angle, intersection_point, right_normal), point[1]) for point in rotate_set]
+        left_or_right = -1
+
+        if c > 0.0:
+            left_set[0] = [self.rotate_left(point, angle, intersection_point) for point in left_set[0]]
             left_or_right = 1
 
         else:
-            rotate_set = [(self.rotate_right(point[0], angle, intersection_point, right_normal), point[1]) for point in rotate_set]
+            left_set[0] = [self.rotate_right(point, angle, intersection_point) for point in left_set[0]]
             left_or_right = 0
 
 
-        tup = rotate_set + non_rotate_set
 
-        self.data[0] = [p[0] for p in tup]
-        self.data[1] = [p[1] for p in tup]
+        X = left_set[0] + right_set[0]
+        y = left_set[1] + right_set[1]
 
-        #self.plot_dir(right_normal, intersection_point, False, True)
-       # self.plot_dir(left_normal, intersection_point, True, True)
-       # self.plot_data(self.data)
 
-        #plt.show()
-        return left_or_right, intersection_point
+        return (X, y, left_or_right, intersection_point)
 
 
     def fold(self):
-
         # folding sets
-        right_clf = svm.SVC(kernel='linear', C=C_param, cache_size = 7000)
-        left_clf = svm.SVC(kernel='linear', C=C_param, cache_size = 7000)
+        right_clf = svm.SVC(kernel='linear', C=1e10)
+        left_clf = svm.SVC(kernel='linear', C=1e10)
 
-       
+
         # Splitting point
         self.primary_support_vector = self.get_splitting_point()
 
@@ -504,8 +441,9 @@ class HPF:
             return -1
 
 
+
         # Rotate and merge data sets back into one
-        left_or_right, intersection_point = self.rotate_set(left_clf, right_clf, left_set, right_set)
+        self.data[0], self.data[1], left_or_right, intersection_point = self.rotate_set(left_clf, left_set, right_clf, right_set)
         self.rotation_data.append((intersection_point, self.primary_support_vector, left_or_right, (right_clf, left_clf), self.support_vectors_dictionary, np.array(self.hyperplane_normal)))
 
         return 0
@@ -513,9 +451,8 @@ class HPF:
     def classify(self, points, rotate=True):
         if (len(points) is 0):
             return []
-
         if not rotate:
-            return self.old_clf.predict(points) #use standard svm 
+            return self.old_clf.predict(points)
 
         # Correct dim is used to save last down projection
         # As we don't want if-statement checking for last iteration
@@ -532,20 +469,75 @@ class HPF:
             left_clf = rotation[3][1]
             hyperplane_normal = rotation[5]
 
-            #left_set, right_set = self.split_data(points, [None] * len(points), primary_support_vector, hyperplane_normal)
+            left_set, right_set = self.split_data(points, [None] * len(points), primary_support_vector, hyperplane_normal)
 
 
-            self.rotate_set(left_clf, right_clf, primary_support_vector, hyperplane_normal, (points, [None] * len(points)))
+            points, y, __, ___ = self.rotate_set(left_clf, left_set, right_clf, right_set, primary_support_vector, hyperplane_normal)
 
             points = self.dim_red.classify_project_up(points, idx)
+
+            print("CLASSIFY PROJED UP : ", idx, "\n", points, "\n")
 
         
         return self.clf.predict(points)
 
-    
+    def plot_dir(self, dir, point, new_figure_ = False):
+        if new_figure_:
+            plt.figure()
+
+        h = dir
+
+        w = [0,0]
+        w[0] = -h[1]
+        w[1] = h[0]
+
+        p = point
+
+        plot_size = 10
+
+        hx1 = p[0] + h[0] * plot_size
+        hy1 = p[1] + h[1] * plot_size
+
+        hx2 = p[0] + h[0] * -plot_size
+        hy2 = p[1] + h[1] * -plot_size
+
+        plt.plot([hx1,hx2],[hy1, hy2], 'g')
+
+        hx1 = p[0] + w[0] * plot_size
+        hy1 = p[1] + w[1] * plot_size
+
+        hx2 = p[0] + w[0] * -plot_size
+        hy2 = p[1] + w[1] * -plot_size
+
+        plt.plot([hx1,hx2],[hy1, hy2], 'b')
+
+    def plot_data(self, data, new_figure_ = False):
+
+        if new_figure_:
+            plt.figure()
+
+        x1 = []
+        y1 = []
+        x2 = []
+        y2 = []
+
+        for index, label in enumerate(data[1]):
+
+            if label == 0:
+
+                x1.append(data[0][index][0])
+                y1.append(data[0][index][1])
+
+            elif label == 1:
+                x2.append(data[0][index][0])
+                y2.append(data[0][index][1])
+
+        plt.plot(x1, y1, 'ro')
+        plt.plot(x2, y2, 'go')
+
     def fit(self, data_points, data_labels):
         self.data = [data_points, data_labels]
-        
+
         self.old_data = data_points
 
         # Builds clfs
@@ -569,22 +561,22 @@ class HPF:
         #print(self.data[0][-5:])
         while(len(self.clf.support_vectors_) > 2 and val is 0):
 
-            print(self.current_fold)
-
             self.data[0], self.support_vectors_dictionary, self.hyperplane_normal = self.dim_red.project_down(self.data[0], self.support_vectors_dictionary, self.hyperplane_normal)
-            
+
+
             val = self.fold()
-            
+
             self.current_fold += 1
 
             self.data[0] = self.dim_red.project_up(self.data[0])
-            
+
 
             #fit for next iteration or exit contidion of just two support vectors
             self.clf.fit(self.data[0], self.data[1])
-            
             self.support_vectors_dictionary = self.group_support_vectors(self.clf) #regroup
             self.hyperplane_normal = self.get_hyperplane_normal()
+
+            print("PROJECTED UP DIM: ", self.current_fold, "\n", self.data[0], "LABEL :", self.data[1], "\n")
 
             self.new_margin = self.get_margin(self.clf)
             margins.append(math.fabs(self.new_margin - previous_margin))
@@ -592,12 +584,12 @@ class HPF:
 
             if len(margins) == 3:
                 avg = sum(margins) / len(margins)
-                if avg < 0.01:
+                if avg < 0.001:
                     val = -1
                     print("termination due to floating point")
                 margins.clear()
 
-        self.fitting = False
+
         print("nr of support {}".format(len(self.clf.support_vectors_)))
 
 
@@ -627,17 +619,15 @@ class HPF:
 
 
 
-        return self.new_margin, self.old_margin
+
+        stopper = 0
 
 
-    def __init__(self,rot_func = lambda p, i, r : np.matmul(p.T - i, r) + i, max_nr_of_folds = 1, verbose = False, use_old_hpf = False, use_rubber_band = True):
+    def __init__(self,rot_func = lambda p, i, r : np.matmul(p.T - i, r) + i, max_nr_of_folds = 1, verbose = False):
         self.verbose = verbose
         self.max_nr_of_folds = max_nr_of_folds
-        self.use_rubber_band = use_rubber_band
-        self.use_old_hpf = use_old_hpf
-
-        self.clf = svm.SVC(kernel='linear', C=C_param, cache_size = 7000)
-        self.old_clf = svm.SVC(kernel='linear', C=C_param, cache_size = 7000)
+        self.clf = svm.SVC(kernel='linear', C=1e10)
+        self.old_clf = svm.SVC(kernel='linear', C=1e10)
         self.rotation_data = []
         self.rot_func = rot_func
         self.dim_red = DR()

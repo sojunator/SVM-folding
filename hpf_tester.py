@@ -87,17 +87,14 @@ data_points, data_labels = data_set["liver.csv"]
 
 
 hpf = HPF(max_nr_of_folds=100, verbose=False) 
-lasse_hpf = HPF(max_nr_of_folds=100, verbose=False, use_rubber_band=False, use_old_hpf=True)
+lasse_hpf = HPF(max_nr_of_folds=100, verbose=False, use_rubber_band=False, use_old_hpf=True) #classifier that use old hpfimplementation without rubberband folding
 
 
-#test algorithms using k-fold, k = 10
-
+#test algorithms using k-fold
 K = 5
-
 sk_kf = KFold(n_splits=K, shuffle=True)
 
-print("NR of splits : ", sk_kf.get_n_splits())
-
+#declare metrics
 avg_accuracy_lasse_hpf = 0
 avg_sensitivety_lasse_hpf = 0
 avg_specificity_lasse_hpf = 0
@@ -114,17 +111,19 @@ new_margin = 0
 old_margin = 0
 lasse_new_margin = 0
 lasse_old_margin = 0
-
+index = 0
 for train_index, test_index in sk_kf.split(data_points): # runs k-tests
-    #print("TRAIN:", train_index, "TEST:", test_index)
+    
+    print("K fold k =", index)
+    index = index +1
     X_train, X_test = data_points[train_index], data_points[test_index] #split data into one trainging part and one test part
     Y_train, Y_test = data_labels[train_index], data_labels[test_index] # do the same with the labels
 
     X_train, Y_train = clean_data([X_train, Y_train], 50) #Clean the training data, but not the test data
 
-    print("Hpf")
+    print("running HPF")
     new_margin, old_margin = hpf.fit(X_train, Y_train) #train
-    print("lasse")
+    print("running lasse")
     lasse_new_margin, lasse_old_margin = lasse_hpf.fit(X_train, Y_train) #train
 
     lasse_hpf_ans = lasse_hpf.classify(X_test) #old hpf
@@ -160,10 +159,10 @@ print("\n\nAccuracy Lasse :", avg_accuracy_lasse_hpf / K)
 print("Sensitivety Lasse :", avg_sensitivety_lasse_hpf / K)
 print("Specificity :", avg_specificity_lasse_hpf / K)
 
-print("\nAccuracy HPF :", avg_accuracy_hpf / K)
+print("\n\nAccuracy HPF :", avg_accuracy_hpf / K)
 print("Sensitivety HPF :", avg_sensitivety_hpf / K)
 print("Specificity HPF :", avg_specificity_hpf / K)
 
-print("\nAccuracy SVM :", avg_accuracy_svm / K)
+print("\n\nAccuracy SVM :", avg_accuracy_svm / K)
 print("Sensitivety SVM :", avg_sensitivety_svm / K)
 print("Specificity SVM :", avg_specificity_svm / K)
