@@ -54,4 +54,4 @@ data_points_new = transformer.transform(data_points)
 
 
 
-test_dataset(data_points_new, data_labels, "bmi")
+#test_dataset(data_points_new, data_labels, "bmi")

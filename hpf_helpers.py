@@ -13,6 +13,9 @@ from sklearn.datasets import make_blobs, load_breast_cancer
 from hpf import HPF
 from old_hpf import old_HPF
 
+result_dict = {}
+
+
 def plot_hpf(hpf, ax, XX, YY, colour='k'):
     """
     Plots a clf, with margins, colour will be black
@@ -171,7 +174,7 @@ def clean_data(training_data, c=50):
 
     clf.fit(training_data[0], training_data[1])
 
-    print("fit done")
+
     new_labels = clf.predict(training_data[0])
 
 
@@ -191,9 +194,19 @@ def clean_data(training_data, c=50):
 
     return training_data
 
+def write_avg_matrix_to_file(result_dict, filehandle):
 
+    for classifier in result_dict:
+            filehandle.write("{}\n".format(classifier))
+            for entry in result_dict[classifier]:
+                list_of_predictions = result_dict[classifier][entry]
+                avg_entry = sum(list_of_predictions) / len(list_of_predictions)
 
-def write_matrix_to_file(result_list, filehandle):
+                filehandle.write("AVG {} : {} \n".format(entry, avg_entry))
+
+            filehandle.write("\n\n")
+
+def dump_matrix_to_file(result_list, filehandle):
     for element in result_list:
         filehandle.write("K-fold nr {} \n".format(result_list.index(element)))
         for key in element:
@@ -225,7 +238,7 @@ def plot_clf(data):
     plt.plot(x2, y2, 'go')
     plt.show()
 
-def evaluate(model_ans, real_ans, write_to_file = False, print_ans = True):
+def evaluate(classifier_str, model_ans, real_ans, print_ans = True):
     true_positives = 0
     true_negatives = 0
     false_positives = 0
@@ -243,11 +256,12 @@ def evaluate(model_ans, real_ans, write_to_file = False, print_ans = True):
             elif compare[0] == 0:#negative
                 false_negatives += 1
 
-    result_dict = {}
-    result_dict["TP"] = true_positives
-    result_dict["TN"] = true_negatives
-    result_dict["FP"] = false_positives
-    result_dict["FN"] = false_negatives
+
+    result_dict[classifier_str]["TP"].append(true_positives)
+    result_dict[classifier_str]["TN"].append(true_negatives)
+    result_dict[classifier_str]["FP"].append(false_positives)
+    result_dict[classifier_str]["FN"].append(false_negatives)
+
 
     #true_positives, true_negatives, false_positives, false_negatives
 
@@ -290,7 +304,26 @@ def test_dataset(data_points, data_labels, name):
     result_rbf = []
     result_svm = []
 
+    result_dict["SVM"] = {}
+    result_dict["HPF"] = {}
+    result_dict["RBF"] = {}
 
+    result_dict["SVM"]["TP"] = []
+    result_dict["SVM"]["TN"] = []
+    result_dict["SVM"]["FP"] = []
+    result_dict["SVM"]["FN"] = []
+
+    result_dict["RBF"] = {}
+    result_dict["RBF"]["TP"] = []
+    result_dict["RBF"]["TN"] = []
+    result_dict["RBF"]["FP"] = []
+    result_dict["RBF"]["FN"] = []
+
+    result_dict["HPF"] = {}
+    result_dict["HPF"]["TP"] = []
+    result_dict["HPF"]["TN"] = []
+    result_dict["HPF"]["FP"] = []
+    result_dict["HPF"]["FN"] = []
 
     for train_index, test_index in sk_kf.split(data_points): # runs k-tests
 
@@ -311,17 +344,17 @@ def test_dataset(data_points, data_labels, name):
         svm_ans = rbf.classify(X_test, False) # state of the art svm
 
         #compare with expected labels
-        acc, sen, spe, result_hpf_tmp = evaluate(old_hpf_ans, Y_test)
+        acc, sen, spe, result_hpf_tmp = evaluate("HPF", old_hpf_ans, Y_test)
         avg_accuracy_old_hpf += acc
         avg_sensitivety_old_hpf += sen
         avg_specificity_old_hpf += spe
 
-        acc, sen, spe, result_rbf_tmp = evaluate(improved_hpf_ans, Y_test)
+        acc, sen, spe, result_rbf_tmp = evaluate("RBF", improved_hpf_ans, Y_test)
         avg_accuracy_hpf += acc
         avg_sensitivety_hpf += sen
         avg_specificity_hpf += spe
 
-        acc, sen, spe, result_svm_tmp = evaluate(svm_ans, Y_test)
+        acc, sen, spe, result_svm_tmp = evaluate("SVM", svm_ans, Y_test)
         avg_accuracy_svm += acc
         avg_sensitivety_svm += sen
         avg_specificity_svm += spe
@@ -352,14 +385,16 @@ def test_dataset(data_points, data_labels, name):
     file.write("Sensitivety SVM : {} \n".format(avg_sensitivety_svm / K))
     file.write("Specificity SVM : {} \n".format(avg_specificity_svm / K))
 
+    write_avg_matrix_to_file(result_dict, file)
 
     file.write("RBF DATA \n")
-    write_matrix_to_file(result_rbf, file)
+    dump_matrix_to_file(result_rbf, file)
     file.write("\n\n")
     file.write("HPF DATA\n")
-    write_matrix_to_file(result_hpf, file)
+    dump_matrix_to_file(result_hpf, file)
     file.write("\n\n")
     file.write("SVM DATA\n")
-    write_matrix_to_file(result_svm, file)
+    dump_matrix_to_file(result_svm, file)
 
+    print(result_dict)
     file.close()

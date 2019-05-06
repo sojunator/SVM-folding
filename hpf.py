@@ -591,8 +591,8 @@ class HPF:
         #self.clf.fit(self.data_points, self.data_labels)
         #self.new_margin = self.get_margin(self.clf)
         self.new_margin = self.get_margin(self.clf)
-        print(self.new_margin)
-        print(self.old_margin)
+        #print(self.new_margin)
+        #print(self.old_margin)
 
         if self.verbose:
             print("Number of folds: {}".format(self.current_fold))
