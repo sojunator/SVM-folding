@@ -331,21 +331,21 @@ def test_dataset(data_points, data_labels, name):
     result_dict["HPF"]["FP"] = []
     result_dict["HPF"]["FN"] = []
 
-    time_dict["HPF"]["timestamp"] = {}
-    time_dict["SVM"]["timestamp"] = {}
-    time_dict["RBF"]["timestamp"] = {}
+    time_dict["HPF"] = {}
+    time_dict["SVM"] = {}
+    time_dict["RBF"] = {}
 
-    time_dict["HPF"]["timestamp"]["classify"] = []
+    time_dict["HPF"]["classify"] = []
 
-    time_dict["SVM"]["timestamp"]["classify"] = []
+    time_dict["SVM"]["classify"] = []
 
-    time_dict["RBF"]["timestamp"]["classify"] = []
+    time_dict["RBF"]["classify"] = []
 
-    time_dict["HPF"]["timestamp"]["fit"] = []
+    time_dict["HPF"]["fit"] = []
 
-    time_dict["SVM"]["timestamp"]["fit"] = []
+    time_dict["SVM"]["fit"] = []
 
-    time_dict["RBF"]["timestamp"]["fit"] = []
+    time_dict["RBF"]["fit"] = []
 
     for train_index, test_index in sk_kf.split(data_points): # runs k-tests
 
@@ -358,30 +358,30 @@ def test_dataset(data_points, data_labels, name):
 
         #print("running HPF")
         rbf_start_time = datetime.datetime.now()
-        old_margin, new_margin = rbf.fit(X_train, Y_train) #train
+        old_margin, new_margin = rbf.fit(X_train, Y_train, time_dict) #train
         rbf_fit_time = datetime.datetime.now() - rbf_start_time
-        time_dict["RBF"]["timestamp"]["fit"].append(rbf_fit_time.total_seconds()*1000)
+        time_dict["RBF"]["fit"].append(rbf_fit_time.total_seconds()*1000)
 
         hpf_start_time = datetime.datetime.now()
         old_old_margin, old_new_margin = hpf.fit(X_train, Y_train) #train
         hpf_fit_time = datetime.datetime.now() - hpf_start_time
-        time_dict["HPF"]["timestamp"]["fit"].append(hpf_fit_time.total_seconds()*1000)
+        time_dict["HPF"]["fit"].append(hpf_fit_time.total_seconds()*1000)
 
 
         hpf_start_time = datetime.datetime.now()
         hpf_ans = hpf.classify(X_test) #old hpf
         hpf_classify_time = datetime.datetime.now() - hpf_start_time
-        time_dict["HPF"]["timestamp"]["classify"].append(hpf_classify_time.total_seconds()*1000)
+        time_dict["HPF"]["classify"].append(hpf_classify_time.total_seconds()*1000)
 
         rbf_start_time = datetime.datetime.now()
         rbf_ans = rbf.classify(X_test) #new hpf
         rbf_classify_time = datetime.datetime.now() - rbf_start_time
-        time_dict["RBF"]["timestamp"]["classify"].append(rbf_classify_time.total_seconds()*1000)
+        time_dict["RBF"]["classify"].append(rbf_classify_time.total_seconds()*1000)
 
         svm_start_time = datetime.datetime.now()
         svm_ans = rbf.classify(X_test, False) # state of the art svm
         svm_classify_time = datetime.datetime.now() - svm_start_time
-        time_dict["SVM"]["timestamp"]["classify"].append(svm_classify_time.total_seconds()*1000)
+        time_dict["SVM"]["classify"].append(svm_classify_time.total_seconds()*1000)
 
 
         #compare with expected labels

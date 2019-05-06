@@ -10,6 +10,7 @@ import numpy as np
 import math
 import json
 import pdb
+import datetime
 
 from dimred import DR
 
@@ -530,13 +531,18 @@ class HPF:
         return self.clf.predict(points)
 
 
-    def fit(self, data_points, data_labels):
+    def fit(self, data_points, data_labels, time_dict):
         self.data = [data_points, data_labels]
         self.fitting = True
         self.old_data = data_points
 
         # Builds clfs
+
+
+        svm_start_time = datetime.datetime.now()
         self.old_clf.fit(data_points, data_labels)
+        svm_fit_time = datetime.datetime.now() - svm_start_time
+        time_dict["SVM"]["fit"].append(svm_fit_time.total_seconds()*1000)
         self.clf.fit(data_points, data_labels)
 
         self.old_margin = self.get_margin(self.old_clf)
