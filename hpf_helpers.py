@@ -12,9 +12,10 @@ from sklearn.preprocessing import MinMaxScaler,  Normalizer
 from sklearn.datasets import make_blobs, load_breast_cancer
 from hpf import HPF
 from old_hpf import old_HPF
+import datetime
 
 result_dict = {}
-
+time_dict = {}
 
 def plot_hpf(hpf, ax, XX, YY, colour='k'):
     """
@@ -308,6 +309,11 @@ def test_dataset(data_points, data_labels, name):
     result_dict["HPF"] = {}
     result_dict["RBF"] = {}
 
+    time_dict["SVM"] = {}
+    time_dict["HPF"] = {}
+    time_dict["RBF"] = {}
+
+
     result_dict["SVM"]["TP"] = []
     result_dict["SVM"]["TN"] = []
     result_dict["SVM"]["FP"] = []
@@ -325,6 +331,22 @@ def test_dataset(data_points, data_labels, name):
     result_dict["HPF"]["FP"] = []
     result_dict["HPF"]["FN"] = []
 
+    time_dict["HPF"]["timestamp"] = {}
+    time_dict["SVM"]["timestamp"] = {}
+    time_dict["RBF"]["timestamp"] = {}
+
+    time_dict["HPF"]["timestamp"]["classify"] = []
+
+    time_dict["SVM"]["timestamp"]["classify"] = []
+
+    time_dict["RBF"]["timestamp"]["classify"] = []
+
+    time_dict["HPF"]["timestamp"]["fit"] = []
+
+    time_dict["SVM"]["timestamp"]["fit"] = []
+
+    time_dict["RBF"]["timestamp"]["fit"] = []
+
     for train_index, test_index in sk_kf.split(data_points): # runs k-tests
 
         print("K fold k =", index)
@@ -335,21 +357,40 @@ def test_dataset(data_points, data_labels, name):
         X_train, Y_train = clean_data([X_train, Y_train], 50) #Clean the training data, but not the test data
 
         #print("running HPF")
+        rbf_start_time = datetime.datetime.now()
         old_margin, new_margin = rbf.fit(X_train, Y_train) #train
-        #print("running old")
-        old_old_margin, old_new_margin = hpf.fit(X_train, Y_train) #train
+        rbf_fit_time = datetime.datetime.now() - rbf_start_time
+        time_dict["RBF"]["timestamp"]["fit"].append(rbf_fit_time.total_seconds()*1000)
 
-        old_hpf_ans = hpf.classify(X_test) #old hpf
-        improved_hpf_ans = rbf.classify(X_test) #new hpf
+        hpf_start_time = datetime.datetime.now()
+        old_old_margin, old_new_margin = hpf.fit(X_train, Y_train) #train
+        hpf_fit_time = datetime.datetime.now() - hpf_start_time
+        time_dict["HPF"]["timestamp"]["fit"].append(hpf_fit_time.total_seconds()*1000)
+
+
+        hpf_start_time = datetime.datetime.now()
+        hpf_ans = hpf.classify(X_test) #old hpf
+        hpf_classify_time = datetime.datetime.now() - hpf_start_time
+        time_dict["HPF"]["timestamp"]["classify"].append(hpf_classify_time.total_seconds()*1000)
+
+        rbf_start_time = datetime.datetime.now()
+        rbf_ans = rbf.classify(X_test) #new hpf
+        rbf_classify_time = datetime.datetime.now() - rbf_start_time
+        time_dict["RBF"]["timestamp"]["classify"].append(rbf_classify_time.total_seconds()*1000)
+
+        svm_start_time = datetime.datetime.now()
         svm_ans = rbf.classify(X_test, False) # state of the art svm
+        svm_classify_time = datetime.datetime.now() - svm_start_time
+        time_dict["SVM"]["timestamp"]["classify"].append(svm_classify_time.total_seconds()*1000)
+
 
         #compare with expected labels
-        acc, sen, spe, result_hpf_tmp = evaluate("HPF", old_hpf_ans, Y_test)
+        acc, sen, spe, result_hpf_tmp = evaluate("HPF", hpf_ans, Y_test)
         avg_accuracy_old_hpf += acc
         avg_sensitivety_old_hpf += sen
         avg_specificity_old_hpf += spe
 
-        acc, sen, spe, result_rbf_tmp = evaluate("RBF", improved_hpf_ans, Y_test)
+        acc, sen, spe, result_rbf_tmp = evaluate("RBF", rbf_ans, Y_test)
         avg_accuracy_hpf += acc
         avg_sensitivety_hpf += sen
         avg_specificity_hpf += spe
@@ -396,5 +437,5 @@ def test_dataset(data_points, data_labels, name):
     file.write("SVM DATA\n")
     dump_matrix_to_file(result_svm, file)
 
-    print(result_dict)
+    print(time_dict)
     file.close()
