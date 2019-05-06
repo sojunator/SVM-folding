@@ -540,6 +540,8 @@ class HPF:
 
 
         svm_start_time = datetime.datetime.now()
+        import pdb; pdb.set_trace()
+
         self.old_clf.fit(data_points, data_labels)
         svm_fit_time = datetime.datetime.now() - svm_start_time
         time_dict["SVM"]["fit"].append(svm_fit_time.total_seconds()*1000)
