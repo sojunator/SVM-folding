@@ -272,6 +272,17 @@ def evaluate(classifier_str, model_ans, real_ans, print_ans = True):
 
     return accuracy, sensitivity, specificity, result_dict
 
+def write_timedict_to_file(time_dict, filehandle):
+    for classifier in time_dict:
+        filehandle.write("\n\n{}\n".format(classifier))
+        for operation in time_dict[classifier]:
+            operation_avg = time_dict[classifier][operation]
+            operation_avg = sum(operation_avg) / len(operation_avg)
+            filehandle.write("{} - {} avg in ms\n".format(operation, operation_avg))
+
+        filehandle.write("\n")
+
+
 def test_dataset(data_points, data_labels, name):
     #test algorithms using k-fold
 
@@ -428,7 +439,7 @@ def test_dataset(data_points, data_labels, name):
     file.write("Specificity SVM : {} \n".format(avg_specificity_svm / K))
 
     write_avg_matrix_to_file(result_dict, file)
-
+    write_timedict_to_file(time_dict, file)
     file.write("RBF DATA \n")
     dump_matrix_to_file(result_rbf, file)
     file.write("\n\n")
