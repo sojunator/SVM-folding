@@ -7,7 +7,7 @@ from os.path import isfile, join
 import pandas as pd
 from sklearn import svm
 from sklearn import datasets
-from sklearn.model_selection import train_test_split, KFold
+from sklearn.model_selection import train_test_split, StratifiedKFold
 from sklearn.preprocessing import MinMaxScaler,  Normalizer
 from sklearn.datasets import make_blobs, load_breast_cancer
 from hpf import HPF
@@ -165,7 +165,7 @@ def plot_clf(clf, data):
     plt.plot(x2, y2, 'go')
     plt.show()
 
-def clean_data(training_data, c=50):
+def clean_data(training_data, c=1):
     """
     training data with labels
     return linearly separable data
@@ -290,7 +290,7 @@ def test_dataset(data_points, data_labels, name):
     hpf = old_HPF(max_nr_of_folds=1, verbose=False) #classifier that use old hpfimplementation without rubberband folding
 
     K = 10
-    sk_kf = KFold(n_splits=K, shuffle=True)
+    skf = StratifiedKFold(n_splits=K)
 
     #declare metrics
     avg_accuracy_old_hpf = 0
@@ -358,7 +358,7 @@ def test_dataset(data_points, data_labels, name):
 
     time_dict["RBF"]["fit"] = []
 
-    for train_index, test_index in sk_kf.split(data_points): # runs k-tests
+    for train_index, test_index in skf.split(data_points, data_labels): # runs k-tests
 
         print("K fold k =", index)
         index = index +1
