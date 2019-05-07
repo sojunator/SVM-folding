@@ -17,6 +17,18 @@ import datetime
 result_dict = {}
 time_dict = {}
 
+def normalize_data(data_points):
+
+    # Perform linear search in each dim for min and max value
+    max_values = np.amax(data_points, 0)
+    min_values = np.amin(data_points, 0)
+
+    data_points = data_points - min_values
+    data_points = data_points / max_values
+
+
+    return data_points
+
 def plot_hpf(hpf, ax, XX, YY, colour='k'):
     """
     Plots a clf, with margins, colour will be black
@@ -165,7 +177,7 @@ def plot_clf(clf, data):
     plt.plot(x2, y2, 'go')
     plt.show()
 
-def clean_data(training_data, c=1):
+def clean_data(training_data, c=50):
     """
     training data with labels
     return linearly separable data
@@ -181,9 +193,8 @@ def clean_data(training_data, c=1):
 
     indexes = []
     for idx, label in enumerate(new_labels):
-        if not (label == training_data[1][idx]).all():
+        if not label == training_data[1][idx]:
             indexes.append(idx)
-
 
     #plot_3d(training_data)
 
@@ -365,8 +376,7 @@ def test_dataset(data_points, data_labels, name):
         X_train, X_test = data_points[train_index], data_points[test_index] #split data into one trainging part and one test part
         Y_train, Y_test = data_labels[train_index], data_labels[test_index] # do the same with the labels
 
-        X_train, Y_train = clean_data([X_train, Y_train], 50) #Clean the training data, but not the test data
-
+        X_train, Y_train = clean_data([X_train, Y_train]) #Clean the training data, but not the test data
 
         #print("running HPF")
         rbf_start_time = datetime.datetime.now()
@@ -449,5 +459,4 @@ def test_dataset(data_points, data_labels, name):
     file.write("SVM DATA\n")
     dump_matrix_to_file(result_svm, file)
 
-    print(time_dict)
     file.close()
