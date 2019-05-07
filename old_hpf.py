@@ -13,7 +13,7 @@ import pdb
 
 from dimred import DR
 
-
+C_param = 8000
 
 def vec_equal(vec1, vec2):
 
@@ -627,8 +627,8 @@ class old_HPF:
     def __init__(self,rot_func = lambda p, i, r : np.matmul(p.T - i, r) + i, max_nr_of_folds = 1, verbose = False):
         self.verbose = verbose
         self.max_nr_of_folds = max_nr_of_folds
-        self.clf = svm.SVC(kernel='linear', C=1e10)
-        self.old_clf = svm.SVC(kernel='linear', C=1e10)
+        self.clf = svm.SVC(kernel='linear', C=C_param)
+        self.old_clf = svm.SVC(kernel='linear', C=C_param)
         self.rotation_data = []
         self.rot_func = rot_func
         self.dim_red = DR()

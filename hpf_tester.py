@@ -23,6 +23,8 @@ warnings.filterwarnings('error')
 
 data_set = read_data_from_folder("datasets") # Load data
 
+
+# Liver dataset
 data_points, data_labels = data_set["liver.csv"]
 
 transformer = Normalizer().fit(data_points) # fit does nothing.
@@ -32,7 +34,7 @@ data_points_new = transformer.transform(data_points)
 test_dataset(data_points_new, data_labels, "liver")
 
 
-
+#Breast cancer
 data = load_breast_cancer()
 data_points  = data.data
 data_labels = data.target
@@ -46,10 +48,17 @@ test_dataset(data_points_new, data_labels, "cancer")
 
 data_points, data_labels = data_set["bmi.csv"]
 
+
+transformer = Normalizer().fit(data_points) # fit does nothing.
+data_points_new = transformer.transform(data_points)
+
+data_points, data_labels = data_set["hepatitis.csv"]
+import pdb; pdb.set_trace()
 transformer = Normalizer().fit(data_points) # fit does nothing.
 data_points_new = transformer.transform(data_points)
 
 
+test_dataset(data_points_new, data_labels, "parkinsons")
 
 
 #test_dataset(data_points_new, data_labels, "bmi")
