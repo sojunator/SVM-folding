@@ -11,7 +11,7 @@ import json
 import warnings
 import pdb
 import os
-from hpf_helpers import plot, read_data_from_folder, clean_data, plot_3d, test_dataset, normalize_data
+from hpf_helpers import plot, read_data_from_folder, clean_data, plot_3d, test_dataset, normalize_data, extend_data_spherical
 
 
 nr_of_folds = 2
@@ -23,7 +23,14 @@ warnings.filterwarnings('error')
 
 data_set = read_data_from_folder("datasets") # Load data
 
-
+data_points, data_labels = data_set["bmi.csv"]
+print(len(data_labels))
+data_points, data_labels = clean_data([data_points, data_labels])
+print(len(data_labels))
+data_points, data_labels = extend_data_spherical(data_points, data_labels, 50, 15)
+print(len(data_labels))
+data_points, data_labels = clean_data([data_points, data_labels], 50)
+print(len(data_labels))
 # Liver dataset
 data_points, data_labels = data_set["liver.csv"]
 

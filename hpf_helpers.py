@@ -177,7 +177,42 @@ def plot_clf(clf, data):
     plt.plot(x2, y2, 'go')
     plt.show()
 
-def clean_data(training_data, c=50):
+
+def sample_sphere(center,radius):
+
+    two_pi = np.math.pi * 2.0
+    point = []
+
+    rand_radius = np.random.random_sample() *radius *2 - radius
+    theta = np.random.random_sample() * two_pi
+    phi = np.random.random_sample()* np.math.pi
+
+    point.append(rand_radius * np.math.cos(theta) * np.math.sin(phi) + center[0])
+    point.append(rand_radius * np.math.sin(theta) * np.math.sin(phi) + center[1])
+    point.append(rand_radius * np.math.cos(phi)  + center[2])
+
+    return np.array([point])
+    
+    
+def extend_data_spherical(data_points, data_labels, multiplyer = 25, radius = 1):
+    if len(data_points[0]) != 3:
+        print("wrong dim")
+
+    plot_3d([data_points,data_labels])
+    plt.show()
+
+    for p in zip(data_points, data_labels):
+        for i in range(0,multiplyer):
+            data_points = np.append(data_points, sample_sphere(p[0],radius), axis=0)
+            data_labels = np.append(data_labels, np.array(p[1]))
+            
+    
+    plot_3d([data_points,data_labels])
+    plt.show()
+
+    return data_points, data_labels
+
+def clean_data(training_data, c=1):
     """
     training data with labels
     return linearly separable data
