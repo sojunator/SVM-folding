@@ -24,13 +24,10 @@ warnings.filterwarnings('error')
 data_set = read_data_from_folder("datasets") # Load data
 
 data_points, data_labels = data_set["bmi.csv"]
-print(len(data_labels))
-data_points, data_labels = clean_data([data_points, data_labels])
-print(len(data_labels))
-data_points, data_labels = extend_data_spherical(data_points, data_labels, 50, 15)
-print(len(data_labels))
-data_points, data_labels = clean_data([data_points, data_labels], 50)
-print(len(data_labels))
+data_points = normalize_data(data_points)
+test_dataset(data_points, data_labels, "bmi", nr_of_folds)
+
+"""
 # Liver dataset
 data_points, data_labels = data_set["liver.csv"]
 
@@ -38,7 +35,7 @@ data_points = normalize_data(data_points)
 
 
 test_dataset(data_points, data_labels, "liver", nr_of_folds)
-"""
+
 
 #Breast cancer
 data = load_breast_cancer()

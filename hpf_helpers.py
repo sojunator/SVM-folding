@@ -121,7 +121,6 @@ def plot_3d(data):
     fig = plt.figure()
     ax = fig.add_subplot(111, projection='3d')
 
-    n = 100
 
     x1 = []
     y1 = []
@@ -144,12 +143,15 @@ def plot_3d(data):
             z2.append(data[0][index][2])
 
     ax.scatter(x1, y1, z1, c='r', marker='o')
-    ax.scatter(x2, y2, z2, c='b', marker='^')
+    ax.scatter(x2, y2, z2, c='b', marker='x')
 
 
     ax.set_xlabel('X Label')
     ax.set_ylabel('Y Label')
     ax.set_zlabel('Z Label')
+    ax.set_xlim(0,1)
+    ax.set_ylim(0,1)
+    ax.set_zlim(0,1)
 
 
 
@@ -187,9 +189,9 @@ def sample_sphere(center,radius):
     theta = np.random.random_sample() * two_pi
     phi = np.random.random_sample()* np.math.pi
 
-    point.append(rand_radius * np.math.cos(theta) * np.math.sin(phi) + center[0])
-    point.append(rand_radius * np.math.sin(theta) * np.math.sin(phi) + center[1])
-    point.append(rand_radius * np.math.cos(phi)  + center[2])
+    point.append(np.clip(rand_radius * np.math.cos(theta) * np.math.sin(phi) + center[0], 0, 1))
+    point.append(np.clip(rand_radius * np.math.sin(theta) * np.math.sin(phi) + center[1], 0, 1))
+    point.append(np.clip(rand_radius * np.math.cos(phi)  + center[2], 0, 1))
 
     return np.array([point])
     
@@ -426,6 +428,7 @@ def test_dataset(data_points, data_labels, name, nr_of_folds = 1):
             index = index + 1
             X_train, X_test = data_points[train_index], data_points[test_index] #split data into one trainging part and one test part
             Y_train, Y_test = data_labels[train_index], data_labels[test_index] # do the same with the labels
+            X_test, Y_test = extend_data_spherical(X_test, Y_test, 20, 0.1)
 
             X_train, Y_train = clean_data([X_train, Y_train]) #Clean the training data, but not the test data
 
