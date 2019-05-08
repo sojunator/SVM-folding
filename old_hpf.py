@@ -444,7 +444,7 @@ class old_HPF:
 
         # Rotate and merge data sets back into one
         self.data[0], self.data[1], left_or_right, intersection_point = self.rotate_set(left_clf, left_set, right_clf, right_set)
-        self.rotation_data.append((intersection_point, self.primary_support_vector, left_or_right, (right_clf, left_clf), self.support_vectors_dictionary, np.array(self.hyperplane_normal)))
+        self.rotation_data.append((intersection_point, self.primary_support_vector, left_or_right, (right_clf, left_clf), self.support_vectors_dictionary, np.array(self.hyperplane_normal), self.temp_angle))
 
         return 0
 
@@ -632,7 +632,7 @@ class old_HPF:
         self.rotation_data = []
         self.rot_func = rot_func
         self.dim_red = DR()
-
+        self.temp_angle = 0
 
     def __gr__(self, other):
         return self.new_margin - self.old_margin < other.new_margin - self.old_margin

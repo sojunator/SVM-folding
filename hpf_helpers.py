@@ -192,8 +192,8 @@ def sample_sphere(center,radius):
     point.append(rand_radius * np.math.cos(phi)  + center[2])
 
     return np.array([point])
-    
-    
+
+
 def extend_data_spherical(data_points, data_labels, multiplyer = 25, radius = 1):
     if len(data_points[0]) != 3:
         print("wrong dim")
@@ -205,14 +205,14 @@ def extend_data_spherical(data_points, data_labels, multiplyer = 25, radius = 1)
         for i in range(0,multiplyer):
             data_points = np.append(data_points, sample_sphere(p[0],radius), axis=0)
             data_labels = np.append(data_labels, np.array(p[1]))
-            
-    
+
+
     plot_3d([data_points,data_labels])
     plt.show()
 
     return data_points, data_labels
 
-def clean_data(training_data, c=1):
+def clean_data(training_data, c=50):
     """
     training data with labels
     return linearly separable data
@@ -242,7 +242,7 @@ def clean_data(training_data, c=1):
     return training_data
 
 def write_data_to_file(result_dict, filehandle):
-    filehandle.write("acc\tmargin\tspe\t\tspec")
+    filehandle.write("acc\tmargin\tspe\t\tspec\tang")
 
     for classifier in result_dict:
         for fold in result_dict[classifier]:
@@ -251,11 +251,12 @@ def write_data_to_file(result_dict, filehandle):
             spec = result_dict[classifier][fold]["spe"]
             sen = result_dict[classifier][fold]["sen"]
             acc = result_dict[classifier][fold]["acc"]
+            ang = result_dict[classifier][fold]["ang"]
             filehandle.write("{} {}\t".format(fold, acc))
             filehandle.write("{} {}\t".format(fold, margin))
             filehandle.write("{} {}\t".format(fold, sen))
             filehandle.write("{} {}\t".format(fold, spec))
-
+            filehandle.write("{} {}\t".format(fold, ang))
             filehandle.write("\n")
         filehandle.write("\n")
 
@@ -374,6 +375,7 @@ def test_dataset(data_points, data_labels, name, nr_of_folds = 1):
     result_dict["SVM"][0]["acc"] = 0
     result_dict["SVM"][0]["spe"] = 0
     result_dict["SVM"][0]["sen"] = 0
+    result_dict["SVM"][0]["ang"] = 0
     result_dict["SVM"][0]["TP"] = []
     result_dict["SVM"][0]["TN"] = []
     result_dict["SVM"][0]["FP"] = []
@@ -497,7 +499,9 @@ def test_dataset(data_points, data_labels, name, nr_of_folds = 1):
         result_dict["HPF"][i]["acc"] = avg_accuracy_hpf / K
         result_dict["HPF"][i]["spe"] = avg_specificity_hpf / K
         result_dict["HPF"][i]["sen"] = avg_sensitivety_hpf  / K
+        result_dict["HPF"][i]["ang"] = hpf.rotation_data[i][-1]
 
+        result_dict["RBF"][i]["ang"] = rbf.rotation_data[i][-1]
         result_dict["RBF"][i]["margin"] = avg_rbf_margin / K
         result_dict["RBF"][i]["acc"] = avg_accuracy_rbf / K
         result_dict["RBF"][i]["spe"] = avg_specificity_rbf / K
