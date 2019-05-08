@@ -14,7 +14,7 @@ import os
 from hpf_helpers import plot, read_data_from_folder, clean_data, plot_3d, test_dataset, normalize_data
 
 
-
+nr_of_folds = 2
 
 
 #Exception when divide when zero
@@ -30,8 +30,8 @@ data_points, data_labels = data_set["liver.csv"]
 data_points = normalize_data(data_points)
 
 
-test_dataset(data_points, data_labels, "liver")
-
+test_dataset(data_points, data_labels, "liver", nr_of_folds)
+"""
 
 #Breast cancer
 data = load_breast_cancer()
@@ -41,7 +41,7 @@ data_labels = data.target
 data_points = normalize_data(data_points)
 
 
-test_dataset(data_points, data_labels, "cancer")
+test_dataset(data_points, data_labels, "cancer", nr_of_folds)
 
 
 #hepatitis
@@ -49,4 +49,5 @@ data_points, data_labels = data_set["hepatitis.csv"]
 
 data_points = normalize_data(data_points)
 
-test_dataset(data_points, data_labels, "hepatitis")
+test_dataset(data_points, data_labels, "hepatitis", nr_of_folds)
+"""

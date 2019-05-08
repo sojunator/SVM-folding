@@ -206,25 +206,19 @@ def clean_data(training_data, c=50):
 
     return training_data
 
-def write_avg_matrix_to_file(result_dict, filehandle):
+def write_data_to_file(result_dict, filehandle):
 
-    for classifier in result_dict:
-            filehandle.write("{}\n".format(classifier))
-            for entry in result_dict[classifier]:
-                list_of_predictions = result_dict[classifier][entry]
-                avg_entry = sum(list_of_predictions) / len(list_of_predictions)
+    for fold in result_dict:
+        for classifier in result_dict[fold]:
 
-                filehandle.write("AVG {} : {} \n".format(entry, avg_entry))
+            margin = result_dict[fold][classifier]["margin"]
+            spec = result_dict[fold][classifier]["spe"]
+            sen = result_dict[fold][classifier]["sen"]
+            filehandle.write("{} {}\t".format(fold, margin))
+            filehandle.write("{} {}\t".format(fold, sen))
+            filehandle.write("{} {}\t".format(fold, spec))
 
-            filehandle.write("\n\n")
-
-def dump_matrix_to_file(result_list, filehandle):
-    for element in result_list:
-        filehandle.write("K-fold nr {} \n".format(result_list.index(element)))
-        for key in element:
-            filehandle.write("{} : {} \n".format(key, element[key]))
-        filehandle.write("\n")
-
+            filehandle.write("\n")
 
 def plot_clf(data):
 
@@ -250,7 +244,7 @@ def plot_clf(data):
     plt.plot(x2, y2, 'go')
     plt.show()
 
-def evaluate(classifier_str, model_ans, real_ans, print_ans = True):
+def evaluate(classifier_str, model_ans, real_ans, i, print_ans = True):
     true_positives = 0
     true_negatives = 0
     false_positives = 0
@@ -269,11 +263,10 @@ def evaluate(classifier_str, model_ans, real_ans, print_ans = True):
                 false_negatives += 1
 
 
-    result_dict[classifier_str]["TP"].append(true_positives)
-    result_dict[classifier_str]["TN"].append(true_negatives)
-    result_dict[classifier_str]["FP"].append(false_positives)
-    result_dict[classifier_str]["FN"].append(false_negatives)
-
+    result_dict[i][classifier_str]["TP"].append(true_positives)
+    result_dict[i][classifier_str]["TN"].append(true_negatives)
+    result_dict[i][classifier_str]["FP"].append(false_positives)
+    result_dict[i][classifier_str]["FN"].append(false_negatives)
 
     #true_positives, true_negatives, false_positives, false_negatives
 
@@ -294,64 +287,54 @@ def write_timedict_to_file(time_dict, filehandle):
         filehandle.write("\n")
 
 
-def test_dataset(data_points, data_labels, name):
+def test_dataset(data_points, data_labels, name, nr_of_folds = 1):
     #test algorithms using k-fold
 
-    rbf = HPF(max_nr_of_folds=1, verbose=False)
-    hpf = old_HPF(max_nr_of_folds=1, verbose=False) #classifier that use old hpfimplementation without rubberband folding
+
 
     K = 10
+
     skf = StratifiedKFold(n_splits=K)
 
-    #declare metrics
-    avg_accuracy_old_hpf = 0
-    avg_sensitivety_old_hpf = 0
-    avg_specificity_old_hpf = 0
-
-    avg_accuracy_hpf = 0
-    avg_sensitivety_hpf = 0
-    avg_specificity_hpf = 0
-
-    avg_accuracy_svm = 0
-    avg_sensitivety_svm = 0
-    avg_specificity_svm = 0
-
-    new_margin = 0
-    old_margin = 0
-    old_new_margin = 0
-    old_old_margin = 0
-    index = 0
-
-
-    result_hpf = []
-    result_rbf = []
-    result_svm = []
-
-    result_dict["SVM"] = {}
-    result_dict["HPF"] = {}
-    result_dict["RBF"] = {}
+    result_dict[0] = {}
 
     time_dict["SVM"] = {}
     time_dict["HPF"] = {}
     time_dict["RBF"] = {}
 
 
-    result_dict["SVM"]["TP"] = []
-    result_dict["SVM"]["TN"] = []
-    result_dict["SVM"]["FP"] = []
-    result_dict["SVM"]["FN"] = []
+    for i in range(nr_of_folds):
+        result_dict[i] = {}
 
-    result_dict["RBF"] = {}
-    result_dict["RBF"]["TP"] = []
-    result_dict["RBF"]["TN"] = []
-    result_dict["RBF"]["FP"] = []
-    result_dict["RBF"]["FN"] = []
+        result_dict[i]["RBF"] = {}
+        result_dict[i]["RBF"]["margin"] = 0
+        result_dict[i]["RBF"]["acc"] = 0
+        result_dict[i]["RBF"]["spe"] = 0
+        result_dict[i]["RBF"]["sen"] = 0
+        result_dict[i]["RBF"]["TP"] = []
+        result_dict[i]["RBF"]["TN"] = []
+        result_dict[i]["RBF"]["FP"] = []
+        result_dict[i]["RBF"]["FN"] = []
 
-    result_dict["HPF"] = {}
-    result_dict["HPF"]["TP"] = []
-    result_dict["HPF"]["TN"] = []
-    result_dict["HPF"]["FP"] = []
-    result_dict["HPF"]["FN"] = []
+        result_dict[i]["HPF"] = {}
+        result_dict[i]["HPF"]["margin"] = 0
+        result_dict[i]["HPF"]["acc"] = 0
+        result_dict[i]["HPF"]["spe"] = 0
+        result_dict[i]["HPF"]["sen"] = 0
+        result_dict[i]["HPF"]["TP"] = []
+        result_dict[i]["HPF"]["TN"] = []
+        result_dict[i]["HPF"]["FP"] = []
+        result_dict[i]["HPF"]["FN"] = []
+
+    result_dict[0]["SVM"] = {}
+    result_dict[0]["SVM"]["margin"] = 0
+    result_dict[0]["SVM"]["acc"] = 0
+    result_dict[0]["SVM"]["spe"] = 0
+    result_dict[0]["SVM"]["sen"] = 0
+    result_dict[0]["SVM"]["TP"] = []
+    result_dict[0]["SVM"]["TN"] = []
+    result_dict[0]["SVM"]["FP"] = []
+    result_dict[0]["SVM"]["FN"] = []
 
     time_dict["HPF"] = {}
     time_dict["SVM"] = {}
@@ -369,94 +352,114 @@ def test_dataset(data_points, data_labels, name):
 
     time_dict["RBF"]["fit"] = []
 
-    for train_index, test_index in skf.split(data_points, data_labels): # runs k-tests
+    avg_accuracy_svm = 0
+    avg_sensitivety_svm = 0
+    avg_specificity_svm = 0
+    avg_svm_margin = 0
+    for i in range(nr_of_folds):
+        rbf = HPF(max_nr_of_folds = (i + 1), verbose = False)
+        hpf = old_HPF(max_nr_of_folds = (i + 1), verbose = False) #classifier that use old hpfimplementation without rubberband folding
 
-        print("K fold k =", index)
-        index = index +1
-        X_train, X_test = data_points[train_index], data_points[test_index] #split data into one trainging part and one test part
-        Y_train, Y_test = data_labels[train_index], data_labels[test_index] # do the same with the labels
+        #declare metrics
+        avg_accuracy_hpf = 0
+        avg_sensitivety_hpf = 0
+        avg_specificity_hpf = 0
 
-        X_train, Y_train = clean_data([X_train, Y_train]) #Clean the training data, but not the test data
-
-        #print("running HPF")
-        rbf_start_time = datetime.datetime.now()
-        old_margin, new_margin = rbf.fit(X_train, Y_train, time_dict) #train
-        rbf_fit_time = datetime.datetime.now() - rbf_start_time
-        time_dict["RBF"]["fit"].append(rbf_fit_time.total_seconds()*1000)
-
-        hpf_start_time = datetime.datetime.now()
-        old_old_margin, old_new_margin = hpf.fit(X_train, Y_train) #train
-        hpf_fit_time = datetime.datetime.now() - hpf_start_time
-        time_dict["HPF"]["fit"].append(hpf_fit_time.total_seconds()*1000)
+        avg_accuracy_rbf = 0
+        avg_sensitivety_rbf = 0
+        avg_specificity_rbf = 0
 
 
-        hpf_start_time = datetime.datetime.now()
-        hpf_ans = hpf.classify(X_test) #old hpf
-        hpf_classify_time = datetime.datetime.now() - hpf_start_time
-        time_dict["HPF"]["classify"].append(hpf_classify_time.total_seconds()*1000)
+        avg_hpf_margin = 0
+        avg_rbf_margin = 0
 
-        rbf_start_time = datetime.datetime.now()
-        rbf_ans = rbf.classify(X_test) #new hpf
-        rbf_classify_time = datetime.datetime.now() - rbf_start_time
-        time_dict["RBF"]["classify"].append(rbf_classify_time.total_seconds()*1000)
+        avg_org_margin = 0
 
-        svm_start_time = datetime.datetime.now()
-        svm_ans = rbf.classify(X_test, False) # state of the art svm
-        svm_classify_time = datetime.datetime.now() - svm_start_time
-        time_dict["SVM"]["classify"].append(svm_classify_time.total_seconds()*1000)
+        index = 0
+
+        for train_index, test_index in skf.split(data_points, data_labels): # runs k-tests
+
+            print("K fold k =", index)
+            index = index + 1
+            X_train, X_test = data_points[train_index], data_points[test_index] #split data into one trainging part and one test part
+            Y_train, Y_test = data_labels[train_index], data_labels[test_index] # do the same with the labels
+
+            X_train, Y_train = clean_data([X_train, Y_train]) #Clean the training data, but not the test data
 
 
-        #compare with expected labels
-        acc, sen, spe, result_hpf_tmp = evaluate("HPF", hpf_ans, Y_test)
-        avg_accuracy_old_hpf += acc
-        avg_sensitivety_old_hpf += sen
-        avg_specificity_old_hpf += spe
+            # Fit RBF
+            rbf_start_time = datetime.datetime.now()
+            rbf_old_margin, rbf_new_margin = rbf.fit(X_train, Y_train, time_dict) #train
+            rbf_fit_time = datetime.datetime.now() - rbf_start_time
+            avg_rbf_margin += rbf_new_margin
 
-        acc, sen, spe, result_rbf_tmp = evaluate("RBF", rbf_ans, Y_test)
-        avg_accuracy_hpf += acc
-        avg_sensitivety_hpf += sen
-        avg_specificity_hpf += spe
+            time_dict["RBF"]["fit"].append(rbf_fit_time.total_seconds()*1000)
 
-        acc, sen, spe, result_svm_tmp = evaluate("SVM", svm_ans, Y_test)
-        avg_accuracy_svm += acc
-        avg_sensitivety_svm += sen
-        avg_specificity_svm += spe
+            # Fit HPF
+            hpf_start_time = datetime.datetime.now()
+            hpf_old_margin, hpf_new_margin = hpf.fit(X_train, Y_train) #train
+            hpf_fit_time = datetime.datetime.now() - hpf_start_time
+            avg_hpf_margin += hpf_new_margin
 
-        result_svm.append(result_svm_tmp)
-        result_rbf.append(result_rbf_tmp)
-        result_hpf.append(result_hpf_tmp)
+            time_dict["HPF"]["fit"].append(hpf_fit_time.total_seconds()*1000)
 
+            # Classify HPF
+            hpf_start_time = datetime.datetime.now()
+            hpf_ans = hpf.classify(X_test) #old hpf
+            hpf_classify_time = datetime.datetime.now() - hpf_start_time
+            time_dict["HPF"]["classify"].append(hpf_classify_time.total_seconds()*1000)
+
+            # Classify RBF
+            rbf_start_time = datetime.datetime.now()
+            rbf_ans = rbf.classify(X_test) #new hpf
+            rbf_classify_time = datetime.datetime.now() - rbf_start_time
+            time_dict["RBF"]["classify"].append(rbf_classify_time.total_seconds()*1000)
+
+
+            # Classify SVM
+            # Classift does not improve over folds
+            if i == 0:
+                svm_start_time = datetime.datetime.now()
+                svm_ans = rbf.classify(X_test, False) # state of the art svm
+                svm_classify_time = datetime.datetime.now() - svm_start_time
+                time_dict["SVM"]["classify"].append(svm_classify_time.total_seconds()*1000)
+
+                acc, sen, spe, result_svm_tmp = evaluate("SVM", svm_ans, Y_test, i)
+                avg_accuracy_svm += acc
+                avg_sensitivety_svm += sen
+                avg_specificity_svm += spe
+                avg_svm_margin += rbf_old_margin
+
+
+            #compare with expected labels
+            acc, sen, spe, result_hpf_tmp = evaluate("HPF", hpf_ans, Y_test, i)
+            avg_accuracy_hpf += acc
+            avg_sensitivety_hpf += sen
+            avg_specificity_hpf += spe
+
+            acc, sen, spe, result_rbf_tmp = evaluate("RBF", rbf_ans, Y_test, i)
+            avg_accuracy_rbf += acc
+            avg_sensitivety_rbf += sen
+            avg_specificity_rbf += spe
+
+
+        if i == 0:
+            result_dict[i]["SVM"]["margin"] = avg_svm_margin / K
+            result_dict[i]["SVM"]["acc"] = avg_accuracy_svm / K
+            result_dict[i]["SVM"]["spe"] = avg_specificity_svm / K
+            result_dict[i]["SVM"]["sen"] = avg_sensitivety_svm  / K
+
+
+        result_dict[i]["HPF"]["margin"] = avg_hpf_margin / K
+        result_dict[i]["HPF"]["acc"] = avg_accuracy_hpf / K
+        result_dict[i]["HPF"]["spe"] = avg_specificity_hpf / K
+        result_dict[i]["HPF"]["sen"] = avg_sensitivety_hpf  / K
+
+        result_dict[i]["RBF"]["margin"] = avg_rbf_margin / K
+        result_dict[i]["RBF"]["acc"] = avg_accuracy_rbf / K
+        result_dict[i]["RBF"]["spe"] = avg_specificity_rbf / K
+        result_dict[i]["RBF"]["sen"] = avg_sensitivety_rbf  / K
 
     file = open(name + ".data", "w+")
-    file.write("\n\nHPF old Margin: {} \n".format(old_old_margin))
-    file.write("HPF New Margin: {} \n".format(old_new_margin))
-    file.write("HPF Margin Change: {} \n".format(old_new_margin - old_old_margin))
-
-    file.write("\nOrginal Margin: {}  \n".format(old_margin))
-    file.write("RBF Margin: {}  \n".format(new_margin))
-    file.write("Margin Change: {}  \n".format(new_margin - old_margin))
-
-    file.write("\n\nAccuracy HPF : {}  \n".format((avg_accuracy_old_hpf / K)))
-    file.write("Sensitivety HPF : {}  \n".format(avg_sensitivety_old_hpf / K))
-    file.write("Specificity HPF : {}  \n".format(avg_specificity_old_hpf / K))
-
-    file.write("\n\nAccuracy RBF : {}  \n".format(avg_accuracy_hpf / K))
-    file.write("Sensitivety RBF : {}  \n".format(avg_sensitivety_hpf / K))
-    file.write("Specificity RBF : {}  \n".format(avg_specificity_hpf / K))
-
-    file.write("\n\nAccuracy SVM : {}\n".format(avg_accuracy_svm / K))
-    file.write("Sensitivety SVM : {} \n".format(avg_sensitivety_svm / K))
-    file.write("Specificity SVM : {} \n".format(avg_specificity_svm / K))
-
-    write_avg_matrix_to_file(result_dict, file)
-    write_timedict_to_file(time_dict, file)
-    file.write("RBF DATA \n")
-    dump_matrix_to_file(result_rbf, file)
-    file.write("\n\n")
-    file.write("HPF DATA\n")
-    dump_matrix_to_file(result_hpf, file)
-    file.write("\n\n")
-    file.write("SVM DATA\n")
-    dump_matrix_to_file(result_svm, file)
-
+    write_data_to_file(result_dict, file)
     file.close()

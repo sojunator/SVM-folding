@@ -572,7 +572,7 @@ class HPF:
             self.current_fold += 1
 
             self.data[0] = self.dim_red.project_up(self.data[0])
-            print(self.current_fold)
+            #print(self.current_fold)
 
             #fit for next iteration or exit contidion of just two support vectors
             self.clf.fit(self.data[0], self.data[1])
@@ -592,7 +592,7 @@ class HPF:
                 margins.clear()
 
         self.fitting = False
-        print("nr of support {}".format(len(self.clf.support_vectors_)))
+        #print("nr of support {}".format(len(self.clf.support_vectors_)))
 
 
         #self.clf.fit(self.data_points, self.data_labels)
