@@ -244,30 +244,24 @@ def clean_data(training_data, c=50):
     return training_data
 
 def write_data_to_file(result_dict, time_dict, filehandle):
-    filehandle.write("acc\tmargin\tspe\t\tspec\tang\tfit\tclassify")
+    filehandle.write("Fold")
 
-    for classifier in result_dict:
-        for fold in result_dict[classifier]:
-            margin = result_dict[classifier][fold]["margin"]
-            spec = result_dict[classifier][fold]["spe"]
-            sen = result_dict[classifier][fold]["sen"]
-            acc = result_dict[classifier][fold]["acc"]
-            ang = result_dict[classifier][fold]["ang"]
+    for classifier in result_dict[0]:
+            for entry in ["acc", "margin"]:
+                filehandle.write(", {}-{}\t\t\t".format(classifier, entry))
+    filehandle.write("\n")
 
-            avg_fit = sum(time_dict[classifier][fold]["fit"]) / len(time_dict[classifier][fold]["fit"])
-            avg_class = sum(time_dict[classifier][fold]["classify"]) / len(time_dict[classifier][fold]["classify"])
+    for fold in result_dict:
+        filehandle.write("{},".format(fold))
+        for classifier in result_dict[fold]:
+            for key in ["acc", "margin"]:
+                feature = result_dict[fold][classifier][key]
 
-            filehandle.write("{} {},".format(fold, acc))
-            filehandle.write("{} {},".format(fold, margin))
-            filehandle.write("{} {},".format(fold, sen))
-            filehandle.write("{} {},".format(fold, spec))
-            filehandle.write("{} {},".format(fold, ang))
-            filehandle.write("{} {},".format(fold, avg_fit))
-            filehandle.write("{} {}".format(fold, avg_class))
+                filehandle.write("{},".format(feature))
 
 
 
-            filehandle.write("\n")
+            filehandle.write("\t\t\t")
         filehandle.write("\n")
 
 def plot_clf(data):
@@ -313,10 +307,10 @@ def evaluate(classifier_str, model_ans, real_ans, i, print_ans = True):
                 false_negatives += 1
 
 
-    result_dict[classifier_str][i]["TP"].append(true_positives)
-    result_dict[classifier_str][i]["TN"].append(true_negatives)
-    result_dict[classifier_str][i]["FP"].append(false_positives)
-    result_dict[classifier_str][i]["FN"].append(false_negatives)
+    result_dict[i][classifier_str]["TP"].append(true_positives)
+    result_dict[i][classifier_str]["TN"].append(true_negatives)
+    result_dict[i][classifier_str]["FP"].append(false_positives)
+    result_dict[i][classifier_str]["FN"].append(false_negatives)
 
     #true_positives, true_negatives, false_positives, false_negatives
 
@@ -346,39 +340,36 @@ def test_dataset(data_points, data_labels, name, nr_of_folds = 1):
 
     skf = StratifiedKFold(n_splits=K)
 
-    result_dict[0] = {}
+
 
     time_dict["SVM"] = {}
     time_dict["HPF"] = {}
     time_dict["RBF"] = {}
 
-    result_dict["SVM"] = {}
-    result_dict["HPF"] = {}
-    result_dict["RBF"] = {}
-
 
 
     for i in range(nr_of_folds):
-        result_dict["RBF"][i] = {}
-        result_dict["RBF"][i]["margin"] = 0
-        result_dict["RBF"][i]["acc"] = 0
-        result_dict["RBF"][i]["spe"] = 0
-        result_dict["RBF"][i]["sen"] = 0
-        result_dict["RBF"][i]["TP"] = []
-        result_dict["RBF"][i]["TN"] = []
-        result_dict["RBF"][i]["FP"] = []
-        result_dict["RBF"][i]["FN"] = []
+        result_dict[i] = {}
+        result_dict[i]["RBF"] = {}
+        result_dict[i]["RBF"]["margin"] = 0
+        result_dict[i]["RBF"]["acc"] = 0
+        result_dict[i]["RBF"]["spe"] = 0
+        result_dict[i]["RBF"]["sen"] = 0
+        result_dict[i]["RBF"]["TP"] = []
+        result_dict[i]["RBF"]["TN"] = []
+        result_dict[i]["RBF"]["FP"] = []
+        result_dict[i]["RBF"]["FN"] = []
 
 
-        result_dict["HPF"][i] = {}
-        result_dict["HPF"][i]["margin"] = 0
-        result_dict["HPF"][i]["acc"] = 0
-        result_dict["HPF"][i]["spe"] = 0
-        result_dict["HPF"][i]["sen"] = 0
-        result_dict["HPF"][i]["TP"] = []
-        result_dict["HPF"][i]["TN"] = []
-        result_dict["HPF"][i]["FP"] = []
-        result_dict["HPF"][i]["FN"] = []
+        result_dict[i]["HPF"]= {}
+        result_dict[i]["HPF"]["margin"] = 0
+        result_dict[i]["HPF"]["acc"] = 0
+        result_dict[i]["HPF"]["spe"] = 0
+        result_dict[i]["HPF"]["sen"] = 0
+        result_dict[i]["HPF"]["TP"] = []
+        result_dict[i]["HPF"]["TN"] = []
+        result_dict[i]["HPF"]["FP"] = []
+        result_dict[i]["HPF"]["FN"] = []
 
         time_dict["HPF"][i] = {}
         time_dict["RBF"][i] = {}
@@ -390,20 +381,20 @@ def test_dataset(data_points, data_labels, name, nr_of_folds = 1):
         time_dict["RBF"][i]["fit"] = []
 
 
-    result_dict["SVM"][0] = {}
-    result_dict["SVM"][0]["margin"] = 0
-    result_dict["SVM"][0]["acc"] = 0
-    result_dict["SVM"][0]["spe"] = 0
-    result_dict["SVM"][0]["sen"] = 0
-    result_dict["SVM"][0]["ang"] = 0
-    result_dict["SVM"][0]["TP"] = []
-    result_dict["SVM"][0]["TN"] = []
-    result_dict["SVM"][0]["FP"] = []
-    result_dict["SVM"][0]["FN"] = []
+        result_dict[i]["SVM"] = {}
+        result_dict[i]["SVM"]["margin"] = 0
+        result_dict[i]["SVM"]["acc"] = 0
+        result_dict[i]["SVM"]["spe"] = 0
+        result_dict[i]["SVM"]["sen"] = 0
+        result_dict[i]["SVM"]["ang"] = 0
+        result_dict[i]["SVM"]["TP"] = []
+        result_dict[i]["SVM"]["TN"] = []
+        result_dict[i]["SVM"]["FP"] = []
+        result_dict[i]["SVM"]["FN"] = []
 
-    time_dict["SVM"][0] = {}
-    time_dict["SVM"][0]["classify"] = []
-    time_dict["SVM"][0]["fit"] = []
+        time_dict["SVM"][i] = {}
+        time_dict["SVM"][i]["classify"] = []
+        time_dict["SVM"][i]["fit"] = []
 
 
 
@@ -475,17 +466,17 @@ def test_dataset(data_points, data_labels, name, nr_of_folds = 1):
 
             # Classify SVM
             # Classift does not improve over folds
-            if i == 0:
-                svm_start_time = datetime.datetime.now()
-                svm_ans = rbf.classify(X_test, False) # state of the art svm
-                svm_classify_time = datetime.datetime.now() - svm_start_time
-                time_dict["SVM"][i]["classify"].append(svm_classify_time.total_seconds()*1000)
 
-                acc, sen, spe, result_svm_tmp = evaluate("SVM", svm_ans, Y_test, i)
-                avg_accuracy_svm += acc
-                avg_sensitivety_svm += sen
-                avg_specificity_svm += spe
-                avg_svm_margin += rbf_old_margin
+            svm_start_time = datetime.datetime.now()
+            svm_ans = rbf.classify(X_test, False) # state of the art svm
+            svm_classify_time = datetime.datetime.now() - svm_start_time
+            time_dict["SVM"][i]["classify"].append(svm_classify_time.total_seconds()*1000)
+
+            acc, sen, spe, result_svm_tmp = evaluate("SVM", svm_ans, Y_test, i)
+            avg_accuracy_svm += acc
+            avg_sensitivety_svm += sen
+            avg_specificity_svm += spe
+            avg_svm_margin += rbf_old_margin
 
 
             #compare with expected labels
@@ -500,24 +491,24 @@ def test_dataset(data_points, data_labels, name, nr_of_folds = 1):
             avg_specificity_rbf += spe
 
 
-        if i == 0:
-            result_dict["SVM"][i]["margin"] = avg_svm_margin / K
-            result_dict["SVM"][i]["acc"] = avg_accuracy_svm / K
-            result_dict["SVM"][i]["spe"] = avg_specificity_svm / K
-            result_dict["SVM"][i]["sen"] = avg_sensitivety_svm  / K
+
+        result_dict[i]["SVM"]["margin"] = avg_svm_margin / (K * (i+1))
+        result_dict[i]["SVM"]["acc"] = avg_accuracy_svm / (K * (i+1))
+        result_dict[i]["SVM"]["spe"] = avg_specificity_svm / (K * (i+1))
+        result_dict[i]["SVM"]["sen"] = avg_sensitivety_svm / (K * (i+1))
 
 
-        result_dict["HPF"][i]["margin"] = avg_hpf_margin / K
-        result_dict["HPF"][i]["acc"] = avg_accuracy_hpf / K
-        result_dict["HPF"][i]["spe"] = avg_specificity_hpf / K
-        result_dict["HPF"][i]["sen"] = avg_sensitivety_hpf  / K
-        result_dict["HPF"][i]["ang"] = hpf.rotation_data[i][-1]
+        result_dict[i]["HPF"]["margin"] = avg_hpf_margin / K
+        result_dict[i]["HPF"]["acc"] = avg_accuracy_hpf / K
+        result_dict[i]["HPF"]["spe"] = avg_specificity_hpf / K
+        result_dict[i]["HPF"]["sen"] = avg_sensitivety_hpf  / K
+        result_dict[i]["HPF"]["ang"] = hpf.rotation_data[i][-1]
 
-        result_dict["RBF"][i]["ang"] = rbf.rotation_data[i][-1]
-        result_dict["RBF"][i]["margin"] = avg_rbf_margin / K
-        result_dict["RBF"][i]["acc"] = avg_accuracy_rbf / K
-        result_dict["RBF"][i]["spe"] = avg_specificity_rbf / K
-        result_dict["RBF"][i]["sen"] = avg_sensitivety_rbf  / K
+        result_dict[i]["RBF"]["ang"] = rbf.rotation_data[i][-1]
+        result_dict[i]["RBF"]["margin"] = avg_rbf_margin / K
+        result_dict[i]["RBF"]["acc"] = avg_accuracy_rbf / K
+        result_dict[i]["RBF"]["spe"] = avg_specificity_rbf / K
+        result_dict[i]["RBF"]["sen"] = avg_sensitivety_rbf  / K
 
     file = open(name + ".data", "w+")
     write_data_to_file(result_dict, time_dict, file)
