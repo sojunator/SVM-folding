@@ -48,7 +48,7 @@ def normalize_data(data_points):
     min_values = np.amin(data_points, 0)
 
     data_points = data_points - min_values
-    data_points = data_points / max_values
+    data_points = data_points / (max_values - min_values)
 
 
     return data_points
@@ -142,7 +142,9 @@ def read_data_from_folder(folder_name):
     return datasets
 
 def plot_3d(data):
+    
     fig = plt.figure()
+    
     ax = fig.add_subplot(111, projection='3d')
 
 
@@ -224,17 +226,11 @@ def extend_data_spherical(data_points, data_labels, multiplyer = 25, radius = 1)
     if len(data_points[0]) != 3:
         print("wrong dim")
 
-    plot_3d([data_points,data_labels])
-    plt.show()
-
     for p in zip(data_points, data_labels):
         for i in range(0,multiplyer):
             data_points = np.append(data_points, sample_sphere(p[0],radius), axis=0)
             data_labels = np.append(data_labels, np.array(p[1]))
 
-
-    plot_3d([data_points,data_labels])
-    plt.show()
 
     return data_points, data_labels
 
