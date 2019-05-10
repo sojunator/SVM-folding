@@ -243,21 +243,36 @@ def clean_data(training_data, c=50):
 
     return training_data
 
+def dump_raw_data(result_dict, file):
+    for fold in result_dict:
+        for classifier in result_dict[fold]:
+            file.write("{} - {}\n".format(classifier, fold))
+            for key in ["TP", "TN", "FP", "FN"]:
+                file.write("{} - {}\n".format(key, result_dict[fold][classifier][key]))
+
+
 def write_data_to_file(result_dict, time_dict, filehandle):
+    special_keys = ["TP", "TN", "FP", "FN"]
+
     filehandle.write("Fold")
 
     for classifier in result_dict[0]:
-            for entry in ["acc", "margin"]:
+            for entry in ["acc", "margin"] + special_keys:
                 filehandle.write(", {}-{}\t\t\t".format(classifier, entry))
     filehandle.write("\n")
 
     for fold in result_dict:
         filehandle.write("{},".format(fold))
         for classifier in result_dict[fold]:
-            for key in ["acc", "margin"]:
-                feature = result_dict[fold][classifier][key]
+            for key in ["acc", "margin"] + special_keys:
+                if key in special_keys:
+                    avg_value = sum(result_dict[fold][classifier][key]) / len(result_dict[fold][classifier][key])
 
-                filehandle.write("{},".format(feature))
+                    filehandle.write("{},".format(avg_value))
+                else:
+                    feature = result_dict[fold][classifier][key]
+
+                    filehandle.write("{},".format(feature))
 
 
 
@@ -265,8 +280,6 @@ def write_data_to_file(result_dict, time_dict, filehandle):
         filehandle.write("\n")
 
 def plot_clf(data):
-
-
     x1 = []
     y1 = []
     x2 = []
@@ -510,6 +523,10 @@ def test_dataset(data_points, data_labels, name, nr_of_folds = 1):
         result_dict[i]["RBF"]["spe"] = avg_specificity_rbf / K
         result_dict[i]["RBF"]["sen"] = avg_sensitivety_rbf  / K
 
-    file = open(name + ".data", "w+")
-    write_data_to_file(result_dict, time_dict, file)
-    file.close()
+    result_file = open(name + ".data", "w+")
+    raw_file = open(name + "_raw" + ".data", "w+")
+    write_data_to_file(result_dict, time_dict, result_file)
+
+    dump_raw_data(result_dict, raw_file)
+    result_file.close()
+    raw_file.close()
