@@ -17,6 +17,30 @@ import datetime
 result_dict = {}
 time_dict = {}
 
+def plot2d_from_columns(file_path, x_column_index = 0):
+
+    ######
+    #Note: plt.show() needs to be called outside the function
+    #####
+
+    sns.set(style="whitegrid")
+
+    data_frame = pd.read_csv(file_path)
+
+    columns_len = len(data_frame.columns.values)
+    if (column_index_1 > columns_len - 1 or column_index_2 > columns_len - 1):
+        print("Error: Columns out of range!")
+        return
+    
+    
+    #data_frame.columns.values[0]
+    #data_frame.columns.values[1]
+
+    data_frame.plot.line(x=data_frame.columns.values[x_column_index],y=data_frame.drop(data_frame.columns.values[x_column_index], axis=1).columns.values)
+    
+
+
+
 def normalize_data(data_points):
 
     # Perform linear search in each dim for min and max value
