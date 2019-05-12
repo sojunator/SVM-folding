@@ -31,13 +31,13 @@ def plot2d_from_columns(file_path, x_column_index = 0):
     if (column_index_1 > columns_len - 1 or column_index_2 > columns_len - 1):
         print("Error: Columns out of range!")
         return
-    
-    
+
+
     #data_frame.columns.values[0]
     #data_frame.columns.values[1]
 
     data_frame.plot.line(x=data_frame.columns.values[x_column_index],y=data_frame.drop(data_frame.columns.values[x_column_index], axis=1).columns.values)
-    
+
 
 
 
@@ -142,9 +142,9 @@ def read_data_from_folder(folder_name):
     return datasets
 
 def plot_3d(data):
-    
+
     fig = plt.figure()
-    
+
     ax = fig.add_subplot(111, projection='3d')
 
 
@@ -247,7 +247,7 @@ def clean_data(training_data, c=50):
 
     new_labels = clf.predict(training_data[0])
 
-
+    removed_data = []
     indexes = []
     for idx, label in enumerate(new_labels):
         if not label == training_data[1][idx]:
@@ -255,6 +255,11 @@ def clean_data(training_data, c=50):
 
     #plot_3d(training_data)
 
+    # Copy the deleted points before removal
+    for index in indexes:
+        removed_data.append((training_data[0][index], training_data[1][index]))
+
+    print(len(removed_data))
     training_data[0] = np.delete(training_data[0], indexes, 0)
     training_data[1] = np.delete(training_data[1], indexes, 0)
 
@@ -364,12 +369,14 @@ def write_timedict_to_file(time_dict, filehandle):
         filehandle.write("\n")
 
 
-def test_dataset(data_points, data_labels, name, nr_of_folds = 1):
+def test_dataset(data_points, data_labels, name, nr_of_folds = 1, extend = False):
     #test algorithms using k-fold
 
 
-
-    K = 10
+    if extend:
+        K = 2
+    else:
+        K = 10
 
     skf = StratifiedKFold(n_splits=K)
 
@@ -467,6 +474,8 @@ def test_dataset(data_points, data_labels, name, nr_of_folds = 1):
 
             X_train, Y_train = clean_data([X_train, Y_train]) #Clean the training data, but not the test data
 
+            if extend:
+                X_test, Y_test = extend_data_spherical(X_test, Y_train)
 
             # Fit RBF
             rbf_start_time = datetime.datetime.now()
