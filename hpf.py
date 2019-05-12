@@ -325,6 +325,7 @@ class HPF:
         (cos, -sin)
         (sin, cos)
         """
+        alpha = np.min((alpha, 1.0))
         c = alpha
         s = np.sqrt(1 - alpha * alpha)
         #theta = alpha
@@ -337,7 +338,9 @@ class HPF:
         (cos, sin)
         (-sin, cos)
         """
+        alpha = np.min((alpha, 1.0))
         c = alpha
+
         s = np.sqrt(1 - alpha * alpha)
         #theta = alpha
         #c, s = np.cos(theta), np.sin(theta)
@@ -352,8 +355,7 @@ class HPF:
         v = v / np.linalg.norm(v)
 
         r_angle = np.dot(v, normal)
-
-        if np.arccos(r_angle)* 180 / 3.1415 > 90:
+        if np.arccos(np.min((r_angle , 1.0))* 180 / 3.1415 > 90):
             print("ASDFKAHSDGFKAHSGDFKJAHSGDFKJHAGSDKJFHAGSDKJFXHAGSDKJFASDLKJF")
 
         return np.fmax(r_angle, angle)
