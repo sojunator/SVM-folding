@@ -253,7 +253,7 @@ def extend_data_spherical(data_points, data_labels, multiplyer = 25, radius = 1)
 
     return data_points, data_labels
 
-def clean_data(training_data, c=50):
+def clean_data(training_data, c=1):
     """
     training data with labels
     return linearly separable data
@@ -397,14 +397,10 @@ def write_timedict_to_file(time_dict, filehandle):
         filehandle.write("\n")
 
 
-def test_dataset(data_points, data_labels, name, nr_of_folds = 1, extend = False):
+def test_dataset(data_points, data_labels, name, nr_of_folds = 1, extend = False, K = 10):
     #test algorithms using k-fold
 
 
-    if extend:
-        K = 2
-    else:
-        K = 10
 
     skf = StratifiedKFold(n_splits=K)
 
@@ -414,7 +410,7 @@ def test_dataset(data_points, data_labels, name, nr_of_folds = 1, extend = False
     time_dict["HPF"] = {}
     time_dict["RBF"] = {}
 
-    measurements = ["margin", "acc", "spe", "sen", "ang"]
+    measurements = ["margin", "acc", "spe", "sen", "ang"] #graph list
 
 
     for i in range(nr_of_folds):
