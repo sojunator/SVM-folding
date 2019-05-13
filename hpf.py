@@ -586,13 +586,14 @@ class HPF:
             self.new_margin = self.get_margin(self.clf)
             margins.append(math.fabs(self.new_margin - previous_margin))
             previous_margin = self.new_margin
-
+            """
             if len(margins) == 3:
                 avg = sum(margins) / len(margins)
                 if avg < 0.01:
                     val = -1
                     print("termination due to floating point")
                 margins.clear()
+            """
 
         self.fitting = False
         #print("nr of support {}".format(len(self.clf.support_vectors_)))
