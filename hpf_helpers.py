@@ -13,6 +13,7 @@ from sklearn.datasets import make_blobs, load_breast_cancer
 from hpf import HPF
 from old_hpf import old_HPF
 import datetime
+from mpl_toolkits.mplot3d import axes3d
 
 result_dict = {}
 time_dict = {}
@@ -140,9 +141,10 @@ def read_data_from_folder(folder_name):
 
 
     return datasets
+   
 
-def plot_3d(data):
-
+def plot_3d(data, normal = None, intercept = None):
+    
     fig = plt.figure()
 
     ax = fig.add_subplot(111, projection='3d')
@@ -178,6 +180,28 @@ def plot_3d(data):
     ax.set_xlim(0,1)
     ax.set_ylim(0,1)
     ax.set_zlim(0,1)
+
+
+    #point  = np.array([0.5, 0.5, 0.5])
+    #normal = np.array([1, 1, 2])
+
+
+    if normal is not None and intercept is not None:
+        # a plane is a*x+b*y+c*z+d=0
+        # [a,b,c] is the normal. Thus, we have to calculate
+        # d and we're set
+
+        # create x,y
+        xx, yy = np.meshgrid([0,1], [0,1])
+
+        #d = -point.dot(normal)
+
+        # calculate corresponding z
+        z = (-intercept -normal[0] * xx - normal[1] * yy) * 1. /normal[2]
+
+        # plot the surface
+        ax.plot_surface(xx, yy, z)
+    
 
 
 
@@ -244,7 +268,7 @@ def clean_data(training_data, c=50):
 
     clf.fit(training_data[0], training_data[1])
 
-
+    
     new_labels = clf.predict(training_data[0])
 
     removed_data = []
@@ -253,7 +277,12 @@ def clean_data(training_data, c=50):
         if not label == training_data[1][idx]:
             indexes.append(idx)
 
-    #plot_3d(training_data)
+    normal = clf.coef_[0]
+    clf.intercept_[0]
+
+
+
+    plot_3d(training_data, np.array(normal), clf.intercept_[0])
 
     # Copy the deleted points before removal
     for index in indexes:
@@ -263,8 +292,9 @@ def clean_data(training_data, c=50):
     training_data[0] = np.delete(training_data[0], indexes, 0)
     training_data[1] = np.delete(training_data[1], indexes, 0)
 
-    #plot_3d(training_data)
-    #plt.show()
+    plot_3d(training_data, np.array(normal), clf.intercept_[0])
+
+    plt.show()
 
     return training_data
 
