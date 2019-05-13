@@ -473,7 +473,26 @@ def test_dataset(data_points, data_labels, name, nr_of_folds = 1, extend = False
     avg_sensitivety_svm = 0
     avg_specificity_svm = 0
     avg_svm_margin = 0
+    for i in range(nr_of_folds):
+        rbf = HPF(max_nr_of_folds = (i + 1), verbose = False)
+        hpf = old_HPF(max_nr_of_folds = (i + 1), verbose = False) #classifier that use old hpfimplementation without rubberband folding
 
+        #declare metrics
+        avg_accuracy_hpf = 0
+        avg_sensitivety_hpf = 0
+        avg_specificity_hpf = 0
+
+        avg_accuracy_rbf = 0
+        avg_sensitivety_rbf = 0
+        avg_specificity_rbf = 0
+
+
+        avg_hpf_margin = 0
+        avg_rbf_margin = 0
+
+        avg_org_margin = 0
+
+        index = 0
 
         for train_index, test_index in skf.split(data_points, data_labels): # runs k-tests
 
@@ -494,83 +513,61 @@ def test_dataset(data_points, data_labels, name, nr_of_folds = 1, extend = False
 
 
             X_train, Y_train = clean_data([X_train, Y_train]) #Clean the training data, but not the test data
-            for
+
             # Fit RBF
+            rbf_start_time = datetime.datetime.now()
+            rbf_old_margin, rbf_new_margin = rbf.fit(X_train, Y_train, time_dict) #train
+            rbf_fit_time = datetime.datetime.now() - rbf_start_time
+            avg_rbf_margin += rbf_new_margin
 
-            #declare metrics
-            avg_accuracy_hpf = 0
-            avg_sensitivety_hpf = 0
-            avg_specificity_hpf = 0
+            time_dict["RBF"][i]["fit"].append(rbf_fit_time.total_seconds()*1000)
 
-            avg_accuracy_rbf = 0
-            avg_sensitivety_rbf = 0
-            avg_specificity_rbf = 0
+            # Fit HPF
+            hpf_start_time = datetime.datetime.now()
+            hpf_old_margin, hpf_new_margin = hpf.fit(X_train, Y_train) #train
+            hpf_fit_time = datetime.datetime.now() - hpf_start_time
+            avg_hpf_margin += hpf_new_margin
 
+            time_dict["HPF"][i]["fit"].append(hpf_fit_time.total_seconds()*1000)
 
-            avg_hpf_margin = 0
-            avg_rbf_margin = 0
+            # Classify HPF
+            hpf_start_time = datetime.datetime.now()
+            hpf_ans = hpf.classify(X_test) #old hpf
+            hpf_classify_time = datetime.datetime.now() - hpf_start_time
+            time_dict["HPF"][i]["classify"].append(hpf_classify_time.total_seconds()*1000)
 
-            avg_org_margin = 0
-            for i in range(nr_of_folds):
-                rbf = HPF(max_nr_of_folds = (i + 1), verbose = False)
-                hpf = old_HPF(max_nr_of_folds = (i + 1), verbose = False) #classifier that use old hpfimplementation without rubberband folding
-
-
-
-                index = 0
-                rbf_start_time = datetime.datetime.now()
-                rbf_old_margin, rbf_new_margin = rbf.fit(X_train, Y_train, time_dict) #train
-                rbf_fit_time = datetime.datetime.now() - rbf_start_time
-                avg_rbf_margin += rbf_new_margin
-
-                time_dict["RBF"][i]["fit"].append(rbf_fit_time.total_seconds()*1000)
-
-                # Fit HPF
-                hpf_start_time = datetime.datetime.now()
-                hpf_old_margin, hpf_new_margin = hpf.fit(X_train, Y_train) #train
-                hpf_fit_time = datetime.datetime.now() - hpf_start_time
-                avg_hpf_margin += hpf_new_margin
-
-                time_dict["HPF"][i]["fit"].append(hpf_fit_time.total_seconds()*1000)
-
-                # Classify HPF
-                hpf_start_time = datetime.datetime.now()
-                hpf_ans = hpf.classify(X_test) #old hpf
-                hpf_classify_time = datetime.datetime.now() - hpf_start_time
-                time_dict["HPF"][i]["classify"].append(hpf_classify_time.total_seconds()*1000)
-
-                # Classify RBF
-                rbf_start_time = datetime.datetime.now()
-                rbf_ans = rbf.classify(X_test) #new hpf
-                rbf_classify_time = datetime.datetime.now() - rbf_start_time
-                time_dict["RBF"][i]["classify"].append(rbf_classify_time.total_seconds()*1000)
+            # Classify RBF
+            rbf_start_time = datetime.datetime.now()
+            rbf_ans = rbf.classify(X_test) #new hpf
+            rbf_classify_time = datetime.datetime.now() - rbf_start_time
+            time_dict["RBF"][i]["classify"].append(rbf_classify_time.total_seconds()*1000)
 
 
-                # Classify SVM
-                # Classift does not improve over folds
+            # Classify SVM
+            # Classift does not improve over folds
 
-                svm_start_time = datetime.datetime.now()
-                svm_ans = rbf.classify(X_test, False) # state of the art svm
-                svm_classify_time = datetime.datetime.now() - svm_start_time
-                time_dict["SVM"][i]["classify"].append(svm_classify_time.total_seconds()*1000)
+            svm_start_time = datetime.datetime.now()
+            svm_ans = rbf.classify(X_test, False) # state of the art svm
+            svm_classify_time = datetime.datetime.now() - svm_start_time
+            time_dict["SVM"][i]["classify"].append(svm_classify_time.total_seconds()*1000)
 
-                acc, sen, spe, result_svm_tmp = evaluate("SVM", svm_ans, Y_test, i)
-                avg_accuracy_svm += acc
-                avg_sensitivety_svm += sen
-                avg_specificity_svm += spe
-                avg_svm_margin += rbf_old_margin
+            acc, sen, spe, result_svm_tmp = evaluate("SVM", svm_ans, Y_test, i)
+            avg_accuracy_svm += acc
+            avg_sensitivety_svm += sen
+            avg_specificity_svm += spe
+            avg_svm_margin += rbf_old_margin
 
 
-                #compare with expected labels
-                acc, sen, spe, result_hpf_tmp = evaluate("HPF", hpf_ans, Y_test, i)
-                avg_accuracy_hpf += acc
-                avg_sensitivety_hpf += sen
-                avg_specificity_hpf += spe
+            #compare with expected labels
+            acc, sen, spe, result_hpf_tmp = evaluate("HPF", hpf_ans, Y_test, i)
+            avg_accuracy_hpf += acc
+            avg_sensitivety_hpf += sen
+            avg_specificity_hpf += spe
 
-                acc, sen, spe, result_rbf_tmp = evaluate("RBF", rbf_ans, Y_test, i)
-                avg_accuracy_rbf += acc
-                avg_sensitivety_rbf += sen
-                avg_specificity_rbf += spe
+            acc, sen, spe, result_rbf_tmp = evaluate("RBF", rbf_ans, Y_test, i)
+            avg_accuracy_rbf += acc
+            avg_sensitivety_rbf += sen
+            avg_specificity_rbf += spe
 
 
 
