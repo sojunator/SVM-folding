@@ -282,7 +282,7 @@ def clean_data(training_data, c=50):
 
 
 
-    plot_3d(training_data, np.array(normal), clf.intercept_[0])
+    #plot_3d(training_data, np.array(normal), clf.intercept_[0])
 
     # Copy the deleted points before removal
     for index in indexes:
@@ -292,9 +292,9 @@ def clean_data(training_data, c=50):
     training_data[0] = np.delete(training_data[0], indexes, 0)
     training_data[1] = np.delete(training_data[1], indexes, 0)
 
-    plot_3d(training_data, np.array(normal), clf.intercept_[0])
+    #plot_3d(training_data, np.array(normal), clf.intercept_[0])
 
-    plt.show()
+    #plt.show()
 
     return training_data
 
@@ -502,14 +502,14 @@ def test_dataset(data_points, data_labels, name, nr_of_folds = 1, extend = False
             Y_train, Y_test = data_labels[train_index], data_labels[test_index] # do the same with the labels
             #X_test, Y_test = extend_data_spherical(X_test, Y_test, 20, 0.1)
 
-            plot_3d([X_train, Y_train])
+            #plot_3d([X_train, Y_train])
 
             if extend:
-                X_train, Y_train = extend_data_spherical(X_train, Y_train, 5, 0.3)
+                X_train, Y_train = extend_data_spherical(X_train, Y_train, 25, 0.3) #extend for bmi data
 
             
-            plot_3d([X_train, Y_train])
-            plt.show()
+            #plot_3d([X_train, Y_train])
+            #plt.show()
 
 
             X_train, Y_train = clean_data([X_train, Y_train]) #Clean the training data, but not the test data

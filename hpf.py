@@ -356,7 +356,7 @@ class HPF:
 
         r_angle = np.dot(v, normal)
         if np.arccos(np.min((r_angle , 1.0)))* 180 / 3.1415 > 90:
-            print("ASDFKAHSDGFKAHSGDFKJAHSGDFKJHAGSDKJFHAGSDKJFXHAGSDKJFASDLKJF")
+            print("ERROR in get_rubber_band_angle: angle is larger than 90 degrees")
 
         return np.fmax(r_angle, angle)
 
