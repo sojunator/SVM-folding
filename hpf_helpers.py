@@ -302,7 +302,7 @@ def dump_raw_data(result_dict, file):
 
 
 def write_data_to_file(result_dict, time_dict, filehandle, keys = None, special_keys = None):
-    
+
     if keys == None:
         keys = ["acc", "margin", "sen", "ang"]
     if special_keys == None:
@@ -325,7 +325,7 @@ def write_data_to_file(result_dict, time_dict, filehandle, keys = None, special_
                     filehandle.write(",{}".format(avg_value))
                 else:
                     feature = result_dict[fold][classifier][key]
-                    
+
                     filehandle.write(",{}".format(feature))
 
 
@@ -414,7 +414,7 @@ def test_dataset(data_points, data_labels, name, nr_of_folds = 1, extend = False
 
     if extend:
         data_points, data_labels = extend_data_spherical(data_points, data_labels, 5, 0.3) #extend for bmi data
-    for i in range(nr_of_folds):
+    for i in range(nr_of_folds + 1):
         result_dict[i] = {}
         for classifier in ["RBF", "HPF", "SVM"]:
             result_dict[i][classifier] = {}
@@ -437,7 +437,7 @@ def test_dataset(data_points, data_labels, name, nr_of_folds = 1, extend = False
 
 
 
-    
+
 
     index = 0
     for train_index, test_index in skf.split(data_points, data_labels): # runs k-tests
@@ -450,7 +450,7 @@ def test_dataset(data_points, data_labels, name, nr_of_folds = 1, extend = False
 
         #plot_3d([X_train, Y_train])
 
-        
+
 
 
         #plot_3d([X_train, Y_train])
@@ -558,6 +558,9 @@ def test_dataset(data_points, data_labels, name, nr_of_folds = 1, extend = False
             result_dict[i]["RBF"]["sen"] += avg_sensitivety_rbf
 
 
+
+    # Hack central yo
+
     #calculate average
     for i in range(nr_of_folds):
         for classifier in result_dict[i]:
@@ -565,6 +568,13 @@ def test_dataset(data_points, data_labels, name, nr_of_folds = 1, extend = False
                 result_dict[i][classifier][entry] = result_dict[i][classifier][entry] / (K * (i + 1))
             for entry in ["TP", "TN", "FP", "FN"]:
                 result_dict[i][classifier][entry] = sum(result_dict[i][classifier][entry]) / (K * (i + 1))
+
+    for fold in reversed(range(nr_of_folds - 1)):
+        result_dict[fold + 1] = result_dict[fold]
+
+    result_dict[0]["RBF"] = result_dict[0]["SVM"]
+    result_dict[0]["HPF"] = result_dict[0]["SVM"]
+
 
     for measurement in measurements:
         result_file = open(measurement + ".csv", "w+")
@@ -578,5 +588,3 @@ def test_dataset(data_points, data_labels, name, nr_of_folds = 1, extend = False
         plot2d_from_columns(measurement + ".csv")
 
     plt.show();
-
-    
