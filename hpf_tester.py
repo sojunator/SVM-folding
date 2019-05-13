@@ -21,9 +21,7 @@ nr_of_folds = 3
 np.seterr(all='warn')
 warnings.filterwarnings('error')
 
-plot2d_from_columns("datasets/seaborntest.csv")
 
-plt.show();
 
 
 data_set = read_data_from_folder("datasets") # Load data

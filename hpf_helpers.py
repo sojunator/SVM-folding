@@ -301,32 +301,35 @@ def dump_raw_data(result_dict, file):
                 file.write("{} - {}\n".format(key, result_dict[fold][classifier][key]))
 
 
-def write_data_to_file(result_dict, time_dict, filehandle):
-    special_keys = []
-    keys = ["acc", "margin"]
+def write_data_to_file(result_dict, time_dict, filehandle, keys = None, special_keys = None):
+    
+    if keys == None:
+        keys = ["acc", "margin", "sen", "ang"]
+    if special_keys == None:
+        special_keys = ["TP", "TN", "FP", "FN"]
+
     filehandle.write("Fold")
 
     for classifier in result_dict[0]:
             for entry in keys + special_keys:
-                filehandle.write(", {}-{}\t\t\t".format(classifier, entry))
+                filehandle.write(",{}{}".format(classifier, entry))
     filehandle.write("\n")
 
     for fold in result_dict:
-        filehandle.write("{},".format(fold))
+        filehandle.write("{}".format(fold))
         for classifier in result_dict[fold]:
             for key in keys+ special_keys:
                 if key in special_keys:
                     avg_value = sum(result_dict[fold][classifier][key]) / len(result_dict[fold][classifier][key])
 
-                    filehandle.write("{},".format(avg_value))
+                    filehandle.write(",{}".format(avg_value))
                 else:
                     feature = result_dict[fold][classifier][key]
+                    
+                    filehandle.write(",{}".format(feature))
 
-                    filehandle.write("{},".format(feature))
 
 
-
-            filehandle.write("\t\t\t")
         filehandle.write("\n")
 
 def plot_clf(data):
@@ -411,6 +414,7 @@ def test_dataset(data_points, data_labels, name, nr_of_folds = 1, extend = False
     time_dict["HPF"] = {}
     time_dict["RBF"] = {}
 
+    measurements = ["margin", "acc", "spe", "sen", "ang"]
 
 
     for i in range(nr_of_folds):
@@ -566,11 +570,17 @@ def test_dataset(data_points, data_labels, name, nr_of_folds = 1, extend = False
             for entry in ["TP", "TN", "FP", "FN"]:
                 result_dict[i][classifier][entry] = sum(result_dict[i][classifier][entry]) / (K * (i + 1))
 
-    result_file = open(name + ".data", "w+")
-    raw_file = open(name + "_raw" + ".data", "w+")
-    write_data_to_file(result_dict, time_dict, result_file)
+    for measurement in measurements:
+        result_file = open(measurement + ".csv", "w+")
+        raw_file = open(measurement + "_raw" + ".data", "w+")
+        write_data_to_file(result_dict, time_dict, result_file, [measurement], [])
+        dump_raw_data(result_dict, raw_file)
+        result_file.close()
+        raw_file.close()
 
-    dump_raw_data(result_dict, raw_file)
-    result_file.close()
-    raw_file.close()
-    hitler
+    for measurement in measurements:
+        plot2d_from_columns(measurement + ".csv")
+
+    plt.show();
+
+    
