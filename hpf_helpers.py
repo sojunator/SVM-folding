@@ -412,7 +412,8 @@ def test_dataset(data_points, data_labels, name, nr_of_folds = 1, extend = False
 
     measurements = ["margin", "acc", "spe", "sen", "ang"] #graph list
 
-
+    if extend:
+        data_points, data_labels = extend_data_spherical(data_points, data_labels, 5, 0.3) #extend for bmi data
     for i in range(nr_of_folds):
         result_dict[i] = {}
         for classifier in ["RBF", "HPF", "SVM"]:
@@ -436,7 +437,7 @@ def test_dataset(data_points, data_labels, name, nr_of_folds = 1, extend = False
 
 
 
-
+    
 
     index = 0
     for train_index, test_index in skf.split(data_points, data_labels): # runs k-tests
@@ -449,8 +450,7 @@ def test_dataset(data_points, data_labels, name, nr_of_folds = 1, extend = False
 
         #plot_3d([X_train, Y_train])
 
-        if extend:
-            X_train, Y_train = extend_data_spherical(X_train, Y_train, 25, 0.3) #extend for bmi data
+        
 
 
         #plot_3d([X_train, Y_train])
