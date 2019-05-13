@@ -355,7 +355,7 @@ class HPF:
         v = v / np.linalg.norm(v)
 
         r_angle = np.dot(v, normal)
-        if np.arccos(np.min((r_angle , 1.0))* 180 / 3.1415 > 90):
+        if np.arccos(np.min((r_angle , 1.0)))* 180 / 3.1415 > 90:
             print("ASDFKAHSDGFKAHSGDFKJAHSGDFKJHAGSDKJFHAGSDKJFXHAGSDKJFASDLKJF")
 
         return np.fmax(r_angle, angle)

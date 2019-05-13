@@ -502,10 +502,17 @@ def test_dataset(data_points, data_labels, name, nr_of_folds = 1, extend = False
             Y_train, Y_test = data_labels[train_index], data_labels[test_index] # do the same with the labels
             #X_test, Y_test = extend_data_spherical(X_test, Y_test, 20, 0.1)
 
-            X_train, Y_train = clean_data([X_train, Y_train]) #Clean the training data, but not the test data
+            plot_3d([X_train, Y_train])
 
             if extend:
-                X_test, Y_test = extend_data_spherical(X_test, Y_train)
+                X_train, Y_train = extend_data_spherical(X_train, Y_train, 5, 0.3)
+
+            
+            plot_3d([X_train, Y_train])
+            plt.show()
+
+
+            X_train, Y_train = clean_data([X_train, Y_train]) #Clean the training data, but not the test data
 
             # Fit RBF
             rbf_start_time = datetime.datetime.now()
