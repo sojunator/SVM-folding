@@ -14,15 +14,17 @@ from hpf import HPF
 from old_hpf import old_HPF
 import datetime
 from mpl_toolkits.mplot3d import axes3d
+from matplotlib.ticker import MaxNLocator
 
 result_dict = {}
 time_dict = {}
 
-def plot2d_from_columns(file_path, x_column_index = 0):
+def plot2d_from_columns(file_path, x_column_index = 0, y_label = "y"):
 
     ######
     #Note: plt.show() needs to be called outside the function
     #####
+
 
 
     data_frame = pd.read_csv(file_path)
@@ -32,7 +34,29 @@ def plot2d_from_columns(file_path, x_column_index = 0):
         print("Error: Columns out of range!")
         return
 
-    data_frame.plot.line(x=data_frame.columns.values[x_column_index],y=data_frame.drop(data_frame.columns.values[x_column_index], axis=1).columns.values)
+    x_vals = data_frame.columns.values[x_column_index]
+    y_vals = data_frame.drop(data_frame.columns.values[x_column_index], axis=1).columns.values #drop x_axis
+    
+    new_cols = [x_vals]
+    
+    y_vals = [y_lab[:3] for y_lab in y_vals]
+    
+
+    new_cols.extend(y_vals)
+
+    data_frame.columns = new_cols
+
+    lineplot = data_frame.plot.line(x=x_vals,y=y_vals)
+    lineplot.set_ylabel(y_label)
+
+
+    xint = []
+    locs, labels = plt.xticks()
+    for each in locs:
+        xint.append(int(each))
+    plt.xticks(xint)
+    
+
 
 
 
@@ -410,7 +434,7 @@ def test_dataset(data_points, data_labels, name, nr_of_folds = 1, extend = False
     time_dict["HPF"] = {}
     time_dict["RBF"] = {}
 
-    measurements = ["margin", "acc", "spe", "sen", "ang"] #graph list
+    measurements = ["Margin", "Accuracy", "Specificity", "Sensitivety"] #graph list
 
     if extend:
         data_points, data_labels = extend_data_spherical(data_points, data_labels, 5, 0.3) #extend for bmi data
@@ -418,10 +442,10 @@ def test_dataset(data_points, data_labels, name, nr_of_folds = 1, extend = False
         result_dict[i] = {}
         for classifier in ["RBF", "HPF", "SVM"]:
             result_dict[i][classifier] = {}
-            result_dict[i][classifier]["margin"] = []
-            result_dict[i][classifier]["acc"] = []
-            result_dict[i][classifier]["spe"] = []
-            result_dict[i][classifier]["sen"] = []
+            result_dict[i][classifier]["Margin"] = []
+            result_dict[i][classifier]["Accuracy"] = []
+            result_dict[i][classifier]["Specificity"] = []
+            result_dict[i][classifier]["Sensitivety"] = []
 
             result_dict[i][classifier]["TP"] = []
             result_dict[i][classifier]["TN"] = []
@@ -507,26 +531,26 @@ def test_dataset(data_points, data_labels, name, nr_of_folds = 1, extend = False
             time_dict["SVM"][i]["classify"].append(svm_classify_time.total_seconds()*1000)
 
             acc, sen, spe, result_svm_tmp = evaluate("SVM", svm_ans, Y_test, i)
-            result_dict[i + 1]["SVM"]["acc"].append(acc)
-            result_dict[i + 1]["SVM"]["spe"].append(spe)
-            result_dict[i + 1]["SVM"]["sen"].append(sen)
-            result_dict[i + 1]["SVM"]["margin"].append(rbf_old_margin)
+            result_dict[i + 1]["SVM"]["Accuracy"].append(acc)
+            result_dict[i + 1]["SVM"]["Specificity"].append(spe)
+            result_dict[i + 1]["SVM"]["Sensitivety"].append(sen)
+            result_dict[i + 1]["SVM"]["Margin"].append(rbf_old_margin)
 
             #compare with expected labels
             acc, sen, spe, result_hpf_tmp = evaluate("HPF", hpf_ans, Y_test, i)
-            result_dict[i + 1]["HPF"]["margin"].append(hpf_new_margin)
-            result_dict[i + 1]["HPF"]["acc"].append(acc)
-            result_dict[i + 1]["HPF"]["spe"].append(spe)
-            result_dict[i + 1]["HPF"]["sen"].append(sen)
+            result_dict[i + 1]["HPF"]["Margin"].append(hpf_new_margin)
+            result_dict[i + 1]["HPF"]["Accuracy"].append(acc)
+            result_dict[i + 1]["HPF"]["Specificity"].append(spe)
+            result_dict[i + 1]["HPF"]["Sensitivety"].append(sen)
             result_dict[i + 1]["HPF"]["ang"].append(hpf.rotation_data[i][-1])
 
-
+            
 
             acc, sen, spe, result_rbf_tmp = evaluate("RBF", rbf_ans, Y_test, i)
-            result_dict[i + 1]["RBF"]["margin"].append(rbf_new_margin)
-            result_dict[i + 1]["RBF"]["acc"].append(acc)
-            result_dict[i + 1]["RBF"]["spe"].append(spe)
-            result_dict[i + 1]["RBF"]["sen"].append(sen)
+            result_dict[i + 1]["RBF"]["Margin"].append(rbf_new_margin)
+            result_dict[i + 1]["RBF"]["Accuracy"].append(acc)
+            result_dict[i + 1]["RBF"]["Specificity"].append(spe)
+            result_dict[i + 1]["RBF"]["Sensitivety"].append(sen)
             result_dict[i + 1]["RBF"]["ang"].append(rbf.rotation_data[i][-1])
 
 
@@ -554,6 +578,6 @@ def test_dataset(data_points, data_labels, name, nr_of_folds = 1, extend = False
         raw_file.close()
 
     for measurement in measurements:
-        plot2d_from_columns(measurement + ".csv")
+        plot2d_from_columns(measurement + ".csv", 0, measurement)
 
     plt.show();
