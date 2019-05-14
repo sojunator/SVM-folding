@@ -14,7 +14,7 @@ import os
 from hpf_helpers import plot, read_data_from_folder, clean_data, plot_3d, test_dataset, normalize_data, extend_data_spherical, plot2d_from_columns
 
 
-nr_of_folds = 4
+nr_of_folds = 20
 
 
 #Exception when divide when zero

@@ -549,7 +549,7 @@ class HPF:
 
         self.old_clf.fit(data_points, data_labels)
         svm_fit_time = datetime.datetime.now() - svm_start_time
-        time_dict["SVM"][0]["fit"].append(svm_fit_time.total_seconds()*1000)
+        time_dict = (svm_fit_time.total_seconds()*1000)
         self.clf.fit(data_points, data_labels)
 
         self.old_margin = self.get_margin(self.old_clf)

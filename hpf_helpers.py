@@ -428,13 +428,7 @@ def test_dataset(data_points, data_labels, name, nr_of_folds = 1, extend = False
 
     skf = StratifiedKFold(n_splits=K)
 
-
-
-    time_dict["SVM"] = {}
-    time_dict["HPF"] = {}
-    time_dict["RBF"] = {}
-
-    measurements = ["Margin", "Accuracy", "Specificity", "Sensitivety"] #graph list
+    measurements = ["Margin", "Accuracy", "Specificity", "Sensitivety", "Classify", "Fit"] #graph list
 
     if extend:
         data_points, data_labels = extend_data_spherical(data_points, data_labels, 5, 0.3) #extend for bmi data
@@ -452,9 +446,8 @@ def test_dataset(data_points, data_labels, name, nr_of_folds = 1, extend = False
             result_dict[i][classifier]["FP"] = []
             result_dict[i][classifier]["FN"] = []
 
-            time_dict[classifier][i] = {}
-            time_dict[classifier][i]["classify"] = []
-            time_dict[classifier][i]["fit"] = []
+            result_dict[i][classifier]["Classify"] = []
+            result_dict[i][classifier]["Fit"] = []
 
 
     for i in range(nr_of_folds + 1):
@@ -487,19 +480,20 @@ def test_dataset(data_points, data_labels, name, nr_of_folds = 1, extend = False
 
 
 
-        X_train, Y_train = clean_data([X_train, Y_train], 50) #Clean the training data, but not the test data
+        X_train, Y_train = clean_data([X_train, Y_train], 5) #Clean the training data, but not the test data
         for i in range(nr_of_folds):
             rbf = HPF(max_nr_of_folds = (i + 1), verbose = False)
             hpf = old_HPF(max_nr_of_folds = (i + 1), verbose = False) #classifier that use old hpfimplementation without rubberband folding
 
 
             # Fit RBF
+            svm_fit_time = 0
             rbf_start_time = datetime.datetime.now()
-            rbf_old_margin, rbf_new_margin = rbf.fit(X_train, Y_train, time_dict) #train
+            rbf_old_margin, rbf_new_margin = rbf.fit(X_train, Y_train, svm_fit_time) #train
             rbf_fit_time = datetime.datetime.now() - rbf_start_time
 
 
-            time_dict["RBF"][i]["fit"].append(rbf_fit_time.total_seconds()*1000)
+            result_dict[i + 1]["RBF"]["Fit"].append(rbf_fit_time.total_seconds()*1000)
 
             # Fit HPF
             hpf_start_time = datetime.datetime.now()
@@ -507,19 +501,19 @@ def test_dataset(data_points, data_labels, name, nr_of_folds = 1, extend = False
             hpf_fit_time = datetime.datetime.now() - hpf_start_time
 
 
-            time_dict["HPF"][i]["fit"].append(hpf_fit_time.total_seconds()*1000)
+            result_dict[i + 1]["HPF"]["Fit"].append(hpf_fit_time.total_seconds()*1000)
 
             # Classify HPF
             hpf_start_time = datetime.datetime.now()
             hpf_ans = hpf.classify(X_test) #old hpf
             hpf_classify_time = datetime.datetime.now() - hpf_start_time
-            time_dict["HPF"][i]["classify"].append(hpf_classify_time.total_seconds()*1000)
+            result_dict[i + 1]["HPF"]["Classify"].append(hpf_classify_time.total_seconds()*1000)
 
             # Classify RBF
             rbf_start_time = datetime.datetime.now()
             rbf_ans = rbf.classify(X_test) #new hpf
             rbf_classify_time = datetime.datetime.now() - rbf_start_time
-            time_dict["RBF"][i]["classify"].append(rbf_classify_time.total_seconds()*1000)
+            result_dict[i + 1]["RBF"]["Classify"].append(rbf_classify_time.total_seconds()*1000)
 
 
             # Classify SVM
@@ -528,7 +522,8 @@ def test_dataset(data_points, data_labels, name, nr_of_folds = 1, extend = False
             svm_start_time = datetime.datetime.now()
             svm_ans = rbf.classify(X_test, False) # state of the art svm
             svm_classify_time = datetime.datetime.now() - svm_start_time
-            time_dict["SVM"][i]["classify"].append(svm_classify_time.total_seconds()*1000)
+            result_dict[i + 1]["SVM"]["Classify"].append(svm_classify_time.total_seconds()*1000)
+            result_dict[i + 1]["SVM"]["Fit"].append(svm_fit_time)
 
             acc, sen, spe, result_svm_tmp = evaluate("SVM", svm_ans, Y_test, i)
             result_dict[i + 1]["SVM"]["Accuracy"].append(acc)
@@ -552,9 +547,6 @@ def test_dataset(data_points, data_labels, name, nr_of_folds = 1, extend = False
             result_dict[i + 1]["RBF"]["Specificity"].append(spe)
             result_dict[i + 1]["RBF"]["Sensitivety"].append(sen)
             result_dict[i + 1]["RBF"]["ang"].append(rbf.rotation_data[i][-1])
-
-
-
             result_dict[i + 1]["RBF"]["ang"].append(rbf.rotation_data[i][-1])
 
 
