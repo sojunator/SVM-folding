@@ -354,9 +354,12 @@ class HPF:
         v = intersection_point - point[:2]
         v = v / np.linalg.norm(v)
 
-        r_angle = np.dot(v, normal)
-        if np.arccos(np.min((r_angle , 1.0)))* 180 / 3.1415 > 90:
-            print("ERROR in get_rubber_band_angle: angle is larger than 90 degrees")
+        r_angle = np.min((np.dot(v, normal), 1))
+        keklel = np.min((r_angle, 1.0))
+        asdfangasdf = np.arccos(r_angle)* 180 / 3.1415
+
+        if np.arccos(r_angle)* 180 / 3.1415 > 90:
+            print("ERROR in get_rubber_band_angle: angle is larger than 90 degrees, may be numerical error")
 
         return np.fmax(r_angle, angle)
 
