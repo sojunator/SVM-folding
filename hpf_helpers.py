@@ -36,11 +36,11 @@ def plot2d_from_columns(file_path, x_column_index = 0, y_label = "y"):
 
     x_vals = data_frame.columns.values[x_column_index]
     y_vals = data_frame.drop(data_frame.columns.values[x_column_index], axis=1).columns.values #drop x_axis
-    
+
     new_cols = [x_vals]
-    
+
     y_vals = [y_lab[:3] for y_lab in y_vals]
-    
+
 
     new_cols.extend(y_vals)
 
@@ -55,7 +55,7 @@ def plot2d_from_columns(file_path, x_column_index = 0, y_label = "y"):
     for each in locs:
         xint.append(int(each))
     plt.xticks(xint)
-    
+
 
 
 
@@ -538,37 +538,20 @@ def test_dataset(data_points, data_labels, name, nr_of_folds = 1, extend = False
 
             #compare with expected labels
             acc, sen, spe, result_hpf_tmp = evaluate("HPF", hpf_ans, Y_test, i)
-<<<<<<< HEAD
-            result_dict[i + 1]["HPF"]["margin"].append(hpf_new_margin)
-            result_dict[i + 1]["HPF"]["acc"].append(acc)
-            result_dict[i + 1]["HPF"]["spe"].append(spe)
-            result_dict[i + 1]["HPF"]["sen"].append(sen)
-
-            result_dict[i + 1]["HPF"]["ang"].append(rbf.rotation_data[i][-1])
-
-=======
             result_dict[i + 1]["HPF"]["Margin"].append(hpf_new_margin)
             result_dict[i + 1]["HPF"]["Accuracy"].append(acc)
             result_dict[i + 1]["HPF"]["Specificity"].append(spe)
             result_dict[i + 1]["HPF"]["Sensitivety"].append(sen)
             result_dict[i + 1]["HPF"]["ang"].append(hpf.rotation_data[i][-1])
->>>>>>> 4c9f12e3ee342defeacbaf58b2619988c917eec6
 
-            
+
 
             acc, sen, spe, result_rbf_tmp = evaluate("RBF", rbf_ans, Y_test, i)
-<<<<<<< HEAD
-            result_dict[i + 1]["RBF"]["margin"].append(rbf_new_margin)
-            result_dict[i + 1]["RBF"]["acc"].append(acc)
-            result_dict[i + 1]["RBF"]["spe"].append(spe)
-            result_dict[i + 1]["RBF"]["sen"].append(sen)
-=======
             result_dict[i + 1]["RBF"]["Margin"].append(rbf_new_margin)
             result_dict[i + 1]["RBF"]["Accuracy"].append(acc)
             result_dict[i + 1]["RBF"]["Specificity"].append(spe)
             result_dict[i + 1]["RBF"]["Sensitivety"].append(sen)
             result_dict[i + 1]["RBF"]["ang"].append(rbf.rotation_data[i][-1])
->>>>>>> 4c9f12e3ee342defeacbaf58b2619988c917eec6
 
 
 
@@ -576,7 +559,7 @@ def test_dataset(data_points, data_labels, name, nr_of_folds = 1, extend = False
 
 
 
-    for fold in [1,2,3]:
+    for fold in range(1,nr_of_folds + 1):
         for classifier in result_dict[fold]:
             for entry in result_dict[fold][classifier]:
                 result_dict[fold][classifier][entry] = sum(result_dict[fold][classifier][entry]) / len(result_dict[fold][classifier][entry])

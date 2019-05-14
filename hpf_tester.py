@@ -14,7 +14,7 @@ import os
 from hpf_helpers import plot, read_data_from_folder, clean_data, plot_3d, test_dataset, normalize_data, extend_data_spherical, plot2d_from_columns
 
 
-nr_of_folds = 3
+nr_of_folds = 4
 
 
 #Exception when divide when zero
@@ -26,9 +26,9 @@ warnings.filterwarnings('error')
 
 data_set = read_data_from_folder("datasets") # Load data
 
-data_points, data_labels = data_set["liver.csv"]
+data_points, data_labels = data_set["bmi.csv"]
 data_points = normalize_data(data_points)
-test_dataset(data_points, data_labels, "bmi", nr_of_folds, False)
+test_dataset(data_points, data_labels, "bmi", nr_of_folds, True)
 
 """
 # Liver dataset
