@@ -397,7 +397,7 @@ def write_timedict_to_file(time_dict, filehandle):
         filehandle.write("\n")
 
 
-def test_dataset(data_points, data_labels, name, nr_of_folds = 1, extend = False, K = 2):
+def test_dataset(data_points, data_labels, name, nr_of_folds = 1, extend = False, K = 10):
     #test algorithms using k-fold
 
 
@@ -431,8 +431,6 @@ def test_dataset(data_points, data_labels, name, nr_of_folds = 1, extend = False
             time_dict[classifier][i] = {}
             time_dict[classifier][i]["classify"] = []
             time_dict[classifier][i]["fit"] = []
-
-
 
 
 
@@ -519,7 +517,7 @@ def test_dataset(data_points, data_labels, name, nr_of_folds = 1, extend = False
             svm_classify_time = datetime.datetime.now() - svm_start_time
             time_dict["SVM"][i]["classify"].append(svm_classify_time.total_seconds()*1000)
 
-            acc, sen, spe, result_svm_tmp = evaluate("SVM", svm_ans, Y_test, i)
+            acc, sen, spe, result_svm_tmp = evaluate("SVM", svm_ans, Y_test, i + 1)
             avg_accuracy_svm += acc
             avg_sensitivety_svm += sen
             avg_specificity_svm += spe
@@ -527,12 +525,12 @@ def test_dataset(data_points, data_labels, name, nr_of_folds = 1, extend = False
 
 
             #compare with expected labels
-            acc, sen, spe, result_hpf_tmp = evaluate("HPF", hpf_ans, Y_test, i)
+            acc, sen, spe, result_hpf_tmp = evaluate("HPF", hpf_ans, Y_test, i + 1)
             avg_accuracy_hpf += acc
             avg_sensitivety_hpf += sen
             avg_specificity_hpf += spe
 
-            acc, sen, spe, result_rbf_tmp = evaluate("RBF", rbf_ans, Y_test, i)
+            acc, sen, spe, result_rbf_tmp = evaluate("RBF", rbf_ans, Y_test, i + 1)
             avg_accuracy_rbf += acc
             avg_sensitivety_rbf += sen
             avg_specificity_rbf += spe
@@ -558,20 +556,19 @@ def test_dataset(data_points, data_labels, name, nr_of_folds = 1, extend = False
             result_dict[i + 1]["RBF"]["sen"] += avg_sensitivety_rbf
 
 
-
-    # Hack central yo
-
     #calculate average
-    for i in range(nr_of_folds):
+    for i in range(1, nr_of_folds + 1):
         for classifier in result_dict[i]:
             for entry in ["ang", "margin", "acc", "spe", "sen"]:
-                result_dict[i][classifier][entry] = result_dict[i][classifier][entry] / (K * (i + 1))
+                result_dict[i][classifier][entry] = result_dict[i][classifier][entry] / (K * (i))
             for entry in ["TP", "TN", "FP", "FN"]:
-                result_dict[i][classifier][entry] = sum(result_dict[i][classifier][entry]) / (K * (i + 1))
+                result_dict[i][classifier][entry] = sum(result_dict[i][classifier][entry]) / (K * (i))
 
     result_dict[0]["SVM"] = result_dict[1]["SVM"]
     result_dict[0]["RBF"] = result_dict[0]["SVM"]
     result_dict[0]["HPF"] = result_dict[0]["SVM"]
+
+   
 
 
     for measurement in measurements:
