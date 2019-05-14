@@ -397,7 +397,7 @@ def write_timedict_to_file(time_dict, filehandle):
         filehandle.write("\n")
 
 
-def test_dataset(data_points, data_labels, name, nr_of_folds = 1, extend = False, K = 10):
+def test_dataset(data_points, data_labels, name, nr_of_folds = 1, extend = False, K = 2):
     #test algorithms using k-fold
 
 
@@ -539,23 +539,23 @@ def test_dataset(data_points, data_labels, name, nr_of_folds = 1, extend = False
 
 
 
-            result_dict[i]["SVM"]["margin"] += avg_svm_margin
-            result_dict[i]["SVM"]["acc"] += avg_accuracy_svm
-            result_dict[i]["SVM"]["spe"] += avg_specificity_svm
-            result_dict[i]["SVM"]["sen"] += avg_sensitivety_svm
+            result_dict[i + 1]["SVM"]["margin"] += avg_svm_margin
+            result_dict[i + 1]["SVM"]["acc"] += avg_accuracy_svm
+            result_dict[i + 1]["SVM"]["spe"] += avg_specificity_svm
+            result_dict[i + 1]["SVM"]["sen"] += avg_sensitivety_svm
 
 
-            result_dict[i]["HPF"]["margin"] += avg_hpf_margin
-            result_dict[i]["HPF"]["acc"] += avg_accuracy_hpf
-            result_dict[i]["HPF"]["spe"] += avg_specificity_hpf
-            result_dict[i]["HPF"]["sen"] += avg_sensitivety_hpf
-            result_dict[i]["HPF"]["ang"] += hpf.rotation_data[i][-1]
+            result_dict[i + 1]["HPF"]["margin"] += avg_hpf_margin
+            result_dict[i + 1]["HPF"]["acc"] += avg_accuracy_hpf
+            result_dict[i + 1]["HPF"]["spe"] += avg_specificity_hpf
+            result_dict[i + 1]["HPF"]["sen"] += avg_sensitivety_hpf
+            result_dict[i + 1]["HPF"]["ang"] += hpf.rotation_data[i][-1]
 
-            result_dict[i]["RBF"]["ang"] += rbf.rotation_data[i][-1]
-            result_dict[i]["RBF"]["margin"] += avg_rbf_margin
-            result_dict[i]["RBF"]["acc"] += avg_accuracy_rbf
-            result_dict[i]["RBF"]["spe"] += avg_specificity_rbf
-            result_dict[i]["RBF"]["sen"] += avg_sensitivety_rbf
+            result_dict[i + 1]["RBF"]["ang"] += rbf.rotation_data[i][-1]
+            result_dict[i + 1]["RBF"]["margin"] += avg_rbf_margin
+            result_dict[i + 1]["RBF"]["acc"] += avg_accuracy_rbf
+            result_dict[i + 1]["RBF"]["spe"] += avg_specificity_rbf
+            result_dict[i + 1]["RBF"]["sen"] += avg_sensitivety_rbf
 
 
 
@@ -569,9 +569,7 @@ def test_dataset(data_points, data_labels, name, nr_of_folds = 1, extend = False
             for entry in ["TP", "TN", "FP", "FN"]:
                 result_dict[i][classifier][entry] = sum(result_dict[i][classifier][entry]) / (K * (i + 1))
 
-    for fold in reversed(range(nr_of_folds - 1)):
-        result_dict[fold + 1] = result_dict[fold]
-
+    result_dict[0]["SVM"] = result_dict[1]["SVM"]
     result_dict[0]["RBF"] = result_dict[0]["SVM"]
     result_dict[0]["HPF"] = result_dict[0]["SVM"]
 
