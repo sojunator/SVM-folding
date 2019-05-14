@@ -395,7 +395,7 @@ class old_HPF:
         c = np.dot(d, n)
 
         left_or_right = -1
-
+        self.temp_angle = angle
         if c > 0.0:
             left_set[0] = [self.rotate_left(point, angle, intersection_point) for point in left_set[0]]
             left_or_right = 1
@@ -582,14 +582,14 @@ class old_HPF:
             self.new_margin = self.get_margin(self.clf)
             margins.append(math.fabs(self.new_margin - previous_margin))
             previous_margin = self.new_margin
-
+            """"
             if len(margins) == 3:
                 avg = sum(margins) / len(margins)
                 if avg < 0.001:
                     val = -1
                     print("termination due to floating point")
                 margins.clear()
-
+            """
 
         #print("nr of support {}".format(len(self.clf.support_vectors_)))
 
