@@ -463,7 +463,7 @@ def test_dataset(data_points, data_labels, name, nr_of_folds = 1, extend = False
 
 
 
-        X_train, Y_train = clean_data([X_train, Y_train]) #Clean the training data, but not the test data
+        X_train, Y_train = clean_data([X_train, Y_train], 50) #Clean the training data, but not the test data
         for i in range(nr_of_folds):
             rbf = HPF(max_nr_of_folds = (i + 1), verbose = False)
             hpf = old_HPF(max_nr_of_folds = (i + 1), verbose = False) #classifier that use old hpfimplementation without rubberband folding
@@ -518,7 +518,9 @@ def test_dataset(data_points, data_labels, name, nr_of_folds = 1, extend = False
             result_dict[i + 1]["HPF"]["acc"].append(acc)
             result_dict[i + 1]["HPF"]["spe"].append(spe)
             result_dict[i + 1]["HPF"]["sen"].append(sen)
-            result_dict[i + 1]["HPF"]["ang"].append(hpf.rotation_data[i][-1])
+
+            result_dict[i + 1]["HPF"]["ang"].append(rbf.rotation_data[i][-1])
+
 
 
 
@@ -527,8 +529,10 @@ def test_dataset(data_points, data_labels, name, nr_of_folds = 1, extend = False
             result_dict[i + 1]["RBF"]["acc"].append(acc)
             result_dict[i + 1]["RBF"]["spe"].append(spe)
             result_dict[i + 1]["RBF"]["sen"].append(sen)
-            result_dict[i + 1]["RBF"]["ang"].append(rbf.rotation_data[i][-1])
 
+
+
+            result_dict[i + 1]["RBF"]["ang"].append(rbf.rotation_data[i][-1])
 
 
 

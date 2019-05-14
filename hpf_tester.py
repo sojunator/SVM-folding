@@ -26,9 +26,9 @@ warnings.filterwarnings('error')
 
 data_set = read_data_from_folder("datasets") # Load data
 
-data_points, data_labels = data_set["bmi.csv"]
+data_points, data_labels = data_set["liver.csv"]
 data_points = normalize_data(data_points)
-test_dataset(data_points, data_labels, "bmi", nr_of_folds, True)
+test_dataset(data_points, data_labels, "bmi", nr_of_folds, False)
 
 """
 # Liver dataset

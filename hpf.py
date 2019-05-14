@@ -599,7 +599,7 @@ class HPF:
             """
 
         self.fitting = False
-        #print("nr of support {}".format(len(self.clf.support_vectors_)))
+        print("nr of support {}".format(len(self.clf.support_vectors_)))
 
 
         #self.clf.fit(self.data_points, self.data_labels)
