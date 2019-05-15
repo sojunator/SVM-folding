@@ -3,6 +3,7 @@ import numpy as np
 import matplotlib.pyplot as plt
 from mpl_toolkits.mplot3d import Axes3D
 from os import listdir
+import os
 from os.path import isfile, join
 import pandas as pd
 from sklearn import svm
@@ -56,7 +57,9 @@ def plot2d_from_columns(file_path, x_column_index = 0, y_label = "y"):
         xint.append(int(each))
     plt.xticks(xint)
 
-
+    output = file_path.split(".")
+    output = output[0] + ".png"
+    plt.savefig(output)
 
 
 
@@ -428,7 +431,7 @@ def test_dataset(data_points, data_labels, name, nr_of_folds = 1, extend = False
 
     skf = StratifiedKFold(n_splits=K)
 
-    measurements = ["Margin", "Accuracy", "Specificity", "Sensitivety", "Classify", "Fit"] #graph list
+    measurements = ["Margin", "Accuracy", "Specificity", "Sensitivety", "Classifcation time (ms)", "Training time (ms)"] #graph list
 
     if extend:
         data_points, data_labels = extend_data_spherical(data_points, data_labels, 5, 0.3) #extend for bmi data
@@ -446,8 +449,8 @@ def test_dataset(data_points, data_labels, name, nr_of_folds = 1, extend = False
             result_dict[i][classifier]["FP"] = []
             result_dict[i][classifier]["FN"] = []
 
-            result_dict[i][classifier]["Classify"] = []
-            result_dict[i][classifier]["Fit"] = []
+            result_dict[i][classifier]["Classifcation time (ms)"] = []
+            result_dict[i][classifier]["Training time (ms)"] = []
 
 
     for i in range(nr_of_folds + 1):
@@ -493,7 +496,7 @@ def test_dataset(data_points, data_labels, name, nr_of_folds = 1, extend = False
             rbf_fit_time = datetime.datetime.now() - rbf_start_time
 
 
-            result_dict[i + 1]["RBF"]["Fit"].append(rbf_fit_time.total_seconds()*1000)
+            result_dict[i + 1]["RBF"]["Training time (ms)"].append(rbf_fit_time.total_seconds()*1000)
 
             # Fit HPF
             hpf_start_time = datetime.datetime.now()
@@ -501,19 +504,19 @@ def test_dataset(data_points, data_labels, name, nr_of_folds = 1, extend = False
             hpf_fit_time = datetime.datetime.now() - hpf_start_time
 
 
-            result_dict[i + 1]["HPF"]["Fit"].append(hpf_fit_time.total_seconds()*1000)
+            result_dict[i + 1]["HPF"]["Training time (ms)"].append(hpf_fit_time.total_seconds()*1000)
 
             # Classify HPF
             hpf_start_time = datetime.datetime.now()
             hpf_ans = hpf.classify(X_test) #old hpf
             hpf_classify_time = datetime.datetime.now() - hpf_start_time
-            result_dict[i + 1]["HPF"]["Classify"].append(hpf_classify_time.total_seconds()*1000)
+            result_dict[i + 1]["HPF"]["Classifcation time (ms)"].append(hpf_classify_time.total_seconds()*1000)
 
             # Classify RBF
             rbf_start_time = datetime.datetime.now()
             rbf_ans = rbf.classify(X_test) #new hpf
             rbf_classify_time = datetime.datetime.now() - rbf_start_time
-            result_dict[i + 1]["RBF"]["Classify"].append(rbf_classify_time.total_seconds()*1000)
+            result_dict[i + 1]["RBF"]["Classifcation time (ms)"].append(rbf_classify_time.total_seconds()*1000)
 
 
             # Classify SVM
@@ -522,8 +525,8 @@ def test_dataset(data_points, data_labels, name, nr_of_folds = 1, extend = False
             svm_start_time = datetime.datetime.now()
             svm_ans = rbf.classify(X_test, False) # state of the art svm
             svm_classify_time = datetime.datetime.now() - svm_start_time
-            result_dict[i + 1]["SVM"]["Classify"].append(svm_classify_time.total_seconds()*1000)
-            result_dict[i + 1]["SVM"]["Fit"].append(svm_fit_time)
+            result_dict[i + 1]["SVM"]["Classifcation time (ms)"].append(svm_classify_time.total_seconds()*1000)
+            result_dict[i + 1]["SVM"]["Training time (ms)"].append(svm_fit_time)
 
             acc, sen, spe, result_svm_tmp = evaluate("SVM", svm_ans, Y_test, i)
             result_dict[i + 1]["SVM"]["Accuracy"].append(acc)
@@ -564,15 +567,16 @@ def test_dataset(data_points, data_labels, name, nr_of_folds = 1, extend = False
     result_dict[0]["RBF"]["ang"] = 0.0
     result_dict[0]["HPF"]["ang"] = 0.0
 
+    if not os.path.exists(name):
+        os.makedirs(name)
+
     for measurement in measurements:
-        result_file = open(measurement + ".csv", "w+")
-        raw_file = open(measurement + "_raw" + ".data", "w+")
+        result_file = open(name + "/" + measurement + ".csv", "w+")
+        raw_file = open(name + "/" + measurement + "_raw" + ".data", "w+")
         write_data_to_file(result_dict, time_dict, result_file, [measurement], [])
         dump_raw_data(result_dict, raw_file)
         result_file.close()
         raw_file.close()
 
     for measurement in measurements:
-        plot2d_from_columns(measurement + ".csv", 0, measurement)
-
-    plt.show();
+        plot2d_from_columns(name + "/" + measurement + ".csv", 0, measurement)
