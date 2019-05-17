@@ -32,14 +32,12 @@ test_dataset(data_points, data_labels, "hepatitis", nr_of_folds, False)
 
 
 # Liver dataset
-nr_of_folds = 3
 
 data_points, data_labels = data_set["liver.csv"]
 
-data_points = normalize_data(data_points)
 
 
-test_dataset(data_points, data_labels, "liver", nr_of_folds)
+test_dataset(data_points, data_labels, "liver_test", nr_of_folds, False)
 
 
 #Breast cancer
@@ -47,15 +45,14 @@ data = load_breast_cancer()
 data_points  = data.data
 data_labels = data.target
 
-data_points = normalize_data(data_points)
+#data_points = normalize_data(data_points)
 
 
-test_dataset(data_points, data_labels, "cancer", nr_of_folds)
+test_dataset(data_points, data_labels, "cancer_test", nr_of_folds)
 """
-
 #hepatitis
 data_points, data_labels = data_set["bmi.csv"]
 
-data_points = normalize_data(data_points)
 
-test_dataset(data_points, data_labels, "bmi", nr_of_folds, True)
+
+test_dataset(data_points, data_labels, "bmi_test", nr_of_folds, True)

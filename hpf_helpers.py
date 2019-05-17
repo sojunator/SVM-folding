@@ -261,9 +261,9 @@ def sample_sphere(center,radius):
     theta = np.random.random_sample() * two_pi
     phi = np.random.random_sample()* np.math.pi
 
-    point.append(np.clip(rand_radius * np.math.cos(theta) * np.math.sin(phi) + center[0], 0, 1))
-    point.append(np.clip(rand_radius * np.math.sin(theta) * np.math.sin(phi) + center[1], 0, 1))
-    point.append(np.clip(rand_radius * np.math.cos(phi)  + center[2], 0, 1))
+    point.append(rand_radius * np.math.cos(theta) * np.math.sin(phi) + center[0])
+    point.append(rand_radius * np.math.sin(theta) * np.math.sin(phi) + center[1])
+    point.append(rand_radius * np.math.cos(phi)  + center[2])
 
     return np.array([point])
 
@@ -433,8 +433,7 @@ def test_dataset(data_points, data_labels, name, nr_of_folds = 1, extend = False
 
     measurements = ["Margin", "Accuracy", "Specificity", "Sensitivety", "Classifcation time (ms)", "Training time (ms)"] #graph list
 
-    if extend:
-        data_points, data_labels = extend_data_spherical(data_points, data_labels, 5, 0.3) #extend for bmi data
+
     for i in range(nr_of_folds + 1):
         result_dict[i] = {}
         for classifier in ["RBF", "HPF", "SVM"]:
@@ -452,7 +451,7 @@ def test_dataset(data_points, data_labels, name, nr_of_folds = 1, extend = False
             result_dict[i][classifier]["Classifcation time (ms)"] = []
             result_dict[i][classifier]["Training time (ms)"] = []
 
-
+    """
     for i in range(nr_of_folds + 1):
         for classifier in ["RBF", "HPF"]:
             result_dict[i][classifier]["ang"] = []
@@ -460,8 +459,8 @@ def test_dataset(data_points, data_labels, name, nr_of_folds = 1, extend = False
     for i in range(nr_of_folds + 1):
         for classifier in ["SVM"]:
             result_dict[i][classifier]["ang"] = [0.0]
-
-
+    """
+    #data_points = normalize_data(data_points)
     index = 0
     for train_index, test_index in skf.split(data_points, data_labels): # runs k-tests
 
@@ -470,14 +469,19 @@ def test_dataset(data_points, data_labels, name, nr_of_folds = 1, extend = False
         print("K fold k =", index)
         X_train, X_test = data_points[train_index], data_points[test_index] #split data into one trainging part and one test part
         Y_train, Y_test = data_labels[train_index], data_labels[test_index] # do the same with the labels
-        #X_test, Y_test = extend_data_spherical(X_test, Y_test, 20, 0.1)
+
+        if extend:
+            X_test, Y_test = extend_data_spherical(X_test, Y_test, 25, 8) #extend for bmi data
+            
+        X_test = normalize_data(X_test)
+        X_train = normalize_data(X_train)
 
         #plot_3d([X_train, Y_train])
 
 
 
 
-        #plot_3d([X_train, Y_train])
+        #plot_3d([X_test, Y_test])
         #plt.show()
         #declare metrics
 
@@ -492,7 +496,7 @@ def test_dataset(data_points, data_labels, name, nr_of_folds = 1, extend = False
             # Fit RBF
             svm_fit_time = 0
             rbf_start_time = datetime.datetime.now()
-            rbf_old_margin, rbf_new_margin = rbf.fit(X_train, Y_train, svm_fit_time) #train
+            rbf_old_margin, rbf_new_margin, svm_fit_time = rbf.fit(X_train, Y_train, None) #train
             rbf_fit_time = datetime.datetime.now() - rbf_start_time
 
 
@@ -540,7 +544,7 @@ def test_dataset(data_points, data_labels, name, nr_of_folds = 1, extend = False
             result_dict[i + 1]["HPF"]["Accuracy"].append(acc)
             result_dict[i + 1]["HPF"]["Specificity"].append(spe)
             result_dict[i + 1]["HPF"]["Sensitivety"].append(sen)
-            result_dict[i + 1]["HPF"]["ang"].append(hpf.rotation_data[i][-1])
+            #result_dict[i + 1]["HPF"]["ang"].append(hpf.rotation_data[i][-1])
 
 
 
@@ -549,8 +553,7 @@ def test_dataset(data_points, data_labels, name, nr_of_folds = 1, extend = False
             result_dict[i + 1]["RBF"]["Accuracy"].append(acc)
             result_dict[i + 1]["RBF"]["Specificity"].append(spe)
             result_dict[i + 1]["RBF"]["Sensitivety"].append(sen)
-            result_dict[i + 1]["RBF"]["ang"].append(rbf.rotation_data[i][-1])
-            result_dict[i + 1]["RBF"]["ang"].append(rbf.rotation_data[i][-1])
+            #result_dict[i + 1]["RBF"]["ang"].append(rbf.rotation_data[i][-1])
 
 
 
