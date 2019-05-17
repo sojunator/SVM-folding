@@ -64,11 +64,12 @@ def plot2d_from_columns(file_path, x_column_index = 0, y_label = "y"):
 
 
 
-def normalize_data(data_points):
+def normalize_data(data_points, min_values = None, max_values = None):
 
     # Perform linear search in each dim for min and max value
-    max_values = np.amax(data_points, 0)
-    min_values = np.amin(data_points, 0)
+    if min_values is None and max_values is None:
+        max_values = np.amax(data_points, 0)
+        min_values = np.amin(data_points, 0)
 
     data_points = data_points - min_values
     data_points = data_points / (max_values - min_values)
@@ -460,7 +461,8 @@ def test_dataset(data_points, data_labels, name, nr_of_folds = 1, extend = False
         for classifier in ["SVM"]:
             result_dict[i][classifier]["ang"] = [0.0]
     """
-    #data_points = normalize_data(data_points)
+    if not extend:
+        data_points = normalize_data(data_points)
     index = 0
     for train_index, test_index in skf.split(data_points, data_labels): # runs k-tests
 
@@ -472,9 +474,10 @@ def test_dataset(data_points, data_labels, name, nr_of_folds = 1, extend = False
 
         if extend:
             X_test, Y_test = extend_data_spherical(X_test, Y_test, 25, 8) #extend for bmi data
-            
-        X_test = normalize_data(X_test)
-        X_train = normalize_data(X_train)
+            max_values = np.amax(data_points, 0)
+            min_values = np.amin(data_points, 0)
+            X_test = normalize_data(X_test, min_values, max_values)
+            X_train = normalize_data(X_train, min_values, max_values)
 
         #plot_3d([X_train, Y_train])
 
