@@ -228,7 +228,7 @@ def plot_3d(data, normal = None, intercept = None):
 
 
 
-def plot_clf(clf, data):
+def plot_clf(data):
 
 
     x1 = []
@@ -250,7 +250,7 @@ def plot_clf(clf, data):
 
     plt.plot(x1, y1, 'ro')
     plt.plot(x2, y2, 'go')
-    plt.show()
+    
 
 
 def sample_sphere(center,radius):

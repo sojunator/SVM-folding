@@ -12,6 +12,7 @@ import json
 import pdb
 import datetime
 
+
 from dimred import DR
 
 C_param = 8000
@@ -20,8 +21,8 @@ def vec_equal(vec1, vec2):
 
     return np.allclose(vec1, vec2)
 
-def plot_clf(clf, data):
-
+def plot_clf(data):
+    plt.figure()
 
     x1 = []
     y1 = []
@@ -45,7 +46,7 @@ def plot_clf(clf, data):
 
 class HPF:
 
-    def plot_dir(self, dir, point, new_figure_ = False, plot_normal_to_dir = False, col = 'b'):
+    def plot_dir(self, dir, point, new_figure_ = False, col = 'b'):
         if new_figure_:
             plt.figure()
 
@@ -57,7 +58,7 @@ class HPF:
 
         p = point
 
-        plot_size = 10
+        plot_size = 1
 
         hx1 = p[0] + h[0] * plot_size
         hy1 = p[1] + h[1] * plot_size
@@ -67,14 +68,6 @@ class HPF:
 
         plt.plot([hx1,hx2],[hy1, hy2], col)
 
-        if plot_normal_to_dir:
-            hx1 = p[0] + w[0] * plot_size
-            hy1 = p[1] + w[1] * plot_size
-
-            hx2 = p[0] + w[0] * -plot_size
-            hy2 = p[1] + w[1] * -plot_size
-
-            plt.plot([hx1,hx2],[hy1, hy2], 'r')
 
     def plot_data(self, data, new_figure_ = False):
 
@@ -100,6 +93,10 @@ class HPF:
         plt.plot(x1, y1, 'ro')
         plt.plot(x2, y2, 'go')
 
+
+    def plot_primary(self):
+
+        plt.plot(self.primary_support_vector[0], self.primary_support_vector[1], 'bx')
 
     def plot_self(self, new_figure = False):
         if new_figure:
@@ -347,28 +344,23 @@ class HPF:
         return np.array(((c,s), (-s, c)))
 
 
-    def get_rubber_band_angle(self, point, angle, intersection_point, normal):
+    def get_rubber_band_angle(self, point, angle, intersection_point, right_normal):
 
 
-
-        v = intersection_point - point[:2]
+        v = point[:2] - intersection_point
         v = v / np.linalg.norm(v)
 
-        r_angle = np.min((np.dot(v, normal), 1))
-        keklel = np.min((r_angle, 1.0))
-        asdfangasdf = np.arccos(r_angle)* 180 / 3.1415
-
-        if np.arccos(r_angle)* 180 / 3.1415 > 90:
-            print("ERROR in get_rubber_band_angle: angle is larger than 90 degrees, may be numerical error")
+        r_angle = np.min(np.dot(v, right_normal))
+        
 
         return np.fmax(r_angle, angle)
 
 
 
-    def rotate_left(self, point, angle, intersection_point, left_normal, use_rubber_band):
+    def rotate_left(self, point, angle, intersection_point, right_normal, use_rubber_band):
 
         if use_rubber_band:
-            angle = self.get_rubber_band_angle(point, angle, intersection_point, left_normal)
+            angle = self.get_rubber_band_angle(point, angle, intersection_point, right_normal)
 
         rotation_matrix = self.get_counter_rotation(angle)
 
@@ -380,10 +372,10 @@ class HPF:
         self.temp_angle = angle
         return point
 
-    def rotate_right(self, point, angle, intersection_point, left_normal, use_rubber_band):
+    def rotate_right(self, point, angle, intersection_point, right_normal, use_rubber_band):
 
         if use_rubber_band:
-            angle = self.get_rubber_band_angle(point, angle, intersection_point, left_normal)
+            angle = self.get_rubber_band_angle(point, angle, intersection_point, right_normal)
 
         rotation_matrix = self.get_rotation(angle)
 
@@ -410,12 +402,6 @@ class HPF:
             primary_support_vector = self.primary_support_vector
             points = self.data
 
-
-        # Get margins
-        right_margin = self.get_margin(right_clf)
-        left_margin = self.get_margin(left_clf)
-
-
         # intersection data
         intersection_point, angle = self.get_intersection_between_SVMs(left_clf, right_clf)#self.get_intersection_point(left_clf, right_clf)
 
@@ -427,20 +413,38 @@ class HPF:
         non_rotate_set = []
 
 
-        right_plane = right_clf.coef_[0] / np.linalg.norm(right_clf.coef_[0])#plane
-        right_normal = [right_plane[1], -right_plane[0]]
+        right_normal = right_clf.coef_[0] / np.linalg.norm(right_clf.coef_[0])#plane
+        right_plane = [right_normal[1], -right_normal[0]]
 
-        cp = -(np.dot(right_normal, intersection_point))
+        left_normal = left_clf.coef_[0] / np.linalg.norm(left_clf.coef_[0])#plane
+        left_plane = [left_normal[1], -left_normal[0]]
+
+
+        #plot_clf(self.data)
+        #self.plot_primary()
+        #self.plot_dir(left_plane, intersection_point)
+        #self.plot_dir(right_plane, intersection_point, False, 'g')
+        #self.plot_dir(left_normal, intersection_point, False, 'r')
+
+
+
 
         for point in zip(points[0], points[1]):
-            if np.dot(point[0][:2], right_normal) + cp < 0.0:
-                rotate_set.append(np.array(point))
+
+            p_i = point[0][:2] - intersection_point
+            p_i = p_i / np.linalg.norm(p_i)
+
+            if np.dot(p_i, right_normal) > 0.0:
+                if np.dot(p_i, left_plane) > 0.0:
+                    rotate_set.append(np.array(point))
+                else:
+                    non_rotate_set.append(np.array(point))
             else:
                 non_rotate_set.append(np.array(point))
 
 
         #rotate clockwise or counter clockwise
-        d = intersection_point - primary_support_vector[:2]
+        d = primary_support_vector[:2] - intersection_point
         d = d / np.linalg.norm(d)
 
         n = hyperplane_normal[:2]
@@ -449,11 +453,11 @@ class HPF:
         c_or_cc = np.dot(d, n)#if the cosine of the angle is less than 0, rotate left.
 
         if c_or_cc < 0.0:
-            rotate_set = [(self.rotate_left(point[0], angle, intersection_point, right_normal, use_rubber_band), point[1]) for point in rotate_set]
+            rotate_set = [(self.rotate_left(point[0], angle, intersection_point, left_normal, use_rubber_band), point[1]) for point in rotate_set]
             left_or_right = 1
 
         else:
-            rotate_set = [(self.rotate_right(point[0], angle, intersection_point, right_normal, use_rubber_band), point[1]) for point in rotate_set]
+            rotate_set = [(self.rotate_right(point[0], angle, intersection_point, left_normal, use_rubber_band), point[1]) for point in rotate_set]
             left_or_right = 0
 
 
@@ -461,6 +465,14 @@ class HPF:
 
         self.data[0] = [p[0] for p in tup]
         self.data[1] = [p[1] for p in tup]
+
+
+        #plot_clf(self.data)
+        #self.plot_dir(left_plane, intersection_point)
+        #self.plot_dir(right_plane, intersection_point, False, 'g')
+        #self.plot_dir(left_normal, intersection_point, False, 'r')
+        #self.plot_primary()
+        #plt.show()
 
         #self.plot_dir(right_normal, intersection_point, False, True)
        # self.plot_dir(left_normal, intersection_point, True, True)
@@ -480,8 +492,9 @@ class HPF:
         # Splitting point
         self.primary_support_vector = self.get_splitting_point()
 
+
         # Subsets of datasets, left and right of primary support vector
-        left_set, right_set = self.split_data()
+        right_set, left_set = self.split_data()
 
 
         # New SVM, right
@@ -498,9 +511,13 @@ class HPF:
             print("WARNING, ONLY ONE CLASS PRESENT IN A SET, ABORTING")
             return -1
 
+        
 
         # Rotate and merge data sets back into one
         left_or_right, intersection_point = self.rotate_set(left_clf, right_clf)
+
+        
+
         self.rotation_data.append((intersection_point, self.primary_support_vector, left_or_right, (right_clf, left_clf), self.support_vectors_dictionary, np.array(self.hyperplane_normal), self.temp_angle))
 
         return 0
