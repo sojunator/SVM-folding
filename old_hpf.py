@@ -13,7 +13,7 @@ import pdb
 
 from dimred import DR
 
-C_param = 8000
+C_param = 1e10
 
 def vec_equal(vec1, vec2):
 

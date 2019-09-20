@@ -281,13 +281,15 @@ def extend_data_spherical(data_points, data_labels, multiplyer = 25, radius = 1)
 
     return data_points, data_labels
 
-def clean_data(training_data, c=1):
+def clean_data(training_data, c=1, plot_clean = False):
     """
     training data with labels
     return linearly separable data
     """
 
     clf = svm.SVC(kernel='linear', C=c)
+
+    asdf = len(training_data[1])
 
     clf.fit(training_data[0], training_data[1])
 
@@ -304,20 +306,19 @@ def clean_data(training_data, c=1):
     clf.intercept_[0]
 
 
-
-    #plot_3d(training_data, np.array(normal), clf.intercept_[0])
+    if plot_clean:
+        plot_3d(training_data, np.array(normal), clf.intercept_[0])
 
     # Copy the deleted points before removal
     for index in indexes:
         removed_data.append((training_data[0][index], training_data[1][index]))
 
-    print(len(removed_data))
+    print("Points cleaned", len(removed_data), "out of", asdf)
     training_data[0] = np.delete(training_data[0], indexes, 0)
     training_data[1] = np.delete(training_data[1], indexes, 0)
-
-    #plot_3d(training_data, np.array(normal), clf.intercept_[0])
-
-    #plt.show()
+    if plot_clean:
+        plot_3d(training_data, np.array(normal), clf.intercept_[0])
+        #plt.show()
 
     return training_data
 
@@ -425,6 +426,7 @@ def write_timedict_to_file(time_dict, filehandle):
         filehandle.write("\n")
 
 
+
 def test_dataset(data_points, data_labels, name, nr_of_folds = 1, extend = False, K = 10):
     #test algorithms using k-fold
 
@@ -461,6 +463,17 @@ def test_dataset(data_points, data_labels, name, nr_of_folds = 1, extend = False
         for classifier in ["SVM"]:
             result_dict[i][classifier]["ang"] = [0.0]
     """
+
+    if extend:
+            data_points, data_labels = extend_data_spherical(data_points, data_labels, 20, 1.5) #extend for bmi data
+           # plot_3d([X_test, Y_test])
+            #plt.show()
+            max_values = np.amax(data_points, 0)
+            min_values = np.amin(data_points, 0)
+            data_points = normalize_data(data_points, min_values, max_values)
+            #X_train = normalize_data(X_train, min_values, max_values)
+
+
     if not extend:
         data_points = normalize_data(data_points)
     index = 0
@@ -472,13 +485,7 @@ def test_dataset(data_points, data_labels, name, nr_of_folds = 1, extend = False
         X_train, X_test = data_points[train_index], data_points[test_index] #split data into one trainging part and one test part
         Y_train, Y_test = data_labels[train_index], data_labels[test_index] # do the same with the labels
 
-        if extend:
-            X_test, Y_test = extend_data_spherical(X_test, Y_test, 25, 8) #extend for bmi data
-            max_values = np.amax(data_points, 0)
-            min_values = np.amin(data_points, 0)
-            X_test = normalize_data(X_test, min_values, max_values)
-            X_train = normalize_data(X_train, min_values, max_values)
-
+        
         #plot_3d([X_train, Y_train])
 
 
@@ -489,8 +496,8 @@ def test_dataset(data_points, data_labels, name, nr_of_folds = 1, extend = False
         #declare metrics
 
 
-
-        X_train, Y_train = clean_data([X_train, Y_train], 5) #Clean the training data, but not the test data
+        X_train, Y_train = clean_data([X_train, Y_train], 5, True) #Clean the training data, but not the test data
+        
         for i in range(nr_of_folds):
             rbf = HPF(max_nr_of_folds = (i + 1), verbose = False)
             hpf = old_HPF(max_nr_of_folds = (i + 1), verbose = False) #classifier that use old hpfimplementation without rubberband folding

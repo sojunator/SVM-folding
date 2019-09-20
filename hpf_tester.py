@@ -51,8 +51,7 @@ data_labels = data.target
 test_dataset(data_points, data_labels, "cancer_test", nr_of_folds)
 """
 #hepatitis
-data_points, data_labels = data_set["bmi.csv"]
+data_points, data_labels = data_set["sadel1.csv"]
 
 
-
-test_dataset(data_points, data_labels, "bmi", nr_of_folds, True)
+test_dataset(data_points, data_labels, "sadel1", nr_of_folds, True)

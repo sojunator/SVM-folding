@@ -15,7 +15,91 @@ import datetime
 
 from dimred import DR
 
-C_param = 8000
+C_param = 1e10
+
+def plot_2d(data, support_vector_dict = None):
+
+    plt.figure()
+
+    x1 = []
+    y1 = []
+    x2 = []
+    y2 = []
+
+    for index, label in enumerate(data[1]):
+        #print(index)
+        if label == 0:
+
+            x1.append(data[0][index][0])
+            y1.append(data[0][index][1])
+
+        elif label == 1:
+            x2.append(data[0][index][0])
+            y2.append(data[0][index][1])
+
+
+    plt.plot(x1, y1, 'ro')
+    plt.plot(x2, y2, 'go')
+
+
+    if support_vector_dict is not None:
+        for key in support_vector_dict:
+            for sv in support_vector_dict[key]:
+                plt.plot(sv[0], sv[1], 'bx')
+
+def plot_3d(data, normal = None, intercept = None):
+
+    fig = plt.figure()
+
+    ax = fig.add_subplot(111, projection='3d')
+
+
+    x1 = []
+    y1 = []
+    z1 = []
+    x2 = []
+    y2 = []
+    z2 = []
+
+    for index, label in enumerate(data[1]):
+        #print(index)
+        if label == 0:
+
+            x1.append(data[0][index][0])
+            y1.append(data[0][index][1])
+            z1.append(data[0][index][2])
+
+        elif label == 1:
+            x2.append(data[0][index][0])
+            y2.append(data[0][index][1])
+            z2.append(data[0][index][2])
+
+    ax.scatter(x1, y1, z1, c='r', marker='o')
+    ax.scatter(x2, y2, z2, c='b', marker='x')
+
+
+    ax.set_xlabel('X Label')
+    ax.set_ylabel('Y Label')
+    ax.set_zlabel('Z Label')
+    ax.set_xlim(0,1)
+    ax.set_ylim(0,1)
+    ax.set_zlim(0,1)
+
+    if normal is not None and intercept is not None:
+        # a plane is a*x+b*y+c*z+d=0
+        # [a,b,c] is the normal. Thus, we have to calculate
+        # d and we're set
+
+        # create x,y
+        xx, yy = np.meshgrid([0,1], [0,1])
+
+        #d = -point.dot(normal)
+
+        # calculate corresponding z
+        z = (-intercept -normal[0] * xx - normal[1] * yy) * 1. /normal[2]
+
+        # plot the surface
+        ax.plot_surface(xx, yy, z)
 
 def vec_equal(vec1, vec2):
 
@@ -452,7 +536,7 @@ class HPF:
 
         c_or_cc = np.dot(d, n)#if the cosine of the angle is less than 0, rotate left.
 
-        if c_or_cc < 0.0:
+        if c_or_cc > 0.0:
             rotate_set = [(self.rotate_left(point[0], angle, intersection_point, left_normal, use_rubber_band), point[1]) for point in rotate_set]
             left_or_right = 1
 
@@ -526,7 +610,14 @@ class HPF:
         if (len(points) is 0):
             return []
         if not rotate:
-            return self.old_clf.predict(points)
+            labels = self.old_clf.predict(points)
+
+            
+
+            #plot_3d([points, labels], np.array(self.old_clf.coef_[0]), self.old_clf.intercept_[0])
+            #plt.show()
+
+            return labels
 
         # Correct dim is used to save last down projection
         # As we don't want if-statement checking for last iteration
@@ -569,8 +660,14 @@ class HPF:
         time_dict = (svm_fit_time.total_seconds()*1000)
         self.clf.fit(data_points, data_labels)
 
+        print("Before folds: nr of support {}".format(len(self.clf.support_vectors_)))
+
         self.old_margin = self.get_margin(self.old_clf)
         self.new_margin = -1
+
+        
+        plot_3d([self.data[0], self.data[1]], np.array(self.clf.coef_[0]), self.clf.intercept_[0])
+       
 
 
         #project onto 2D
@@ -589,7 +686,7 @@ class HPF:
             #print(self.current_fold)
 
             self.data[0], self.support_vectors_dictionary, self.hyperplane_normal = self.dim_red.project_down(self.data[0], self.support_vectors_dictionary, self.hyperplane_normal)
-
+            plot_2d(self.data, self.support_vectors_dictionary)
             val = self.fold()
 
             self.current_fold += 1
@@ -614,10 +711,13 @@ class HPF:
                     print("termination due to floating point")
                 margins.clear()
             """
+            stopper = None
 
         self.fitting = False
-        print("nr of support {}".format(len(self.clf.support_vectors_)))
-
+        print("Current fold", self.current_fold)
+        print("After folds: nr of support {}".format(len(self.clf.support_vectors_)))
+        plot_3d([self.data[0], self.data[1]], np.array(self.clf.coef_[0]), self.clf.intercept_[0])
+        plt.show()
 
         #self.clf.fit(self.data_points, self.data_labels)
         #self.new_margin = self.get_margin(self.clf)
